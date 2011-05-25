@@ -1,5 +1,12 @@
 #!/bin/bash
 
+if [ "$1" = "--i-like-pain" ]; then
+	echo "Enabling Masochist mode - You can now allocate a DRBD collection less than 50G"
+	IHATEROB=true
+else
+	IHATEROB=false
+fi
+
 #yum -y groupinstall "Development tools"
 #yum -y install atrpms-repo    # For fxload, iksemel and spandsp
 #yum -y install epel-release # for php-pear-DB, soon to be removed as a prereq.
@@ -66,6 +73,15 @@ vg_fake2=49
 vg_voipa=188.87
 vg_fake3=0'
 
+
+# Default storage percentages.  Minimum sizes (with 50GB lvm space used) in brackets
+# MySQL = 30 (15G)
+# Asterisk = 30 (15G)
+# httpd = 20 (10G)
+# dhcpd = 10 (5G)
+# spare = 10 (5G)
+SERVICES="mysql=30 asterisk=30 httpd=20 dhcpd=10 spare=10"
+
 SELECTEDVG=not-found  # '-' is an invalid character in a volume group, so not-found will never be a valid answer
 for vg in $VGS; do
 	VGNAME=`echo $vg | awk -F= ' { print $1 } '`
@@ -75,14 +91,14 @@ for vg in $VGS; do
 		continue
 	fi
 
-	if [ $(echo "$VGSPACE < 50" | bc) -eq 1 ]; then
+	if [ $IHATEROB = false -a $(echo "$VGSPACE < 50" | bc) -eq 1 ]; then
 		echo -e "\tVG $VGNAME has less than 50G free space, skipping."
 		continue
 	fi
 
 	echo -en "\tVG $VGNAME has ${VGSPACE}G free space. Use this VG? [Yn]: " 
 	read usevg
-	if [ $usevg = "" -o $usevg = "Y" -o $usevg = "y" ]; then
+	if [ "$usevg" = "" -o "$usevg" = "Y" -o "$usevg" = "y" ]; then
 		SELECTEDVG=$VGNAME
 		break 2
 	fi
@@ -93,7 +109,22 @@ if [ $SELECTEDVG = not-found ]; then
 	exit
 fi
 
-echo "You picked $VGNAME with ${VGSPACE}G free"
+echo -ne "\tYou picked $VGNAME with ${VGSPACE}G free. Would you like to use all available space? [Yn]: "
+read usespace
+if [ "$usespace" = "" -o "$usespace" = "Y" -o "$usespace" = "y" ]; then
+	echo -e "\tUsing all ${VGSPACE}G available."
+else
+	echo -ne "\tHow much space would you like to use (in Gigabytes, minimum 50) [50]: "
+	read wantedspace
+	if [ $IHATEROB = false -a $(echo "$wantedspace < 50" | bc) -eq 1 ]; then
+		echo -e "\tLook. You can't expand a DRBD volume. You REALLY want to give it as much"
+		echo -e "\tspace as you can at the start. If you ABSOLUTELY MUST use less than 50G,"
+		echo -e "\trestart install.sh with the parameter --i-like-pain. That will bypass this"
+		echo -e "\tmessage"
+		exit
+	fi
+fi
+
 exit
 
 
