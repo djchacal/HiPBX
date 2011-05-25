@@ -31,7 +31,7 @@ fi
 # Is this the master or slave server?
 if [ "$ISMASTER" = "" ]; then
 	echo -n "Is this the Master or Slave server? [M/s]: "
-	read resp
+	read -e resp
 	if [ "$resp" = "" -o "$resp" = "M" -o "$resp" = "m" ]; then
 		ISMASTER=YES
 	else
@@ -42,7 +42,7 @@ echo ISMASTER=$ISMASTER > /etc/hipbx.conf
 
 if [ $ISMASTER = NO ]; then
 	echo -n "Please enter Heartbeat IP Address of Master [10.80.17.1]: "
-	read masterip
+	read -e masterip
 	[ "$masterip" = "" ] && masterip="10.80.17.1"
 	if ping -c1 $masterip > /dev/null; then
 		echo "$slaveip able to ping"
@@ -54,7 +54,56 @@ fi
 
 [ $ISMASTER = NO ] && slavesetup
 
-echo -e "Starting Master setup.\nMySQL..."
+echo "Starting Master setup."
+
+
+
+echo "drbd:"
+echo -e "\tLooking for vg's with spare space..."
+VGS=`vgdisplay -C --noheadings --nosuffix --units G | awk ' { print $1"="$7 }'`
+VGS='vg_fake1=0
+vg_fake2=49
+vg_voipa=188.87
+vg_fake3=0'
+
+SELECTEDVG=not-found  # '-' is an invalid character in a volume group, so not-found will never be a valid answer
+for vg in $VGS; do
+	VGNAME=`echo $vg | awk -F= ' { print $1 } '`
+	VGSPACE=`echo $vg | awk -F= ' { print $2 } '`
+	if [ $VGSPACE = 0 ]; then
+		echo -e "\tVG $VGNAME has no free space, skipping."
+		continue
+	fi
+
+	if [ $(echo "$VGSPACE < 50" | bc) -eq 1 ]; then
+		echo -e "\tVG $VGNAME has less than 50G free space, skipping."
+		continue
+	fi
+
+	echo -en "\tVG $VGNAME has ${VGSPACE}G free space. Use this VG? [Yn]: " 
+	read usevg
+	if [ $usevg = "" -o $usevg = "Y" -o $usevg = "y" ]; then
+		SELECTEDVG=$VGNAME
+		break 2
+	fi
+done
+
+if [ $SELECTEDVG = not-found ]; then
+	echo "Unfortunately, we couldn't agree on a VG to use. That's something you'll need to take up with your LVM."
+	exit
+fi
+
+echo "You picked $VGNAME with ${VGSPACE}G free"
+exit
+
+
+
+
+
+
+
+
+echo "MySQL..."
 
 # Generate a MySQL password, if one hasn't already been generated.
 [ "$MYSQLPASS" = "" ] && MYSQLPASS=`tr -dc A-Za-z0-9 < /dev/urandom | head -c16`
@@ -79,18 +128,22 @@ fi
 if (mysql -p$MYSQLPASS hipbx -equit 2>&1 | grep Unknown\ database > /dev/null); then
 	# Database does not exist. Create.
 	echo -e "\tCreating HiPBX database"
-	#`echo mysqladmin -p$MYSQLPASS create hipbx > /dev/null`
 	`mysqladmin -p$MYSQLPASS create hipbx`
-	echo -en "\tCreating HiPBX mysql user.."
+fi
+echo -en "\tChecking for correct GRANTs..."
+if (mysql -uhipbx -p$MYSQLPASS -hlocalhost hipbx -equit > /dev/null 2>&1); then
+	echo "OK"
+else
+	echo "Failed."
+	echo -en "\tCreating HiPBX mysql users .. "
 	for host in localhost master slave cluster; do
 		echo -n "$host "
 		CREATE='CREATE USER "hipbx"@"'$host'" IDENTIFIED BY "'$MYSQLPASS'"'
 		`mysql -p$MYSQLPASS -e"$CREATE"`
 		GRANT='GRANT ALL PRIVILEGES ON hipbx.* TO "hipbx"@"'$host'" IDENTIFIED BY "'$MYSQLPASS'"'
-		#`mysql -p$MYSQLPASS -e"$GRANT"`
 		`mysql -p$MYSQLPASS -e"$GRANT"`
 	done
-	:
+	echo ""
 fi
 
 
