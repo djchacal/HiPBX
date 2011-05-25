@@ -35,6 +35,11 @@ else
 	SETUPOK=no
 fi
 
+
+# Generate a MySQL password, if one hasn't already been generated.
+[ "$MYSQLPASS" = "" ] && MYSQLPASS=`tr -dc A-Za-z0-9 < /dev/urandom | head -c16`
+echo MYSQLPASS=$MYSQLPASS > /etc/hipbx.conf
+
 # Is this the master or slave server?
 if [ "$ISMASTER" = "" ]; then
 	echo -n "Is this the Master or Slave server? [M/s]: "
@@ -45,7 +50,7 @@ if [ "$ISMASTER" = "" ]; then
 		ISMASTER=NO
 	fi
 fi
-echo ISMASTER=$ISMASTER > /etc/hipbx.conf
+echo ISMASTER=$ISMASTER >> /etc/hipbx.conf
 
 if [ $ISMASTER = NO ]; then
 	echo -n "Please enter Heartbeat IP Address of Master [10.80.17.1]: "
@@ -125,6 +130,17 @@ else
 	fi
 fi
 
+echo -ne "\tCreating LVs..."
+for vol in $SERVICES; do
+	lvname=`echo $vol | awk -F= ' { print $1 } '`
+	lvpercent=`echo $vol | awk -F= ' { print $2 } '`
+	lvsize=`echo ${VGSPACE}*.${lvpercent} | bc`
+	lvsize=`printf %0.f $lvsize`
+	echo -n "$lvname(${lvsize}G) "
+	`lvcreate -L${lvsize}G $VGNAME -n drbd_${lvname} > /dev/null 2>&1`
+done
+echo "Done"
+
 exit
 
 
@@ -136,9 +152,6 @@ exit
 
 echo "MySQL..."
 
-# Generate a MySQL password, if one hasn't already been generated.
-[ "$MYSQLPASS" = "" ] && MYSQLPASS=`tr -dc A-Za-z0-9 < /dev/urandom | head -c16`
-echo MYSQLPASS=$MYSQLPASS >> /etc/hipbx.conf
 
 # First, can we connect to MySQL without a password?
 if (mysql -equit >/dev/null 2>&1); then
