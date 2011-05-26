@@ -251,13 +251,84 @@ else
 	fi
 fi
 echo "SSH_SLAVE=\"$SSH_SLAVE\"" >> /etc/hipbx.conf
+
+
+echo "Networking:"
+INTS=( `ip -o addr | grep -v "1: lo" | grep inet\ | awk '{print $9"="$4}'| sed 's^/[0-9]*^^'` )
+echo -e "\tThere needs to be at least two Ethernet Inferfaces for the cluster to work. The first"
+echo -e "\tinterface is the 'internal' link. This should be a crossover cable, or even better,"
+echo -e "\ta pair of crossover cables bonded together, that links the two machines. There should"
+echo -e "\tNOT be a network swtich on the internal link. "
+echo -e "\tThe second interface is your external network. This again should be a bonded interface,"
+echo -e "\tpreferrably going to two seperate switches."
+echo -e "\tBoth of these network interfaces should already be configured, tested tand working. If"
+echo -e "\tnot, abort now (Ctrl-C) and do that.\n"
+echo -e "\tI can detect ${#INTS[@]} network interfaces with an IP address:"
+for x in `seq 0 $(( ${#INTS[@]} - 1 ))`; do
+	iname=`echo ${INTS[$x]} | awk -F= '{print $1}'`
+	iaddr=`echo ${INTS[$x]} | awk -F= '{print $2}'`
+	echo -e "\t\t$iname\t$iaddr"
+done
+echo -en "\tPlesae enter the INTERNAL, PRIVATE interface "
+[ "$MASTER_INTERNAL_INT" = "" ] && MASTER_INTERNAL_INT="unknown"
+echo -n "[$MASTER_INTERNAL_INT]: "
+read internalint
+if [ "$internalint" = ""  -a "$MASTER_INTERNAL_INT" = "unknown" ]; then
+	echo "Wait.. What? I don't KNOW what the interface is. That's why it says 'unknown' there."
+	echo "Next time, really pick a network interface."
+	exit
+fi
+if [ "$internalint" = "" ]; then
+	internalint=$MASTER_INTERNAL_INT
+fi
+
+if $(ip addr show $internalint > /dev/null 2>&1 ); then
+	MASTER_INTERNAL_IP=`ip -o addr show $internalint | grep ${internalint}$|awk '{print $4}'|sed 's^/[0-9]*^^'`
+	if [ "$MASTER_INTERNAL_IP" = "" ]; then
+		echo "I'm guessing that was a typo. I can't get an IP address from that interface."
+		echo "Try again."
+		exit
+	fi
+	echo -e "\tSetting INTERNAL interface to $internalint ($MASTER_INTERNAL_IP)"
+else 
+	echo "I'm guessing that was a typo. I can't find that interface. Sorry. Try again"
+	exit
+fi
+echo "MASTER_INTERNAL_IP=$MASTER_INTERNAL_IP" >> /etc/hipbx.conf
+echo "MASTER_INTERNAL_INT=$internalint" >> /etc/hipbx.conf
+
+
+echo -ne "\tPlease select the EXTERNAL, PUBLIC interface "
+[ "$MASTER_EXTERNAL_INT" = "" ] && MASTER_EXTERNAL_INT="unknown"
+echo -n "[$MASTER_EXTERNAL_INT]: "
+read externalint
+if [ "$externalint" = ""  -a "$MASTER_EXTERNAL_INT" = "unknown" ]; then
+	echo "Wait.. What? I don't KNOW what the interface is. That's why it says 'unknown' there."
+	echo "Next time, really pick a network interface."
+	exit
+fi
+if [ "$externalint" = "" ]; then
+	externalint=$MASTER_EXTERNAL_INT
+fi
+
+if $(ip addr show $externalint > /dev/null 2>&1 ); then
+	MASTER_EXTERNAL_IP=`ip -o addr show $externalint | grep ${externalint}$|awk '{print $4}'|sed 's^/[0-9]*^^'`
+	if [ "$MASTER_EXTERNAL_IP" = "" ]; then
+		echo "I'm guessing that was a typo. I can't get an IP address from that interface."
+		echo "Try again."
+		exit
+	fi
+	echo -e "\tSetting EXTERNAL interface to $externalint ($MASTER_EXTERNAL_IP)"
+else 
+	echo "I'm guessing that was a typo. I can't find that interface. Sorry. Try again"
+	exit
+fi
+echo "MASTER_EXTERNAL_IP=$MASTER_EXTERNAL_IP" >> /etc/hipbx.conf
+echo "MASTER_EXTERNAL_INT=$externalint" >> /etc/hipbx.conf
+
 exit
-echo "Networking..."
-INTS=`ip -o addr | grep -v "1: lo" | grep inet\ | awk '{print $2"="$4}'| sed 's^/[0-9]*^^' `
-echo "I have $INTS"
-exit
-echo -e "\tI now need to know about the floating IP addresses for each service."
-echo -e "\t
+
+
 echo -e "\twould probably be the easiest. If you're plumbing this into an existing"
 echo -e "\tnetwork it's a bit harder."
 
