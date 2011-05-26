@@ -20,8 +20,12 @@ fi
 #yum -y install php-pear-DB php-process
 #yum -y install libxml2-devel ncurses-devel libtiff-devel libogg-devel
 #yum -y install libvorbis vorbis-tools
-
 #yum -y install pacemaker
+
+chkconfig mysqld on
+/etc/init.d/mysqld start
+chkconfig httpd on
+/etc/init.d/httpd start
 
 # If /etc/hipbx.conf already exists, grab it and read the config
 SETUPOK=yes
@@ -245,7 +249,7 @@ else
 		ssh-keygen -q -t dsa -f /etc/hipbx.d/ssh_key_slave -N ""
 		SSH_SLAVE=`cat /etc/hipbx.d/ssh_key_slave.pub`
 	else
-		echo "and seems valid"
+		echo " and seems valid"
 	fi
 fi
 echo "SSH_SLAVE=\"$SSH_SLAVE\"" >> /etc/hipbx.conf
@@ -259,7 +263,7 @@ echo -e "\ta pair of crossover cables bonded together, that links the two machin
 echo -e "\tNOT be a network swtich on the internal link. "
 echo -e "\tThe second interface is your external network. This again should be a bonded interface,"
 echo -e "\tpreferrably going to two seperate switches."
-echo -e "\tBoth of these network interfaces should already be configured, tested tand working. If"
+echo -e "\tBoth of these network interfaces should already be configured, tested and working. If"
 echo -e "\tnot, abort now (Ctrl-C) and do that.\n"
 echo -e "\tI can detect ${#INTS[@]} network interfaces with an IP address:"
 for x in `seq 0 $(( ${#INTS[@]} - 1 ))`; do
@@ -337,7 +341,7 @@ if [ "$MULTICAST_ADDR" = "" ]; then
 fi
 echo "MULTICAST_ADDR=$MULTICAST_ADDR" >> /etc/hipbx.conf
 
-echo "Generating corosync configuration file:"
+echo -n "Generating corosync configuration file: "
 echo " totem {
 	version: 2
 	secauth: off
@@ -377,6 +381,13 @@ echo "service {
 	name: pacemaker
 	ver: 1
 }" > /etc/corosync/service.d/pcmk
+
+echo "Done"
+echo "Starting corosync and pacemaker:"
+chkconfig corosync on
+/etc/init.d/corosync start
+chkcofig pacemaker on
+/etc/init.d/pacemaker start
 
 exit
 

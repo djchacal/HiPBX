@@ -1,5 +1,8 @@
 #!/bin/bash
 . /etc/hipbx.conf
+
+/etc/init.d/pacemaker stop
+/etc/init.d/corosync stop
 mysql -p$MYSQLPASS -e"drop user 'hipbx'@'master'"
 mysql -p$MYSQLPASS -e"drop user 'hipbx'@'slave'"
 mysql -p$MYSQLPASS -e"drop user 'hipbx'@'cluster'"
