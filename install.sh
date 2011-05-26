@@ -333,12 +333,12 @@ if [ "$MULTICAST_ADDR" = "" ]; then
 	M3=`tr -dc 0-9 < /dev/urandom | head -c3`
 	M3=`echo ${M3}%256 | bc`
 	echo "(239.${M1}.${M2}.${M3})"
+	MULTICAST_ADDR=239.${M1}.${M2}.${M3}
 fi
-echo "MULTICAST_ADDR=239.${M1}.${M2}.${M3}" >> /etc/hipbx.conf
+echo "MULTICAST_ADDR=$MULTICAST_ADDR" >> /etc/hipbx.conf
 
 echo "Generating corosync configuration file:"
-echo "compatibility: whitetank
-totem {
+echo " totem {
 	version: 2
 	secauth: off
 	threads: 0
@@ -347,6 +347,7 @@ totem {
 		bindnetaddr: $MASTER_INTERNAL_IP
 		mcastaddr: $MULTICAST_ADDR
 		mcastport: 8647
+		ttl: 1
 	}
 }
 
@@ -368,10 +369,14 @@ amf {
 	mode: disabled
 }
 
-service {
-	name pacemaker
-	ver: 0
+aisexec {
+	user: root
+	grou: root
 }" > /etc/corosync/corosync.conf
+echo "service {
+	name: pacemaker
+	ver: 1
+}" > /etc/corosync/service.d/pcmk
 
 exit
 
