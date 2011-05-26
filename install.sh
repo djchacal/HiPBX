@@ -69,84 +69,135 @@ fi
 echo "Starting Master setup."
 
 
-
-echo "drbd:"
-echo -e "\tLooking for vg's with spare space..."
-VGS=`vgdisplay -C --noheadings --nosuffix --units G | awk ' { print $1"="$7 }'`
-VGS='vg_fake1=0
-vg_fake2=49
-vg_voipa=188.87
-vg_fake3=0'
-
-
+#### DRBD Setup Begin
 # Default storage percentages.  Minimum sizes (with 50GB lvm space used) in brackets
 # MySQL = 30 (15G)
 # Asterisk = 30 (15G)
 # httpd = 20 (10G)
 # dhcpd = 10 (5G)
 # spare = 10 (5G)
-SERVICES="mysql=30 asterisk=30 httpd=20 dhcpd=10 spare=10"
+# Don't try to use decimals here. Integers only.
+[ "$SERVICES" = "" ] && SERVICES=( mysql=30 asterisk=30 httpd=20 dhcpd=10 spare=10 )
 
-SELECTEDVG=not-found  # '-' is an invalid character in a volume group, so not-found will never be a valid answer
-for vg in $VGS; do
-	VGNAME=`echo $vg | awk -F= ' { print $1 } '`
-	VGSPACE=`echo $vg | awk -F= ' { print $2 } '`
-	if [ $VGSPACE = 0 ]; then
-		echo -e "\tVG $VGNAME has no free space, skipping."
-		continue
-	fi
-
-	if [ $IHATEROB = false -a $(echo "$VGSPACE < 50" | bc) -eq 1 ]; then
-		echo -e "\tVG $VGNAME has less than 50G free space, skipping."
-		continue
-	fi
-
-	echo -en "\tVG $VGNAME has ${VGSPACE}G free space. Use this VG? [Yn]: " 
-	read usevg
-	if [ "$usevg" = "" -o "$usevg" = "Y" -o "$usevg" = "y" ]; then
-		SELECTEDVG=$VGNAME
-		break 2
-	fi
+NBRSVCS=$((${#SERVICES[@]} - 1))
+SANITYSIZE=0
+SERVSTRING="SERVICES=("
+for element in $(seq 0 $NBRSVCS); do
+	SERVSTRING="$SERVSTRING ${SERVICES[$element]} "
+	SERVICENAME[$element]=`echo ${SERVICES[$element]} | awk -F= ' { print $1 } '`
+	SERVICEPCNT[$element]=`echo ${SERVICES[$element]} | awk -F= ' { print $2 } '`
+	SANITYSIZE=$(( $SANITYSIZE + ${SERVICEPCNT[$element]} ))
 done
 
-if [ $SELECTEDVG = not-found ]; then
-	echo "Unfortunately, we couldn't agree on a VG to use. That's something you'll need to take up with your LVM."
+echo "$SERVSTRING)" >> /etc/hipbx.conf
+
+if [ $SANITYSIZE -gt 100 ]; then
+	echo -e "Severe programmer fail.\n The total percentages of SERVICES is greater than 100."
+	echo -e " Please fix the SERVICES variable, and then poke yourself in the eye."
 	exit
 fi
 
-echo -ne "\tYou picked $VGNAME with ${VGSPACE}G free. Would you like to use all available space? [Yn]: "
-read usespace
-if [ "$usespace" = "" -o "$usespace" = "Y" -o "$usespace" = "y" ]; then
-	echo -e "\tUsing all ${VGSPACE}G available."
-else
-	echo -ne "\tHow much space would you like to use (in Gigabytes, minimum 50) [50]: "
-	read wantedspace
-	if [ $IHATEROB = false -a $(echo "$wantedspace < 50" | bc) -eq 1 ]; then
-		echo -e "\tLook. You can't expand a DRBD volume. You REALLY want to give it as much"
-		echo -e "\tspace as you can at the start. If you ABSOLUTELY MUST use less than 50G,"
-		echo -e "\trestart install.sh with the parameter --i-like-pain. That will bypass this"
-		echo -e "\tmessage"
+echo "drbd:"
+echo -e "\tChecking for existing DRBD volumes..."
+ALLOCATED=0
+USEDSPACE=0
+for x in $(seq 0 $NBRSVCS); do
+	echo -ne "\t\t${SERVICENAME[$x]} - "
+	USED=`lvdisplay -C --noheadings --nosuffix --units g | grep drbd_${SERVICENAME[$x]} | awk ' { print $4 }'`
+	if [ "$USED" != "" ]; then 
+		echo "Found (${USED}G)"
+		echo "drbd_${SERVICENAME[$x]}=${USED}" >> /etc/hipbx.conf
+		ALLOCATED=$(( $ALLOCATED + ${SERVICEPCNT[$x]} ))
+		USEDSPACE=$(( $USEDSPACE + `printf %0.f $USED` ))
+	else
+		echo "Not Found"
+		LVMAKE=( ${LVMAKE[@]-} $x )
+	fi
+done
+
+if [ "$LVMAKE" != "" ]; then
+	echo -e "\tLooking for vg's with spare space..."
+	VGS=`vgdisplay -C --noheadings --nosuffix --units g | awk ' { print $1"="$7 }'`
+	xVGS='vg_fake1=0
+vg_fake2=49
+vg_voipa=175.9
+vg_fake3=0'
+
+	SELECTEDVG=not-found  # '-' is an invalid character in a volume group, so not-found will never be a valid answer
+		for vg in $VGS; do
+			VGNAME=`echo $vg | awk -F= ' { print $1 } '`
+			VGSPACE=`echo $vg | awk -F= ' { print $2 } '`
+			if [ $VGSPACE = 0 ]; then
+				echo -e "\tVG $VGNAME has no free space, skipping."
+				continue
+			fi
+
+			if [ $ALLOCATED -eq 0 -a $IHATEROB = false -a $(echo "$VGSPACE < 50" | bc) -eq 1 ]; then
+				echo -e "\tVG $VGNAME has less than 50G free space, skipping."
+				continue
+			fi
+
+		echo -en "\tVG $VGNAME has ${VGSPACE}G free space. Use this VG? [Yn]: " 
+		read usevg
+		if [ "$usevg" = "" -o "$usevg" = "Y" -o "$usevg" = "y" ]; then
+			SELECTEDVG=$VGNAME
+			break 2
+		fi
+	done
+
+	if [ $SELECTEDVG = not-found ]; then
+		echo "Unfortunately, we couldn't agree on a VG to use. That's something you'll need to take up with your LVM."
 		exit
 	fi
+	
+	echo -ne "\tYou picked $VGNAME with ${VGSPACE}G free. Would you like to use all available space? [Yn]: "
+	read usespace
+	if [ "$usespace" = "" -o "$usespace" = "Y" -o "$usespace" = "y" ]; then
+		echo -e "\tUsing all ${VGSPACE}G available."
+	else
+		echo -ne "\tHow much space would you like to use (in Gigabytes, minimum 50) [50]: "
+		read wantedspace
+		if [ $IHATEROB = false -a $(echo "$wantedspace < 50" | bc) -eq 1 ]; then
+			echo -e "\tLook. You can't expand a DRBD volume. You REALLY want to give it as much"
+			echo -e "\tspace as you can at the start. If you ABSOLUTELY MUST use less than 50G,"
+			echo -e "\trestart install.sh with the parameter --i-like-pain. That will bypass this"
+			echo -e "\tmessage"
+			exit
+		fi
+	fi
+
+	echo -e "\tCreating LVs..."
+	# Calculate how much is allocated already, and base our calculations off that.
+	if [ $ALLOCATED = 0 ]; then
+		BASESIZE=$VGSPACE
+	else
+		BASESIZE=`echo scale=8\; $USEDSPACE / \( $ALLOCATED / 100 \) | bc`
+	fi
+	# Round DOWN basesize
+	BASESIZE=`echo $BASESIZE - .5 | bc`
+	BASESIZE=`printf %0.f $BASESIZE`
+	echo "Working on $BASESIZE"
+	for x in $(seq 0 $(( ${#LVMAKE[@]} - 1 )) ) ; do
+		echo -ne "\t\t${SERVICENAME[${LVMAKE[$x]}]} "
+		lvsize=`echo ${BASESIZE}*.${SERVICEPCNT[${LVMAKE[$x]}]} - .5 | bc`
+		echo -n "Was $lvsize "
+		lvsize=`printf %0.f $lvsize`
+		echo -n "now $lvsize "
+		echo "(${lvsize}G) "
+		echo lvcreate -L${lvsize}G $VGNAME -n drbd_${SERVICENAME[${LVMAKE[$x]}]}
+		if $(lvcreate -L${lvsize}g $VGNAME -n drbd_${SERVICENAME[${LVMAKE[$x]}]} 2>&1 > /dev/null); then
+			echo "drbd_${SERVICENAME[${LVMAKE[$x]}]}=${lvsize}" >> /etc/hipbx.conf
+		else
+			echo "Something really bad has happened. I can't create the logical volume."
+			echo "This is the command I ran:"
+			echo -e "\tlvcreate -L${lvsize}g $VGNAME -n drbd_${SERVICENAME[${LVMAKE[$x]}]}"
+			echo "Try running it yourself and see if you can fix the problem."
+			exit
+		fi
+	done
+	echo "Done"
 fi
-
-echo -ne "\tCreating LVs..."
-for vol in $SERVICES; do
-	lvname=`echo $vol | awk -F= ' { print $1 } '`
-	lvpercent=`echo $vol | awk -F= ' { print $2 } '`
-	lvsize=`echo ${VGSPACE}*.${lvpercent} | bc`
-	lvsize=`printf %0.f $lvsize`
-	echo -n "$lvname(${lvsize}G) "
-	`lvcreate -L${lvsize}G $VGNAME -n drbd_${lvname} > /dev/null 2>&1`
-done
-echo "Done"
-
 exit
-
-
-
-
-
 
 
 
