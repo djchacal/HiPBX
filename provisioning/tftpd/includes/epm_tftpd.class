@@ -1,0 +1,76 @@
+<?PHP
+class epm_tftpd extends TFTPServer
+{
+  private $_root;
+  private $_debug;
+
+  function __construct($server_url,
+		       $root = null, $rw = false, $debug = false)
+  {
+    parent::__construct($server_url);
+    $this->_root = $root;
+    $this->_rw = $rw;
+    $this->_debug = $debug;
+  }
+
+  private function log($peer, $level, $message)
+  {
+    echo
+      date("H:i:s") . " " .
+      $level . " " .
+      $peer . " " .
+      $message . "\n";
+  }
+
+  public function log_debug($peer, $message)
+  {
+    if(!$this->_debug)
+      return;
+
+    $this->log($peer, "D", $message);
+  }
+
+  public function log_info($peer, $message)
+  {
+    $this->log($peer, "I", $message);
+  }
+
+  public function log_warning($peer, $message)
+  {
+    $this->log($peer, "W", $message);
+  }
+
+  public function log_error($peer, $message)
+  {
+    $this->log($peer, "E", $message);
+  }
+
+  public function readable($peer, $filename)
+  {
+    return true;
+  }
+
+  public function exists($peer, $filename)
+  {
+    return false;
+  }
+
+  public function get($peer, $filename, $mode)
+  {
+	$this->log_info($peer, "Yup");
+	$content = "";
+    return 1;
+  }
+
+  public function writable($peer, $filename)
+  {
+    return true;
+  }
+
+  public function put($peer, $filename, $mode, $content)
+  {
+	return true;
+  }
+
+}
+?>
