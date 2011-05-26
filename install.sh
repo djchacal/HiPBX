@@ -180,7 +180,6 @@ vg_fake3=0'
 	# Round DOWN basesize
 	BASESIZE=`echo $BASESIZE - .5 | bc`
 	BASESIZE=`printf %0.f $BASESIZE`
-	echo "Working on $BASESIZE"
 	for x in $(seq 0 $(( ${#LVMAKE[@]} - 1 )) ) ; do
 		echo -ne "\t\t${SERVICENAME[${LVMAKE[$x]}]} "
 		lvsize=`echo ${BASESIZE}*.${SERVICEPCNT[${LVMAKE[$x]}]} - .5 | bc`
@@ -198,7 +197,6 @@ vg_fake3=0'
 			exit
 		fi
 	done
-	echo "Done"
 fi
 
 echo "SSH:"
