@@ -21,6 +21,8 @@ fi
 #yum -y install libxml2-devel ncurses-devel libtiff-devel libogg-devel
 #yum -y install libvorbis vorbis-tools
 
+#yum -y install pacemaker
+
 # If /etc/hipbx.conf already exists, grab it and read the config
 SETUPOK=yes
 if [ -f /etc/hipbx.conf ]; then
@@ -35,6 +37,8 @@ else
 	SETUPOK=no
 fi
 
+# Make the /etc/hipbx.d directory if it doesn't already exist.
+[ ! -d /etc/hipbx.d ] && mkdir -f /etc/hipbx.d
 
 # Generate a MySQL password, if one hasn't already been generated.
 [ "$MYSQLPASS" = "" ] && MYSQLPASS=`tr -dc A-Za-z0-9 < /dev/urandom | head -c16`
@@ -69,7 +73,7 @@ fi
 echo "Starting Master setup."
 
 
-#### DRBD Setup Begin
+#### LVM Setup Begin
 # Default storage percentages.  Minimum sizes (with 50GB lvm space used) in brackets
 # MySQL = 30 (15G)
 # Asterisk = 30 (15G)
@@ -97,8 +101,8 @@ if [ $SANITYSIZE -gt 100 ]; then
 	exit
 fi
 
-echo "drbd:"
-echo -e "\tChecking for existing DRBD volumes..."
+echo "lvm:"
+echo -e "\tChecking for existing LVM volumes for drbd..."
 ALLOCATED=0
 USEDSPACE=0
 for x in $(seq 0 $NBRSVCS); do
@@ -184,8 +188,7 @@ vg_fake3=0'
 		lvsize=`printf %0.f $lvsize`
 		echo -n "now $lvsize "
 		echo "(${lvsize}G) "
-		echo lvcreate -L${lvsize}G $VGNAME -n drbd_${SERVICENAME[${LVMAKE[$x]}]}
-		if $(lvcreate -L${lvsize}g $VGNAME -n drbd_${SERVICENAME[${LVMAKE[$x]}]} 2>&1 > /dev/null); then
+		if $(lvcreate -L${lvsize}g $VGNAME -n drbd_${SERVICENAME[${LVMAKE[$x]}]} > /dev/null); then
 			echo "drbd_${SERVICENAME[${LVMAKE[$x]}]}=${lvsize}" >> /etc/hipbx.conf
 		else
 			echo "Something really bad has happened. I can't create the logical volume."
@@ -197,7 +200,67 @@ vg_fake3=0'
 	done
 	echo "Done"
 fi
+
+echo "SSH:"
+if [ "$SSH_MASTER" = "" ]; then
+	echo -e "\t\$SSH_MASTER not found."
+	if [ -f /etc/hipbx.d/ssh_key_master -a -f /etc/hipbx.d/ssh_key_master.pub ]; then
+		echo -e "\tHowever, /etc/hipbx.d/ssh_key_master exists"
+	else
+		rm -f /etc/hipbx.d/ssh_key_master /etc/hipbx.d/ssh_key_master.pub
+		echo -e "\tGenerating MASTER ssh Public key:"
+		ssh-keygen -q -t dsa -f /etc/hipbx.d/ssh_key_master -N ""
+	fi
+	SSH_MASTER=`cat /etc/hipbx.d/ssh_key_master.pub`
+else
+	echo -en "\tMaster ssh key exists"
+	test=`cat /etc/hipbx.d/ssh_key_master.pub 2>/dev/null`
+	if [ "$SSH_MASTER" != "$test" ]; then
+		echo -e " - but doesn't match hipbx.conf! Regenerating."
+		rm -f /etc/hipbx.d/ssh_key_master /etc/hipbx.d/ssh_key_master.pub
+		echo -e "\tGenerating MASTER ssh Public key:"
+		ssh-keygen -q -t dsa -f /etc/hipbx.d/ssh_key_master -N ""
+		SSH_MASTER=`cat /etc/hipbx.d/ssh_key_master.pub`
+	else
+		echo " and seems valid"
+	fi
+fi
+echo "SSH_MASTER=\"$SSH_MASTER\"" >> /etc/hipbx.conf
+
+if [ "$SSH_SLAVE" = "" ]; then
+	echo -e "\t\$SSH_SLAVE not found."
+	if [ -f /etc/hipbx.d/ssh_key_slave -a -f /etc/hipbx.d/ssh_key_slave.pub ]; then
+		echo -e "\tHowever, /etc/hipbx.d/ssh_key_slave exists"
+	else
+		rm -f /etc/hipbx.d/ssh_key_slave /etc/hipbx.d/ssh_key_slave.pub
+		echo -e "\tGenerating SLAVE ssh Public key:"
+		ssh-keygen -q -t dsa -f /etc/hipbx.d/ssh_key_slave -N ""
+	fi
+	SSH_SLAVE=`cat /etc/hipbx.d/ssh_key_slave.pub`
+else
+	echo -en "\tSlave ssh key exists"
+	test=`cat /etc/hipbx.d/ssh_key_slave.pub 2>/dev/null`
+	if [ "$SSH_SLAVE" != "$test" ]; then
+		echo "- but doesn't match hipbx.conf! Regenerating."
+		rm -f /etc/hipbx.d/ssh_key_slave /etc/hipbx.d/ssh_key_slave.pub
+		echo -e "\tGenerating SLAVE ssh Public key:"
+		ssh-keygen -q -t dsa -f /etc/hipbx.d/ssh_key_slave -N ""
+		SSH_SLAVE=`cat /etc/hipbx.d/ssh_key_slave.pub`
+	else
+		echo "and seems valid"
+	fi
+fi
+echo "SSH_SLAVE=\"$SSH_SLAVE\"" >> /etc/hipbx.conf
 exit
+echo "Networking..."
+INTS=`ip -o addr | grep -v "1: lo" | grep inet\ | awk '{print $2"="$4}'| sed 's^/[0-9]*^^' `
+echo "I have $INTS"
+exit
+echo -e "\tI now need to know about the floating IP addresses for each service."
+echo -e "\t
+echo -e "\twould probably be the easiest. If you're plumbing this into an existing"
+echo -e "\tnetwork it's a bit harder."
+
 
 
 
@@ -208,7 +271,7 @@ echo "MySQL..."
 if (mysql -equit >/dev/null 2>&1); then
 	# We can. Set the password.
 	echo -e "\tSetting Password to $MYSQLPASS"
-	`mysqladmin password $MYSQLPASS > /dev/null`
+	mysqladmin password $MYSQLPASS > /dev/null
 else
 	echo -e "\tPassword previously set"
 	if mysql -p$MYSQLPASS -equit; then
@@ -223,7 +286,7 @@ fi
 if (mysql -p$MYSQLPASS hipbx -equit 2>&1 | grep Unknown\ database > /dev/null); then
 	# Database does not exist. Create.
 	echo -e "\tCreating HiPBX database"
-	`mysqladmin -p$MYSQLPASS create hipbx`
+	mysqladmin -p$MYSQLPASS create hipbx
 fi
 echo -en "\tChecking for correct GRANTs..."
 if (mysql -uhipbx -p$MYSQLPASS -hlocalhost hipbx -equit > /dev/null 2>&1); then
@@ -234,9 +297,9 @@ else
 	for host in localhost master slave cluster; do
 		echo -n "$host "
 		CREATE='CREATE USER "hipbx"@"'$host'" IDENTIFIED BY "'$MYSQLPASS'"'
-		`mysql -p$MYSQLPASS -e"$CREATE"`
+		mysql -p$MYSQLPASS -e"$CREATE"
 		GRANT='GRANT ALL PRIVILEGES ON hipbx.* TO "hipbx"@"'$host'" IDENTIFIED BY "'$MYSQLPASS'"'
-		`mysql -p$MYSQLPASS -e"$GRANT"`
+		mysql -p$MYSQLPASS -e"$GRANT"
 	done
 	echo ""
 fi
