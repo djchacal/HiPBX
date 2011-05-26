@@ -324,14 +324,56 @@ fi
 echo "MASTER_EXTERNAL_IP=$MASTER_EXTERNAL_IP" >> /etc/hipbx.conf
 echo "MASTER_EXTERNAL_INT=$externalint" >> /etc/hipbx.conf
 
+if [ "$MULTICAST_ADDR" = "" ]; then
+	echo -en "\tGenerating Multicast Address..."
+	M1=`tr -dc 0-9 < /dev/urandom | head -c3`
+	M1=`echo ${M1}%256 | bc`
+	M2=`tr -dc 0-9 < /dev/urandom | head -c3`
+	M2=`echo ${M2}%256 | bc`
+	M3=`tr -dc 0-9 < /dev/urandom | head -c3`
+	M3=`echo ${M3}%256 | bc`
+	echo "(239.${M1}.${M2}.${M3})"
+fi
+echo "MULTICAST_ADDR=239.${M1}.${M2}.${M3}" >> /etc/hipbx.conf
+
+echo "Generating corosync configuration file:"
+echo "compatibility: whitetank
+totem {
+	version: 2
+	secauth: off
+	threads: 0
+	interface {
+		ringnumber: 0
+		bindnetaddr: $MASTER_INTERNAL_IP
+		mcastaddr: $MULTICAST_ADDR
+		mcastport: 8647
+	}
+}
+
+logging {
+	fileline: off
+	to_stderr: no
+	to_logfile: yes
+	to_syslog: yes
+	logfile: /var/log/cluster/corosync.log
+	debug: off
+	timestamp: on
+	logger_subsys {
+		subsys: AMF
+		debug: off
+	}
+}
+
+amf {
+	mode: disabled
+}
+
+service {
+	name pacemaker
+	ver: 0
+}" > /etc/corosync/corosync.conf
+
 exit
-
-
-echo -e "\twould probably be the easiest. If you're plumbing this into an existing"
-echo -e "\tnetwork it's a bit harder."
-
-
-
 
 echo "MySQL..."
 
