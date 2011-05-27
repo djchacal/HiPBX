@@ -1,6 +1,7 @@
 #!/bin/bash
 . /etc/hipbx.conf
 
+crm configure erase
 /etc/init.d/pacemaker stop
 /etc/init.d/corosync stop
 mysql -p$MYSQLPASS -e"drop user 'hipbx'@'master'"

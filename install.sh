@@ -22,10 +22,10 @@ fi
 #yum -y install libvorbis vorbis-tools
 #yum -y install pacemaker
 
-chkconfig mysqld on
-/etc/init.d/mysqld start
-chkconfig httpd on
-/etc/init.d/httpd start
+chkconfig mysqld off
+/etc/init.d/mysqld stop
+chkconfig httpd off
+/etc/init.d/httpd stop
 
 # If /etc/hipbx.conf already exists, grab it and read the config
 SETUPOK=yes
@@ -187,9 +187,7 @@ vg_fake3=0'
 	for x in $(seq 0 $(( ${#LVMAKE[@]} - 1 )) ) ; do
 		echo -ne "\t\t${SERVICENAME[${LVMAKE[$x]}]} "
 		lvsize=`echo ${BASESIZE}*.${SERVICEPCNT[${LVMAKE[$x]}]} - .5 | bc`
-		echo -n "Was $lvsize "
 		lvsize=`printf %0.f $lvsize`
-		echo -n "now $lvsize "
 		echo "(${lvsize}G) "
 		if $(lvcreate -L${lvsize}g $VGNAME -n drbd_${SERVICENAME[${LVMAKE[$x]}]} > /dev/null); then
 			echo "drbd_${SERVICENAME[${LVMAKE[$x]}]}=${lvsize}" >> /etc/hipbx.conf
@@ -210,8 +208,9 @@ if [ "$SSH_MASTER" = "" ]; then
 		echo -e "\tHowever, /etc/hipbx.d/ssh_key_master exists"
 	else
 		rm -f /etc/hipbx.d/ssh_key_master /etc/hipbx.d/ssh_key_master.pub
-		echo -e "\tGenerating MASTER ssh Public key:"
+		echo -en "\tGenerating MASTER ssh Public key..."
 		ssh-keygen -q -t dsa -f /etc/hipbx.d/ssh_key_master -N ""
+		echo "Done"
 	fi
 	SSH_MASTER=`cat /etc/hipbx.d/ssh_key_master.pub`
 else
@@ -220,9 +219,10 @@ else
 	if [ "$SSH_MASTER" != "$test" ]; then
 		echo -e " - but doesn't match hipbx.conf! Regenerating."
 		rm -f /etc/hipbx.d/ssh_key_master /etc/hipbx.d/ssh_key_master.pub
-		echo -e "\tGenerating MASTER ssh Public key:"
+		echo -en "\tGenerating MASTER ssh Public key..."
 		ssh-keygen -q -t dsa -f /etc/hipbx.d/ssh_key_master -N ""
 		SSH_MASTER=`cat /etc/hipbx.d/ssh_key_master.pub`
+		echo "Done"
 	else
 		echo " and seems valid"
 	fi
@@ -235,8 +235,9 @@ if [ "$SSH_SLAVE" = "" ]; then
 		echo -e "\tHowever, /etc/hipbx.d/ssh_key_slave exists"
 	else
 		rm -f /etc/hipbx.d/ssh_key_slave /etc/hipbx.d/ssh_key_slave.pub
-		echo -e "\tGenerating SLAVE ssh Public key:"
+		echo -en "\tGenerating SLAVE ssh Public key..."
 		ssh-keygen -q -t dsa -f /etc/hipbx.d/ssh_key_slave -N ""
+		echo "Done"
 	fi
 	SSH_SLAVE=`cat /etc/hipbx.d/ssh_key_slave.pub`
 else
@@ -245,9 +246,10 @@ else
 	if [ "$SSH_SLAVE" != "$test" ]; then
 		echo "- but doesn't match hipbx.conf! Regenerating."
 		rm -f /etc/hipbx.d/ssh_key_slave /etc/hipbx.d/ssh_key_slave.pub
-		echo -e "\tGenerating SLAVE ssh Public key:"
+		echo -en "\tGenerating SLAVE ssh Public key..."
 		ssh-keygen -q -t dsa -f /etc/hipbx.d/ssh_key_slave -N ""
 		SSH_SLAVE=`cat /etc/hipbx.d/ssh_key_slave.pub`
+		echo "Done"
 	else
 		echo " and seems valid"
 	fi
@@ -358,9 +360,9 @@ echo " totem {
 logging {
 	fileline: off
 	to_stderr: no
-	to_logfile: yes
+	to_logfile: no
 	to_syslog: yes
-	logfile: /var/log/cluster/corosync.log
+	logfile: /dev/null
 	debug: off
 	timestamp: on
 	logger_subsys {
@@ -386,8 +388,33 @@ echo "Done"
 echo "Starting corosync and pacemaker:"
 chkconfig corosync on
 /etc/init.d/corosync start
-chkcofig pacemaker on
+chkconfig pacemaker on
 /etc/init.d/pacemaker start
+
+# Now corosync and pacemaker are up, lets make them work!
+echo -en "\tConfiguring corosync\n\t(This may take up to 60 seconds, if the cluster isn't fully up yet)..."
+while :; do
+	crm configure property stonith-enabled=false 2>&1 | grep ERROR > /dev/null || break
+	echo -n "."
+done
+crm configure property no-quorum-policy=ignore
+echo "Done"
+echo "Configure Services"
+echo -e "\tPlease enter the IP Addresses for the HiPBX Services. These addresses should NOT"
+echo -e "\talready exists, and they will be assigned to the interface you previously"
+echo -e "\tselected ($MASTER_EXTERNAL_INT). These will be the 'floating' addresses that"
+echo -e "\tare linked to a service, rather than a machine"
+#for x in $(seq 0 $NBRSVCS); do
+#	$VARNAME = ${SERVICENAME[$x]}_IP
+#	IPADDR="unknown"
+#	[ "${!VARNAME}" != "" ] && IPADDR=${!VARNAME}
+#        echo -ne "\t\t${SERVICENAME[$x]} [${IPADDR}]: "
+#	read newip
+#	[ "$newip" = "" ] && newip=$IPADDR
+	
+ 
+
+
 
 exit
 
