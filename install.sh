@@ -342,6 +342,23 @@ if [ "$MULTICAST_ADDR" = "" ]; then
 	MULTICAST_ADDR=239.${M1}.${M2}.${M3}
 fi
 echo "MULTICAST_ADDR=$MULTICAST_ADDR" >> /etc/hipbx.conf
+while [ "$SLAVE_INTERNAL_IP" = "" ]; do
+	echo -en "\tPlease enter SLAVE internal IP address: "
+	read slaveip
+	if $(ping -c1 $slaveip > /dev/null 2>&1); then
+		echo -e "\tMachine is up."
+		SLAVE_INTERNAL_IP=$slaveip
+	else
+		echo -e "\tMachine is down. I can continue if you're sure that's the right address,"
+		echo -e "\tbut for sanity checking, it's a good idea to have the slave machine up"
+		echo -e "\twhile you're installing."
+		echo -en "Are you sure you want to continue with \"$slaveip\" as the address? [yN]: "
+		read sure
+		[ "$sure" = "Y" -o "$sure" = "y" ] && SLAVE_INTERNAL_IP=$slaveip
+	fi
+done
+
+echo "SLAVE_INTERNAL_IP=$slaveip" >> /etc/hipbx.conf
 
 echo -n "Generating corosync configuration file: "
 echo " totem {
@@ -401,20 +418,31 @@ crm configure property no-quorum-policy=ignore
 echo "Done"
 echo "Configure Services"
 echo -e "\tPlease enter the IP Addresses for the HiPBX Services. These addresses should NOT"
-echo -e "\talready exists, and they will be assigned to the interface you previously"
+echo -e "\talready exist, and they will be assigned to the interface you previously"
 echo -e "\tselected ($MASTER_EXTERNAL_INT). These will be the 'floating' addresses that"
-echo -e "\tare linked to a service, rather than a machine"
-#for x in $(seq 0 $NBRSVCS); do
-#	$VARNAME = ${SERVICENAME[$x]}_IP
-#	IPADDR="unknown"
-#	[ "${!VARNAME}" != "" ] && IPADDR=${!VARNAME}
-#        echo -ne "\t\t${SERVICENAME[$x]} [${IPADDR}]: "
-#	read newip
-#	[ "$newip" = "" ] && newip=$IPADDR
-	
- 
-
-
+echo -e "\tare linked to a service, rather than a machine. Please don't duplicate IP"
+echo -e "\taddresses when assigning them."
+for x in $(seq 0 $NBRSVCS); do
+	VARNAME=${SERVICENAME[$x]}_IP
+	IPADDR="unknown"
+	[ "${!VARNAME}" != "" ] && IPADDR=${!VARNAME}
+	echo -ne "\t\t${SERVICENAME[$x]} [${IPADDR}]: "
+	read newip
+	[ "$newip" = "" ] && newip=$IPADDR
+	if [ $newip = unknown ]; then
+		echo "No, 'unknown' means I DON'T KNOW. You need to tell me. Make it up."
+		exit;
+	fi
+	# Check to make sure the address isn't being used..
+	if $(arping -w1 -fqI $MASTER_EXTERNAL_INT $newip) ; then
+		echo "Whoops. Something seems to be using that address. Here's the response"
+		echo "from arping -w 1 -fI $MASTER_EXTERNAL_INT so you can see the MAC address"
+		echo "for yourself."
+		arping -w 1 -fI $MASTER_EXTERNAL_INT $newip
+		exit;
+	fi	
+	echo ${SERVICENAME[$x]}_IP=$newip >> /etc/hipbx.conf
+done
 
 exit
 
