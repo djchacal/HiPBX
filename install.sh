@@ -357,8 +357,14 @@ while [ "$SLAVE_INTERNAL_IP" = "" ]; do
 		[ "$sure" = "Y" -o "$sure" = "y" ] && SLAVE_INTERNAL_IP=$slaveip
 	fi
 done
+echo "SLAVE_INTERNAL_IP=$SLAVE_INTERNAL_IP" >> /etc/hipbx.conf
 
-echo "SLAVE_INTERNAL_IP=$slaveip" >> /etc/hipbx.conf
+# Figure out netmasks. This isn't line noise, honest.
+EXTERNAL_CLASS=`ip -o addr | grep ${MASTER_EXTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_'`
+INTERNAL_CLASS=`ip -o addr | grep ${MASTER_INTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_'`
+echo INTERNAL_CLASS=$INTERNAL_CLASS >> /etc/hipbx.conf
+echo EXTERNAL_CLASS=$EXTERNAL_CLASS >> /etc/hipbx.conf
+
 
 echo -n "Generating corosync configuration file: "
 echo " totem {
@@ -402,7 +408,6 @@ echo "service {
 }" > /etc/corosync/service.d/pcmk
 
 echo "Done"
-echo "Starting corosync and pacemaker:"
 chkconfig corosync on
 /etc/init.d/corosync start
 chkconfig pacemaker on
