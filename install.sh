@@ -61,6 +61,12 @@ fi
 [ "$MYSQLPASS" = "" ] && MYSQLPASS=`tr -dc A-Za-z0-9 < /dev/urandom | head -c16`
 echo MYSQLPASS=$MYSQLPASS > /etc/hipbx.conf
 
+# Now we've blown away the conf file, lets put back all the SLAVE configs we
+# won't know about later, and if they're not there, take a guess.
+[ "$SLAVE_VGNAME" = "" ] && SLAVE_VGNAME=unknown_vg
+echo SLAVE_VGNAME=$SLAVE_VGNAME >> /etc/hipbx.conf
+
+
 # Is this the master or slave server?
 if [ "$ISMASTER" = "" ]; then
 	echo -n "Is this the Master or Slave server? [M/s]: "
@@ -171,6 +177,7 @@ vg_fake3=0'
 		exit
 	fi
 	
+	MASTER_VGNAME=$SELECTEDVG
 	echo -ne "\tYou picked $VGNAME with ${VGSPACE}G free.\n\tWould you like to use all available space? [Yn]: "
 	read usespace
 	if [ "$usespace" = "" -o "$usespace" = "Y" -o "$usespace" = "y" ]; then
@@ -215,6 +222,7 @@ vg_fake3=0'
 		fi
 	done
 fi
+echo MASTER_VGNAME=$SELECTEDVG >> /etc/hipbx.conf
 
 echo "SSH:"
 if [ "$SSH_MASTER" = "" ]; then
@@ -375,6 +383,10 @@ while [ "$SLAVE_INTERNAL_IP" = "" ]; do
 done
 echo "SLAVE_INTERNAL_IP=$SLAVE_INTERNAL_IP" >> /etc/hipbx.conf
 
+echo -en "\tUpdating hosts file..."
+grep ${SLAVE_INTERNAL_IP}.slave /etc/hosts > /dev/null || echo -e "$SLAVE_INTERNAL_IP\tslave" >> /etc/hosts
+grep ${MASTER_INTERNAL_IP}.master /etc/hosts > /dev/null || echo -e "$MASTER_INTERNAL_IP\tmaster" >> /etc/hosts
+
 # Figure out netmasks. This isn't line noise, honest.
 EXTERNAL_CLASS=`ip -o addr | grep ${MASTER_EXTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_'`
 INTERNAL_CLASS=`ip -o addr | grep ${MASTER_INTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_'`
@@ -455,17 +467,42 @@ for x in $(seq 0 $NBRSVCS); do
 		exit;
 	fi
 	# Check to make sure the address isn't being used..
-	if $(arping -w1 -fqI $MASTER_EXTERNAL_INT $newip) ; then
-		echo "Whoops. Something seems to be using that address. Here's the response"
-		echo "from arping -w 1 -fI $MASTER_EXTERNAL_INT so you can see the MAC address"
-		echo "for yourself."
-		arping -w 1 -fI $MASTER_EXTERNAL_INT $newip
-		exit;
-	fi	
+#	if $(arping -w1 -fqI $MASTER_EXTERNAL_INT $newip) ; then
+#		echo "Whoops. Something seems to be using that address. Here's the response"
+#		echo "from arping -w 1 -fI $MASTER_EXTERNAL_INT so you can see the MAC address"
+#		echo "for yourself."
+#		arping -w 1 -fI $MASTER_EXTERNAL_INT $newip
+#		exit;
+#	fi	
 	echo ${SERVICENAME[$x]}_IP=$newip >> /etc/hipbx.conf
 done
 
+echo "DRBD:"
+if [ ! -f /etc/drbd.conf ]; then
+	echo "Looks like drbd isn't installed. Install all the RPMs in the 'rpms' directory"
+	echo "by typing rpm -i rpms/*rpm"
+	exit
+fi
+		
+for x in $(seq 0 $NBRSVCS); do
+	echo -e "\t\t${SERVICENAME[$x]} on drbd_${SERVICENAME[$x]}"
+	echo "resource ${SERVICENAME[$x]} {
+	on master {
+		device /dev/drbd$x;
+		disk /dev/mapper/${MASTER_VGNAME}-drbd_${SERVICENAME[$x]};
+		address ${MASTER_INTERNAL_IP}:400${x};
+		meta-disk internal;
+	}
+	on slave {
+		device /dev/drbd$x;
+		disk /dev/mapper/${SLAVE_VGNAME}-drbd_${SERVICENAME[$x]};
+		address ${SLAVE_INTERNAL_IP}:400${x};
+		meta-disk internal;
+	}
+}" > /etc/drbd.d/${SERVICENAME[$x]}.res
+done
 exit
+
 
 echo "MySQL..."
 
