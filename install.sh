@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# tell them to disabled SELINUX. 
+
+if selinuxenabled; then
+	echo "SELinux is enabled. You can't continue. I've turned it off for you, but"
+	echo "you'll have to reboot. After that, re-run the installer, and it'll be fine"
+	sed -i s/SELINUX=enforcing/SELINUX=disabled/ /etc/selinux/config
+	exit
+fi
+
 if [ "$1" = "--i-like-pain" ]; then
 	echo "Enabling Masochist mode - You can now allocate a DRBD collection less than 50G"
 	IHATEROB=true
@@ -174,6 +183,7 @@ vg_fake3=0'
 			echo -e "\tmessage"
 			exit
 		fi
+		VGSPACE=$wantedspace
 	fi
 
 	echo -e "\tCreating LVs..."
