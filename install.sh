@@ -36,6 +36,8 @@ chkconfig mysqld off
 /etc/init.d/mysqld stop
 chkconfig httpd off
 /etc/init.d/httpd stop
+chkconfig iptables off
+/etc/init.d/iptables stop
 
 # If /etc/hipbx.conf already exists, grab it and read the config
 SETUPOK=yes
@@ -427,7 +429,6 @@ chkconfig corosync on
 chkconfig pacemaker on
 /etc/init.d/pacemaker start
 
-exit
 # Now corosync and pacemaker are up, lets make them work!
 echo -en "\tConfiguring corosync\n\t(This may take up to 60 seconds, if the cluster isn't fully up yet)..."
 while :; do
