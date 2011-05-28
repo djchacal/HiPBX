@@ -52,6 +52,8 @@ else
 	SETUPOK=no
 fi
 
+cp /etc/hipbx.conf /etc/hipbx.conf.bak
+
 # Make the /etc/hipbx.d directory if it doesn't already exist.
 [ ! -d /etc/hipbx.d ] && mkdir /etc/hipbx.d
 [ ! -d /var/run/heartbeat/crm ] && mkdir  -p /var/run/heartbeat/crm
@@ -76,6 +78,20 @@ if [ "$ISMASTER" = "" ]; then
 		ISMASTER=NO
 	fi
 fi
+if [ $ISMASTER = YES ]; then
+	if [ `hostname` != master ]; then
+		echo "Fixing hostname - setting to 'master'"
+		hostname master
+		sed -i "s/^HOSTNAME=.*/HOSTNAME=master/" /etc/sysconfig/network
+	fi
+else
+	if [ `hostname` != slave ]; then
+		echo "Fixing hostname - setting to 'slave'"
+		hostname slave
+		sed -i "s/^HOSTNAME=.*/HOSTNAME=slave/" /etc/sysconfig/network
+	fi
+fi
+		
 echo ISMASTER=$ISMASTER >> /etc/hipbx.conf
 
 if [ $ISMASTER = NO ]; then
