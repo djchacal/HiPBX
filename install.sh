@@ -151,6 +151,7 @@ for x in $(seq 0 $NBRSVCS); do
 		echo "drbd_${SERVICENAME[$x]}=${USED}" >> /etc/hipbx.conf
 		ALLOCATED=$(( $ALLOCATED + ${SERVICEPCNT[$x]} ))
 		USEDSPACE=$(( $USEDSPACE + `printf %0.f $USED` ))
+		SELECTEDVG=`lvdisplay -C --noheadings --nosuffix --units g | grep drbd_${SERVICENAME[$x]} | awk ' { print $2 }'`
 	else
 		echo "Not Found"
 		LVMAKE=( ${LVMAKE[@]-} $x )
@@ -500,7 +501,7 @@ if [ ! -f /etc/drbd.conf ]; then
 fi
 		
 for x in $(seq 0 $NBRSVCS); do
-	echo -e "\t\t${SERVICENAME[$x]} on drbd_${SERVICENAME[$x]}"
+	echo -ne "\t${SERVICENAME[$x]} on drbd_${SERVICENAME[$x]}"
 	echo "resource ${SERVICENAME[$x]} {
 	on master {
 		device /dev/drbd$x;
@@ -515,8 +516,16 @@ for x in $(seq 0 $NBRSVCS); do
 		meta-disk internal;
 	}
 }" > /etc/drbd.d/${SERVICENAME[$x]}.res
+	if $(drbdadm dump-md ${SERVICENAME[$x]} > /dev/null 2>&1); then
+		echo -e " (already initialized)"
+	else
+		echo -ne " (initializing..."
+		drbdadm create-md  ${SERVICENAME[$x]} > /dev/null  2>&1
+		echo "Done)"
+	fi
 done
-exit
+
+
 
 
 echo "MySQL..."

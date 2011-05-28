@@ -2,8 +2,13 @@
 . /etc/hipbx.conf
 
 crm configure erase
+
 /etc/init.d/pacemaker stop
 /etc/init.d/corosync stop
+for x in /dev/mapper/*drbd*
+ do
+  drbdmeta --force 2 v08 $x internal wipe-md
+ done
 mysql -p$MYSQLPASS -e"drop user 'hipbx'@'master'"
 mysql -p$MYSQLPASS -e"drop user 'hipbx'@'slave'"
 mysql -p$MYSQLPASS -e"drop user 'hipbx'@'cluster'"
