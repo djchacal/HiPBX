@@ -7,20 +7,21 @@ else
 	IHATEROB=false
 fi
 
-#yum -y groupinstall "Development tools"
-#yum -y install atrpms-repo    # For fxload, iksemel and spandsp
-#yum -y install epel-release # for php-pear-DB, soon to be removed as a prereq.
-#yum -y install libusb-devel 
-#yum -y install fxload
-#yum -y install iksemel iksemel-devel
-#yum -y install httpd php php-fpdf
-#yum -y install mysql-server
-#yum -y install curl
-#yum -y install mysql mysql-devel
-#yum -y install php-pear-DB php-process
-#yum -y install libxml2-devel ncurses-devel libtiff-devel libogg-devel
-#yum -y install libvorbis vorbis-tools
-#yum -y install pacemaker
+yum -y groupinstall "Development tools"
+yum -y install atrpms-repo    # For fxload, iksemel and spandsp
+yum -y install epel-release # for php-pear-DB, soon to be removed as a prereq.
+yum -y install bc vim
+yum -y install libusb-devel 
+yum -y install fxload
+yum -y install iksemel iksemel-devel
+yum -y install httpd php php-fpdf
+yum -y install mysql-server
+yum -y install curl
+yum -y install mysql mysql-devel
+yum -y install php-pear-DB php-process
+yum -y install libxml2-devel ncurses-devel libtiff-devel libogg-devel
+yum -y install libvorbis vorbis-tools
+yum -y install pacemaker
 
 chkconfig mysqld off
 /etc/init.d/mysqld stop
@@ -42,7 +43,7 @@ else
 fi
 
 # Make the /etc/hipbx.d directory if it doesn't already exist.
-[ ! -d /etc/hipbx.d ] && mkdir -f /etc/hipbx.d
+[ ! -d /etc/hipbx.d ] && mkdir /etc/hipbx.d
 
 # Generate a MySQL password, if one hasn't already been generated.
 [ "$MYSQLPASS" = "" ] && MYSQLPASS=`tr -dc A-Za-z0-9 < /dev/urandom | head -c16`
