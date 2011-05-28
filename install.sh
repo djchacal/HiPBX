@@ -3,10 +3,9 @@
 # tell them to disabled SELINUX. 
 
 if selinuxenabled; then
-	echo "SELinux is enabled. You can't continue. I've turned it off for you, but"
-	echo "you'll have to reboot. After that, re-run the installer, and it'll be fine"
+	echo "SELinux is enabled. I've turned it off for you. Be aware."
 	sed -i s/SELINUX=enforcing/SELINUX=disabled/ /etc/selinux/config
-	exit
+	setenforce 0
 fi
 
 if [ "$1" = "--i-like-pain" ]; then
