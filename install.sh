@@ -53,6 +53,7 @@ fi
 
 # Make the /etc/hipbx.d directory if it doesn't already exist.
 [ ! -d /etc/hipbx.d ] && mkdir /etc/hipbx.d
+[ ! -d /var/run/heartbeat/crm ] && mkdir  -p /var/run/heartbeat/crm
 
 # Generate a MySQL password, if one hasn't already been generated.
 [ "$MYSQLPASS" = "" ] && MYSQLPASS=`tr -dc A-Za-z0-9 < /dev/urandom | head -c16`
@@ -426,6 +427,7 @@ chkconfig corosync on
 chkconfig pacemaker on
 /etc/init.d/pacemaker start
 
+exit
 # Now corosync and pacemaker are up, lets make them work!
 echo -en "\tConfiguring corosync\n\t(This may take up to 60 seconds, if the cluster isn't fully up yet)..."
 while :; do
