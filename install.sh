@@ -7,21 +7,21 @@ else
 	IHATEROB=false
 fi
 
-yum -y groupinstall "Development tools"
-yum -y install atrpms-repo    # For fxload, iksemel and spandsp
-yum -y install epel-release # for php-pear-DB, soon to be removed as a prereq.
-yum -y install bc vim
-yum -y install libusb-devel 
-yum -y install fxload
-yum -y install iksemel iksemel-devel
-yum -y install httpd php php-fpdf
-yum -y install mysql-server
-yum -y install curl
-yum -y install mysql mysql-devel
-yum -y install php-pear-DB php-process
-yum -y install libxml2-devel ncurses-devel libtiff-devel libogg-devel
-yum -y install libvorbis vorbis-tools
-yum -y install pacemaker
+#yum -y groupinstall "Development tools"
+#yum -y install atrpms-repo    # For fxload, iksemel and spandsp
+#yum -y install epel-release # for php-pear-DB, soon to be removed as a prereq.
+#yum -y install bc vim
+#yum -y install libusb-devel 
+#yum -y install fxload
+#yum -y install iksemel iksemel-devel
+#yum -y install httpd php php-fpdf
+#yum -y install mysql-server
+#yum -y install curl
+#yum -y install mysql mysql-devel
+#yum -y install php-pear-DB php-process
+#yum -y install libxml2-devel ncurses-devel libtiff-devel libogg-devel
+#yum -y install libvorbis vorbis-tools
+#yum -y install pacemaker
 
 chkconfig mysqld off
 /etc/init.d/mysqld stop
@@ -159,13 +159,14 @@ vg_fake3=0'
 		exit
 	fi
 	
-	echo -ne "\tYou picked $VGNAME with ${VGSPACE}G free. Would you like to use all available space? [Yn]: "
+	echo -ne "\tYou picked $VGNAME with ${VGSPACE}G free.\n\tWould you like to use all available space? [Yn]: "
 	read usespace
 	if [ "$usespace" = "" -o "$usespace" = "Y" -o "$usespace" = "y" ]; then
 		echo -e "\tUsing all ${VGSPACE}G available."
 	else
 		echo -ne "\tHow much space would you like to use (in Gigabytes, minimum 50) [50]: "
 		read wantedspace
+		[ "$wantedspace" == "" ] && wantedspace=50
 		if [ $IHATEROB = false -a $(echo "$wantedspace < 50" | bc) -eq 1 ]; then
 			echo -e "\tLook. You can't expand a DRBD volume. You REALLY want to give it as much"
 			echo -e "\tspace as you can at the start. If you ABSOLUTELY MUST use less than 50G,"
@@ -260,14 +261,15 @@ echo "SSH_SLAVE=\"$SSH_SLAVE\"" >> /etc/hipbx.conf
 
 echo "Networking:"
 INTS=( `ip -o addr | grep -v "1: lo" | grep inet\ | awk '{print $9"="$4}'| sed 's^/[0-9]*^^'` )
-echo -e "\tThere needs to be at least two Ethernet Inferfaces for the cluster to work. The first"
-echo -e "\tinterface is the 'internal' link. This should be a crossover cable, or even better,"
-echo -e "\ta pair of crossover cables bonded together, that links the two machines. There should"
-echo -e "\tNOT be a network swtich on the internal link. "
-echo -e "\tThe second interface is your external network. This again should be a bonded interface,"
-echo -e "\tpreferrably going to two seperate switches."
-echo -e "\tBoth of these network interfaces should already be configured, tested and working. If"
-echo -e "\tnot, abort now (Ctrl-C) and do that.\n"
+echo -e "\tThere needs to be at least two Ethernet Inferfaces for the cluster"
+echo -e "\tto work. The first interface is the 'internal' link. This should be"
+echo -e "\ta crossover cable, or even better, a pair of crossover cables"
+echo -e "\tbonded together, that links the two machines. There should NOT be a"
+echo -e "\tnetwork swtich on the internal link. "
+echo -e "\tThe second interface is your external network. This again should be"
+echo -e "\ta bonded interface, preferrably going to two seperate switches."
+echo -e "\tBoth of these network interfaces should already be configured, tested"
+echo -e "\tand working. If not, abort now (Ctrl-C) and do that.\n"
 echo -e "\tI can detect ${#INTS[@]} network interfaces with an IP address:"
 for x in `seq 0 $(( ${#INTS[@]} - 1 ))`; do
 	iname=`echo ${INTS[$x]} | awk -F= '{print $1}'`
