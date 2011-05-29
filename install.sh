@@ -525,6 +525,7 @@ for x in $(seq 0 $NBRSVCS); do
 		meta-disk internal;
 	}
 }" > /etc/drbd.d/${SERVICENAME[$x]}.res
+	echo ${SERVICENAME[$x]}_DISK=/dev/drbd$x >> /etc/hipbx.conf
 	if $(drbdadm dump-md ${SERVICENAME[$x]} > /dev/null 2>&1); then
 		echo -e " (already initialized)"
 	else
