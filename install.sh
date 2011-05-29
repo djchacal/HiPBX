@@ -37,6 +37,8 @@ chkconfig httpd off
 /etc/init.d/httpd stop
 chkconfig iptables off
 /etc/init.d/iptables stop
+chkconfig drbd off
+/etc/init.d/drbd stop
 
 # If /etc/hipbx.conf already exists, grab it and read the config
 SETUPOK=yes
@@ -297,7 +299,7 @@ echo "SSH_SLAVE=\"$SSH_SLAVE\"" >> /etc/hipbx.conf
 
 
 echo "Networking:"
-INTS=( `ip -o addr | grep -v "1: lo" | grep inet\ | awk '{print $9"="$4}'| sed 's^/[0-9]*^^'` )
+INTS=( `ip -o addr | grep -v "1: lo" |grep -v secondary | grep inet\ | awk '{print $9"="$4}'| sed 's^/[0-9]*^^'` )
 echo -e "\tThere needs to be at least two Ethernet Inferfaces for the cluster"
 echo -e "\tto work. The first interface is the 'internal' link. This should be"
 echo -e "\ta crossover cable, or even better, a pair of crossover cables"
@@ -327,7 +329,7 @@ if [ "$internalint" = "" ]; then
 fi
 
 if $(ip addr show $internalint > /dev/null 2>&1 ); then
-	MASTER_INTERNAL_IP=`ip -o addr show $internalint | grep ${internalint}$|awk '{print $4}'|sed 's^/[0-9]*^^'`
+	MASTER_INTERNAL_IP=`ip -o addr show $internalint | grep -v secondary | grep ${internalint}$|awk '{print $4}'|sed 's^/[0-9]*^^'`
 	if [ "$MASTER_INTERNAL_IP" = "" ]; then
 		echo "I'm guessing that was a typo. I can't get an IP address from that interface."
 		echo "Try again."
@@ -356,7 +358,7 @@ if [ "$externalint" = "" ]; then
 fi
 
 if $(ip addr show $externalint > /dev/null 2>&1 ); then
-	MASTER_EXTERNAL_IP=`ip -o addr show $externalint | grep ${externalint}$|awk '{print $4}'|sed 's^/[0-9]*^^'`
+	MASTER_EXTERNAL_IP=`ip -o addr show $externalint | grep -v secondary | grep ${externalint}$|awk '{print $4}'|sed 's^/[0-9]*^^'`
 	if [ "$MASTER_EXTERNAL_IP" = "" ]; then
 		echo "I'm guessing that was a typo. I can't get an IP address from that interface."
 		echo "Try again."
@@ -398,14 +400,42 @@ while [ "$SLAVE_INTERNAL_IP" = "" ]; do
 	fi
 done
 echo "SLAVE_INTERNAL_IP=$SLAVE_INTERNAL_IP" >> /etc/hipbx.conf
+echo "Configure Services"
+echo -e "\tPlease enter the IP Addresses for the HiPBX Services. These addresses"
+echo -e "\tshould NOT already exist, and they will be assigned to the interface"
+echo -e "\tyou previously tselected ($MASTER_EXTERNAL_INT). These will be the"
+echo -e "\t'floating' addresses that are linked to a service, rather than a"
+echo -e "\tmachine. Please don't duplicate IP addresses when assigning them."
+for x in $(seq 0 $NBRSVCS); do
+	VARNAME=${SERVICENAME[$x]}_IP
+	IPADDR="unknown"
+	[ "${!VARNAME}" != "" ] && IPADDR=${!VARNAME}
+	echo -ne "\t\t${SERVICENAME[$x]} [${IPADDR}]: "
+	read newip
+	[ "$newip" = "" ] && newip=$IPADDR
+	if [ $newip = unknown ]; then
+		echo "No, 'unknown' means I DON'T KNOW. You need to tell me. Make it up."
+		exit;
+	fi
+	# Check to make sure the address isn't being used..
+#	if $(arping -w1 -fqI $MASTER_EXTERNAL_INT $newip) ; then
+#		echo "Whoops. Something seems to be using that address. Here's the response"
+#		echo "from arping -w 1 -fI $MASTER_EXTERNAL_INT so you can see the MAC address"
+#		echo "for yourself."
+#		arping -w 1 -fI $MASTER_EXTERNAL_INT $newip
+#		exit;
+#	fi	
+	echo ${SERVICENAME[$x]}_IP=$newip >> /etc/hipbx.conf
+done
+
 
 echo -en "\tUpdating hosts file..."
 grep ${SLAVE_INTERNAL_IP}.slave /etc/hosts > /dev/null || echo -e "$SLAVE_INTERNAL_IP\tslave" >> /etc/hosts
 grep ${MASTER_INTERNAL_IP}.master /etc/hosts > /dev/null || echo -e "$MASTER_INTERNAL_IP\tmaster" >> /etc/hosts
 
 # Figure out netmasks. This isn't line noise, honest.
-EXTERNAL_CLASS=`ip -o addr | grep ${MASTER_EXTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_'`
-INTERNAL_CLASS=`ip -o addr | grep ${MASTER_INTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_'`
+EXTERNAL_CLASS=`ip -o addr | grep -v secondary | grep ${MASTER_EXTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_'`
+INTERNAL_CLASS=`ip -o addr | grep -v secondary | grep ${MASTER_INTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_'`
 echo INTERNAL_CLASS=$INTERNAL_CLASS >> /etc/hipbx.conf
 echo EXTERNAL_CLASS=$EXTERNAL_CLASS >> /etc/hipbx.conf
 
@@ -458,41 +488,20 @@ chkconfig pacemaker on
 /etc/init.d/pacemaker start
 
 # Now corosync and pacemaker are up, lets make them work!
-echo -en "\tConfiguring corosync\n\t(This may take up to 60 seconds, if the cluster isn't fully up yet)..."
+echo -en "Configuring corosync\n\t(This may take up to 60 seconds, if the cluster isn't fully up yet)..."
 while :; do
 	crm configure property stonith-enabled=false 2>&1 | grep ERROR > /dev/null || break
 	echo -n "."
 done
+echo
 crm configure property no-quorum-policy=ignore
-echo "Done"
-echo "Configure Services"
-echo -e "\tPlease enter the IP Addresses for the HiPBX Services. These addresses"
-echo -e "\tshould NOT already exist, and they will be assigned to the interface"
-echo -e "\tyou previously tselected ($MASTER_EXTERNAL_INT). These will be the"
-echo -e "\t'floating' addresses that are linked to a service, rather than a"
-echo -e "\tmachine. Please don't duplicate IP addresses when assigning them."
 for x in $(seq 0 $NBRSVCS); do
-	VARNAME=${SERVICENAME[$x]}_IP
-	IPADDR="unknown"
-	[ "${!VARNAME}" != "" ] && IPADDR=${!VARNAME}
-	echo -ne "\t\t${SERVICENAME[$x]} [${IPADDR}]: "
-	read newip
-	[ "$newip" = "" ] && newip=$IPADDR
-	if [ $newip = unknown ]; then
-		echo "No, 'unknown' means I DON'T KNOW. You need to tell me. Make it up."
-		exit;
-	fi
-	# Check to make sure the address isn't being used..
-#	if $(arping -w1 -fqI $MASTER_EXTERNAL_INT $newip) ; then
-#		echo "Whoops. Something seems to be using that address. Here's the response"
-#		echo "from arping -w 1 -fI $MASTER_EXTERNAL_INT so you can see the MAC address"
-#		echo "for yourself."
-#		arping -w 1 -fI $MASTER_EXTERNAL_INT $newip
-#		exit;
-#	fi	
-	echo ${SERVICENAME[$x]}_IP=$newip >> /etc/hipbx.conf
+	CLUSTER=${SERVICENAME[$x]}_IP
+	echo -en "\tCreating Cluster IP ${CLUSTER}.."
+	crm configure primitive ${CLUSTER} ocf:heartbeat:IPaddr2 params ip=${!CLUSTER} cidr_netmask=$INTERNAL_CLASS op monitor interval=10s
+	echo "Done"
 done
-
+echo "Done"
 echo "DRBD:"
 if [ ! -f /etc/drbd.conf ]; then
 	echo "Looks like drbd isn't installed. Install all the RPMs in the 'rpms' directory"
@@ -526,6 +535,7 @@ for x in $(seq 0 $NBRSVCS); do
 done
 
 
+exit
 
 
 echo "MySQL..."

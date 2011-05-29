@@ -1,14 +1,20 @@
 #!/bin/bash
 . /etc/hipbx.conf
 
+for x in `crm configure show | grep ^primitive | awk '{print $2}'`; do
+	crm resource stop $x
+done
+
 crm configure erase
 
 /etc/init.d/pacemaker stop
 /etc/init.d/corosync stop
-for x in /dev/mapper/*drbd*
+rm -f /var/lib/heartbeat/crm/*
+for x in /etc/drbd.d/*.res
  do
-  drbdmeta --force 2 v08 $x internal wipe-md
+  echo yes|drbdadm wipe-md `echo $x|sed 's_/etc/drbd.d/\(.*\).res_\1_'`
  done
+rm -f /etc/drbd.d/*.res
 mysql -p$MYSQLPASS -e"drop user 'hipbx'@'master'"
 mysql -p$MYSQLPASS -e"drop user 'hipbx'@'slave'"
 mysql -p$MYSQLPASS -e"drop user 'hipbx'@'cluster'"
