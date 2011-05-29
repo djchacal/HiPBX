@@ -495,10 +495,11 @@ while :; do
 done
 echo
 crm configure property no-quorum-policy=ignore
+crm configure property default-action-timeout=240
 for x in $(seq 0 $NBRSVCS); do
 	CLUSTER=${SERVICENAME[$x]}_IP
 	echo -en "\tCreating Cluster IP ${CLUSTER}.."
-	crm configure primitive ${CLUSTER} ocf:heartbeat:IPaddr2 params ip=${!CLUSTER} cidr_netmask=$INTERNAL_CLASS op monitor interval=10s
+	crm configure primitive ip_${SERVICENAME[$x]} ocf:heartbeat:IPaddr2 params ip=${!CLUSTER} cidr_netmask=$INTERNAL_CLASS op monitor interval=10s
 	echo "Done"
 done
 echo "Done"
@@ -512,17 +513,15 @@ fi
 for x in $(seq 0 $NBRSVCS); do
 	echo -ne "\t${SERVICENAME[$x]} on drbd_${SERVICENAME[$x]}"
 	echo "resource ${SERVICENAME[$x]} {
+	device /dev/drbd$x;
+	meta-disk internal;
 	on master {
-		device /dev/drbd$x;
 		disk /dev/mapper/${MASTER_VGNAME}-drbd_${SERVICENAME[$x]};
 		address ${MASTER_INTERNAL_IP}:400${x};
-		meta-disk internal;
 	}
 	on slave {
-		device /dev/drbd$x;
 		disk /dev/mapper/${SLAVE_VGNAME}-drbd_${SERVICENAME[$x]};
 		address ${SLAVE_INTERNAL_IP}:400${x};
-		meta-disk internal;
 	}
 }" > /etc/drbd.d/${SERVICENAME[$x]}.res
 	echo ${SERVICENAME[$x]}_DISK=/dev/drbd$x >> /etc/hipbx.conf
@@ -530,10 +529,34 @@ for x in $(seq 0 $NBRSVCS); do
 		echo -e " (already initialized)"
 	else
 		echo -ne " (initializing..."
-		drbdadm create-md  ${SERVICENAME[$x]} > /dev/null  2>&1
+		echo doing drbdadm create-md  ${SERVICENAME[$x]}
+		
+		echo yes|drbdadm create-md  ${SERVICENAME[$x]} > /dev/null  2>&1
 		echo "Done)"
 	fi
+	crm configure primitive drbd_${SERVICENAME[$x]} ocf:linbit:drbd \
+		params drbd_resource="${SERVICENAME[$x]}" \
+		op monitor interval="10s" > /dev/null 2>&1
+	crm configure ms ms_drbd_${SERVICENAME[$x]} drbd_${SERVICENAME[$x]} \
+		meta master-max="1" \
+		master-node-max="1" \
+		clone-max="2" \
+		clone-node-max="1" \
+		notify="true" > /dev/null 2>&1
+	crm configure primitive fs_${SERVICENAME[$x]} ocf:heartbeat:Filesystem \
+		params device="/dev/drb$x" \
+		directory="/drdb/${SERVICENAME[$x]}" \
+		fstype="ext3" > /dev/null 2>&1
+	crm configure group ${SERVICENAME[$x]} fs_${SERVICENAME[$x]} ip_${SERVICENAME[$x]} > /dev/null 2>&1
+
+        drbdadm adjust ${SERVICENAME[$x]}
+        drbdadm -- --overwrite-data-of-peer primary ${SERVICENAME[$x]}
+        drbdadm primary ${SERVICENAME[$x]}
 done
+
+echo "Setting up cluster:"
+
+	
 
 
 exit
