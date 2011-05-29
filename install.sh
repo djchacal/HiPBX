@@ -513,7 +513,7 @@ fi
 for x in $(seq 0 $NBRSVCS); do
 	echo -ne "\t${SERVICENAME[$x]} on drbd_${SERVICENAME[$x]}"
 	echo "resource ${SERVICENAME[$x]} {
-	device /dev/drbd$x;
+	device /dev/drbd/by-res/${SERVICENAME[$x]};
 	meta-disk internal;
 	on master {
 		disk /dev/mapper/${MASTER_VGNAME}-drbd_${SERVICENAME[$x]};
@@ -524,7 +524,7 @@ for x in $(seq 0 $NBRSVCS); do
 		address ${SLAVE_INTERNAL_IP}:400${x};
 	}
 }" > /etc/drbd.d/${SERVICENAME[$x]}.res
-	echo ${SERVICENAME[$x]}_DISK=/dev/drbd$x >> /etc/hipbx.conf
+	echo ${SERVICENAME[$x]}_DISK=/dev/drbd/by-res/${SERVICENAME[$x]}$x >> /etc/hipbx.conf
 	if $(drbdadm dump-md ${SERVICENAME[$x]} > /dev/null 2>&1); then
 		echo -e " (already initialized)"
 	else
@@ -544,7 +544,7 @@ for x in $(seq 0 $NBRSVCS); do
 		clone-node-max="1" \
 		notify="true" > /dev/null 2>&1
 	crm configure primitive fs_${SERVICENAME[$x]} ocf:heartbeat:Filesystem \
-		params device="/dev/drb$x" \
+		params device="/dev/drbd/by-res/${SERVICENAME[$x]}" \
 		directory="/drdb/${SERVICENAME[$x]}" \
 		fstype="ext3" > /dev/null 2>&1
 	crm configure group ${SERVICENAME[$x]} fs_${SERVICENAME[$x]} ip_${SERVICENAME[$x]} > /dev/null 2>&1
