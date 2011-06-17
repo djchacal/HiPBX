@@ -57,6 +57,7 @@ chkconfig iptables off
 /etc/init.d/iptables stop
 chkconfig drbd off
 /etc/init.d/drbd stop
+modprobe drbd
 
 # If /etc/hipbx.conf already exists, grab it and read the config
 SETUPOK=yes
@@ -259,6 +260,7 @@ vg_fake3=0'
 	done
 fi
 echo MASTER_VGNAME=$SELECTEDVG >> /etc/hipbx.conf
+MASTER_VGNAME=$SELECTEDVG
 
 echo "SSH:"
 if [ "$SSH_MASTER" = "" ]; then
@@ -531,7 +533,7 @@ fi
 for x in $(seq 0 $NBRSVCS); do
 	echo -ne "\t${SERVICENAME[$x]} on drbd_${SERVICENAME[$x]}"
 	echo "resource ${SERVICENAME[$x]} {
-	device /dev/drbd/by-res/${SERVICENAME[$x]};
+	device /dev/drbd${x};
 	meta-disk internal;
 	on master {
 		disk /dev/mapper/${MASTER_VGNAME}-drbd_${SERVICENAME[$x]};
@@ -568,7 +570,7 @@ for x in $(seq 0 $NBRSVCS); do
 	crm configure group ${SERVICENAME[$x]} fs_${SERVICENAME[$x]} ip_${SERVICENAME[$x]} > /dev/null 2>&1
 
         drbdadm adjust ${SERVICENAME[$x]}
-        drbdadm -- --overwrite-data-of-peer primary ${SERVICENAME[$x]}
+        drbdadm -- --force primary ${SERVICENAME[$x]}
         drbdadm primary ${SERVICENAME[$x]}
 done
 
