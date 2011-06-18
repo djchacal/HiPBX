@@ -587,7 +587,8 @@ for x in $(seq 0 $NBRSVCS); do
 		fstype="ext4" > /dev/null 2>&1
 	crm configure location loc_${SERVICENAME[$x]} ms_drbd_${SERVICENAME[$x]} rule role=master 100: \#uname eq master
 	crm configure group ${SERVICENAME[$x]} fs_${SERVICENAME[$x]} ip_${SERVICENAME[$x]} > /dev/null 2>&1
-
+	crm configure order order-${SERVICENAME[$x]} inf: ms_drbd_${SERVICENAME[$x]}:promote ${SERVICENAME[$x]}:start
+	crm_resource --resource fs_${SERVICENAME[$x]} -C > /dev/null 2>&1
 done
 
 echo "Setting up cluster:"
