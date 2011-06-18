@@ -544,16 +544,30 @@ for x in $(seq 0 $NBRSVCS); do
 		address ${SLAVE_INTERNAL_IP}:400${x};
 	}
 }" > /etc/drbd.d/${SERVICENAME[$x]}.res
-	echo ${SERVICENAME[$x]}_DISK=/dev/drbd/by-res/${SERVICENAME[$x]}$x >> /etc/hipbx.conf
+	echo ${SERVICENAME[$x]}_DISK=/dev/drbd$x >> /etc/hipbx.conf
 	if $(drbdadm dump-md ${SERVICENAME[$x]} > /dev/null 2>&1); then
 		echo -e " (already initialized)"
 	else
 		echo -ne " (initializing..."
-		echo doing drbdadm create-md  ${SERVICENAME[$x]}
 		
 		echo yes|drbdadm create-md  ${SERVICENAME[$x]} > /dev/null  2>&1
 		echo "Done)"
 	fi
+        drbdadm adjust ${SERVICENAME[$x]}
+        drbdadm -- --force primary ${SERVICENAME[$x]}
+        drbdadm primary ${SERVICENAME[$x]}
+
+	# Is there a filesystem on this disk?
+	e2fsck -y /dev/drbd$x > /dev/null 2>&1
+	FSCK_RETURN=$?
+	if [ $FSCK_RETURN = 0 -o $FSCK_RETURN = 1 ]; then
+		echo -e "\t\tFilesystem OK"
+	else
+		echo -ne "\t\tCreating filesystem..."
+		mkfs.ext4 -L drbd_${SERVICENAME[$x]} -M /drbd/${SERVICENAME[$x]} /dev/drbd$x >/dev/null 2>&1
+		echo "Done"
+	fi
+
 	crm configure primitive drbd_${SERVICENAME[$x]} ocf:linbit:drbd \
 		params drbd_resource="${SERVICENAME[$x]}" \
 		op monitor interval="10s" > /dev/null 2>&1
@@ -564,14 +578,11 @@ for x in $(seq 0 $NBRSVCS); do
 		clone-node-max="1" \
 		notify="true" > /dev/null 2>&1
 	crm configure primitive fs_${SERVICENAME[$x]} ocf:heartbeat:Filesystem \
-		params device="/dev/drbd/by-res/${SERVICENAME[$x]}" \
+		params device="/dev/drbd$x" \
 		directory="/drdb/${SERVICENAME[$x]}" \
 		fstype="ext3" > /dev/null 2>&1
 	crm configure group ${SERVICENAME[$x]} fs_${SERVICENAME[$x]} ip_${SERVICENAME[$x]} > /dev/null 2>&1
 
-        drbdadm adjust ${SERVICENAME[$x]}
-        drbdadm -- --force primary ${SERVICENAME[$x]}
-        drbdadm primary ${SERVICENAME[$x]}
 done
 
 echo "Setting up cluster:"
