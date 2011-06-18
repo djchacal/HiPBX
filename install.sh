@@ -516,6 +516,8 @@ done
 echo
 crm configure property no-quorum-policy=ignore
 crm configure property default-action-timeout=240
+crm configure rsc_defaults resource-stickiness=100
+
 for x in $(seq 0 $NBRSVCS); do
 	CLUSTER=${SERVICENAME[$x]}_IP
 	echo -en "\tCreating Cluster IP ${CLUSTER}.."
@@ -523,6 +525,7 @@ for x in $(seq 0 $NBRSVCS); do
 	echo "Done"
 done
 echo "Done"
+
 echo "DRBD:"
 if [ ! -f /etc/drbd.conf ]; then
 	echo "Looks like drbd isn't installed. Install all the RPMs in the 'rpms' directory"
@@ -568,6 +571,7 @@ for x in $(seq 0 $NBRSVCS); do
 		echo "Done"
 	fi
 
+	[ ! -d /drbd/${SERVICENAME[$x]} ] && (rm -rf /drbd/${SERVICENAME[$x]}; mkdir -p /drbd/${SERVICENAME[$x]})
 	crm configure primitive drbd_${SERVICENAME[$x]} ocf:linbit:drbd \
 		params drbd_resource="${SERVICENAME[$x]}" \
 		op monitor interval="10s" > /dev/null 2>&1
@@ -579,8 +583,9 @@ for x in $(seq 0 $NBRSVCS); do
 		notify="true" > /dev/null 2>&1
 	crm configure primitive fs_${SERVICENAME[$x]} ocf:heartbeat:Filesystem \
 		params device="/dev/drbd$x" \
-		directory="/drdb/${SERVICENAME[$x]}" \
-		fstype="ext3" > /dev/null 2>&1
+		directory="/drbd/${SERVICENAME[$x]}" \
+		fstype="ext4" > /dev/null 2>&1
+	crm configure location loc_${SERVICENAME[$x]} ms_drbd_${SERVICENAME[$x]} rule role=master 100: \#uname eq master
 	crm configure group ${SERVICENAME[$x]} fs_${SERVICENAME[$x]} ip_${SERVICENAME[$x]} > /dev/null 2>&1
 
 done

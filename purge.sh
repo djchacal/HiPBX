@@ -1,6 +1,9 @@
 #!/bin/bash
 . /etc/hipbx.conf
 
+for x in /drbd/*; do
+	umount $x
+done
 for x in `crm configure show | grep ^primitive | awk '{print $2}'`; do
 	crm resource stop $x
 done
