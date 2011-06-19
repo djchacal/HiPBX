@@ -40,6 +40,9 @@ check_ssh
 # Configure Networking
 config_networking
 
+# Ask for the peer's address
+get_peer_addr
+
 # Fix hosts file
 fixhosts
 

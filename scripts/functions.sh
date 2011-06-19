@@ -149,7 +149,7 @@ function configure_lvm {
 		if [ "$USED" != "" ]; then 
 			# Integerify USED.
 			USED=`printf %0.f $USED`
-			echo -n "Found (${USED}G)"
+			echo  "Found (${USED}G)"
 			if [ "$presize" != "0" -a "${USED}" -lt "$presize" ]; then
 				echo -e "\nSevere Error. Amount of disk space allocated to this volume is"
 				echo "LESS than the amount required by DRBD. This will corrupt your"
@@ -355,7 +355,6 @@ function config_networking {
 			if [ "$MY_EXTERNAL_IP" = "" ]; then
 				echo "I'm guessing that was a typo. I can't get an IP address from that interface."
 				echo "Try again."
-				exit
 			fi
 			echo -e "\tSetting EXTERNAL interface to $externalint ($MY_EXTERNAL_IP)"
 			INTSVALID=true
@@ -562,41 +561,43 @@ function setup_drbd {
 			echo yes|drbdadm create-md  ${SERVICENAME[$x]} > /dev/null  2>&1
 			echo "Done)"
 		fi
-		echo "FAIL: Do not set as master. Figure out if this is a replacement master"
-		exit
-		drbdadm adjust ${SERVICENAME[$x]}
-		drbdadm -- --force primary ${SERVICENAME[$x]}
-		drbdadm primary ${SERVICENAME[$x]}
-
-		# Is there a filesystem on this disk?
-		e2fsck -y /dev/drbd$x > /dev/null 2>&1
-		FSCK_RETURN=$?
-		if [ $FSCK_RETURN = 0 -o $FSCK_RETURN = 1 ]; then
-			echo -e "\t\tFilesystem OK"
-		else
-			echo -ne "\t\tCreating filesystem..."
-			mkfs.ext4 -L drbd_${SERVICENAME[$x]} -M /drbd/${SERVICENAME[$x]} /dev/drbd$x >/dev/null 2>&1
-			echo "Done"
+		if [ ! -d /drbd/${SERVICENAME[$x]} ]; then
+			rm -rf /drbd/${SERVICENAME[$x]}
+			mkdir -p /drbd/${SERVICENAME[$x]}
 		fi
 
-		[ ! -d /drbd/${SERVICENAME[$x]} ] && (rm -rf /drbd/${SERVICENAME[$x]}; mkdir -p /drbd/${SERVICENAME[$x]})
-		crm configure primitive drbd_${SERVICENAME[$x]} ocf:linbit:drbd \
-			params drbd_resource="${SERVICENAME[$x]}" \
-			op monitor interval="10s" > /dev/null 2>&1
-		crm configure ms ms_drbd_${SERVICENAME[$x]} drbd_${SERVICENAME[$x]} \
-			meta master-max="1" \
-			master-node-max="1" \
-			clone-max="2" \
-			clone-node-max="1" \
-			notify="true" > /dev/null 2>&1
-		crm configure primitive fs_${SERVICENAME[$x]} ocf:heartbeat:Filesystem \
-			params device="/dev/drbd$x" \
-			directory="/drbd/${SERVICENAME[$x]}" \
-			fstype="ext4" > /dev/null 2>&1
-		crm configure location loc_${SERVICENAME[$x]} ms_drbd_${SERVICENAME[$x]} rule role=master 100: \#uname eq master
-		crm configure group ${SERVICENAME[$x]} fs_${SERVICENAME[$x]} ip_${SERVICENAME[$x]} > /dev/null 2>&1
-		crm configure order order-${SERVICENAME[$x]} inf: ms_drbd_${SERVICENAME[$x]}:promote ${SERVICENAME[$x]}:start
-		crm_resource --resource fs_${SERVICENAME[$x]} -C > /dev/null 2>&1
+		if [ $NEWCLUSTER = YES ]; then
+			drbdadm adjust ${SERVICENAME[$x]}
+			drbdadm -- --force primary ${SERVICENAME[$x]}
+			drbdadm primary ${SERVICENAME[$x]}
+			# Is there a filesystem on this disk?
+			e2fsck -y /dev/drbd$x > /dev/null 2>&1
+			FSCK_RETURN=$?
+			if [ $FSCK_RETURN = 0 -o $FSCK_RETURN = 1 ]; then
+				echo -e "\t\tFilesystem OK"
+			else
+				echo -ne "\t\tCreating filesystem..."
+				mkfs.ext4 -L drbd_${SERVICENAME[$x]} -M /drbd/${SERVICENAME[$x]} /dev/drbd$x >/dev/null 2>&1
+				echo "Done"
+			fi
+			crm configure primitive drbd_${SERVICENAME[$x]} ocf:linbit:drbd \
+				params drbd_resource="${SERVICENAME[$x]}" \
+				op monitor interval="10s" > /dev/null 2>&1
+			crm configure ms ms_drbd_${SERVICENAME[$x]} drbd_${SERVICENAME[$x]} \
+				meta master-max="1" \
+				master-node-max="1" \
+				clone-max="2" \
+				clone-node-max="1" \
+				notify="true" > /dev/null 2>&1
+			crm configure primitive fs_${SERVICENAME[$x]} ocf:heartbeat:Filesystem \
+				params device="/dev/drbd$x" \
+				directory="/drbd/${SERVICENAME[$x]}" \
+				fstype="ext4" > /dev/null 2>&1
+			crm configure location loc_${SERVICENAME[$x]} ms_drbd_${SERVICENAME[$x]} rule role=master 100: \#uname eq master
+			crm configure group ${SERVICENAME[$x]} fs_${SERVICENAME[$x]} ip_${SERVICENAME[$x]} > /dev/null 2>&1
+			crm configure order order-${SERVICENAME[$x]} inf: ms_drbd_${SERVICENAME[$x]}:promote ${SERVICENAME[$x]}:start
+			crm_resource --resource fs_${SERVICENAME[$x]} -C > /dev/null 2>&1
+		fi
 	done
 }
 
@@ -641,3 +642,32 @@ function setup_mysql {
 	fi
 }
 
+
+function get_peer_addr {
+	if [ $ISMASTER = YES ]; then
+		PEER=SLAVE
+		PEER_IP=$SLAVE_INTERNAL_IP
+	else
+		PEER=MASTER
+		PEER_IP=$MASTER_INTERNAL_IP
+	fi
+	
+	while [ "$PEER_IP" = "" ]; do
+		echo -en "\tPlease enter $PEER internal IP address: "
+		read pip
+		if $(ping -c1 $pip > /dev/null 2>&1); then
+			echo -e "\tMachine is up."
+			PEER_IP=$pip
+		else
+			echo -e "\tMachine is down. I can continue if you're sure that's the right address,"
+			echo -e "\tbut for sanity checking, it's a good idea to have the slave machine up"
+			echo -e "\twhile you're installing."
+			echo -en "Are you sure you want to continue with \"$pip\" as the address? [yN]: "
+			read sure
+			[ "$sure" = "Y" -o "$sure" = "y" ] && PEER_IP=$pip
+		fi
+	done
+	cfg ${PEER}_INTERNAL_IP $PEER_IP
+	[ $PEER = SLAVE ] && SLAVE_INTERNAL_IP=$PEER_IP
+	[ $PEER = MASTER ] && MASTER_INTERNAL_IP=$PEER_IP
+}
