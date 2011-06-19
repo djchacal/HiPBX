@@ -18,6 +18,17 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+function cfg {
+	VARNAME=$1
+	VARVAL=$2
+	[ ! -f /etc/hipbx.d/hipbx.conf ] && touch /etc/hipbx.d/hipbx.conf
+	if egrep "^${VARNAME}=" /etc/hipbx.d/hipbx.conf > /dev/null; then
+		sed -i "s/^${VARNAME}=.*/${VARNAME}=\"$VARVAL\"/" /etc/hipbx.d/hipbx.conf
+	else
+		echo ${VARNAME}=\"$VARVAL\" >> /etc/hipbx.d/hipbx.conf
+	fi
+}
+
 function selinux {
 	# Check if SELinux is enabled. If it is, disable it and warn that it's been
 	# done.
@@ -129,20 +140,22 @@ function configure_lvm {
 	for x in $(seq 0 $NBRSVCS); do
 		echo -ne "\t\t${SERVICENAME[$x]} - "
 		USED=`lvdisplay -C --noheadings --nosuffix --units g | grep drbd_${SERVICENAME[$x]} | awk ' { print $4 }'`
-		drbd_varname=drbd_${SERVICENAME[$x]}
+		varname=drbd_${SERVICENAME[$x]}
+		presize=${!varname}
+		[ "$presize" = "" ] && presize=0
 		if [ "$USED" != "" ]; then 
 			# Integerify USED.
 			USED=`printf %0.f $USED`
 			echo -n "Found (${USED}G)"
-			if [ "${!drbd_varname}" != "" -a ${USED} -lt ${!drbd_varname} ]; then
+			if [ "$presize" != "0" -a "${USED}" -lt "$presize" ]; then
 				echo -e "\nSevere Error. Amount of disk space allocated to this volume is"
 				echo "LESS than the amount required by DRBD. This will corrupt your"
 				echo "filesystem if you force it to work. Delete the existing volumes and"
 				echo "let the installer script recreate them"
 				exit
 			fi
-			if [ "${!drbd_varname}" != "" ]; then 
-				realspace=${!drbd_varname}
+			if [ "$presize" != "0" ]; then 
+				realspace=$presize
 			else
 				realspace=$USED
 			fi
@@ -152,9 +165,9 @@ function configure_lvm {
 			SELECTEDVG=`lvdisplay -C --noheadings --nosuffix --units g | grep drbd_${SERVICENAME[$x]} | awk ' { print $2 }'`
 		else
 			echo "Not Found"
-			LVMAKE=( ${LVMAKE[@]-} $x )
-			if [ "${!drbd_varname}" != "" ]; then
-				REQUIRED=$(( $REQURED + ${!drbd_varname} ))
+			LVMAKE=( ${LVMAKE[@]-} $x 0)
+			if [ "$presize" != "0" ]; then
+				REQUIRED=$(( $REQURED + $presize ))
 			fi
 		fi
 	done
@@ -190,7 +203,7 @@ function configure_lvm {
 	fi
 	
 	echo -e "\tYou picked $VGNAME with ${VGSPACE}G free."
-	echo "\n\tWould you like to use all available space? [Yn]: "
+	echo -en "\n\tWould you like to use all available space? [Yn]: "
 	read usespace
 
 	if [ "$usespace" = "" -o "$usespace" = "Y" -o "$usespace" = "y" ]; then
@@ -315,61 +328,74 @@ function config_networking {
 		iaddr=`echo ${INTS[$x]} | awk -F= '{print $2}'`
 		echo -e "\t\t$iname\t$iaddr"
 	done
-	echo -en "\tPlesae enter the INTERNAL, PRIVATE interface "
-	[ "$MASTER_INTERNAL_INT" = "" ] && MASTER_INTERNAL_INT="unknown"
-	echo -n "[$MASTER_INTERNAL_INT]: "
-	read internalint
-	if [ "$internalint" = ""  -a "$MASTER_INTERNAL_INT" = "unknown" ]; then
-		echo "Wait.. What? I don't KNOW what the interface is. That's why it says 'unknown' there."
-		echo "Next time, really pick a network interface."
-		exit
-	fi
-	if [ "$internalint" = "" ]; then
-		internalint=$MASTER_INTERNAL_INT
+
+	if [ $ISMASTER = YES ]; then
+		MY_EXTERNAL_INT=$MASTER_EXTERNAL_INT
+		MY_INTERNAL_INT=$MASTER_INTERNAL_INT
+	else
+		MY_EXTERNAL_INT=$SLAVE_EXTERNAL_INT
+		MY_INTERNAL_INT=$SLAVE_INTERNAL_INT
 	fi
 
-	if $(ip addr show $internalint > /dev/null 2>&1 ); then
-		MASTER_INTERNAL_IP=`ip -o addr show $internalint | grep -v secondary | grep ${internalint}$|awk '{print $4}'|sed 's^/[0-9]*^^'`
-		if [ "$MASTER_INTERNAL_IP" = "" ]; then
-			echo "I'm guessing that was a typo. I can't get an IP address from that interface."
-			echo "Try again."
-			exit
+	INTSVALID=false
+	while [ $INTSVALID = false ]; do
+		echo -ne "\tPlease select the EXTERNAL, PUBLIC interface "
+		[ "$MY_EXTERNAL_INT" = "" ] && MY_EXTERNAL_INT="eth0"
+		echo -n "[$MY_EXTERNAL_INT]: "
+		read externalint
+		if [ "$externalint" = "" ]; then
+			externalint=$MY_EXTERNAL_INT
 		fi
-		echo -e "\tSetting INTERNAL interface to $internalint ($MASTER_INTERNAL_IP)"
-	else 
-		echo "I'm guessing that was a typo. I can't find that interface. Sorry. Try again"
-		exit
-	fi
-	echo "MASTER_INTERNAL_IP=$MASTER_INTERNAL_IP" >> /etc/hipbx.d/hipbx.conf
-	echo "MASTER_INTERNAL_INT=$internalint" >> /etc/hipbx.d/hipbx.conf
 
-	echo -ne "\tPlease select the EXTERNAL, PUBLIC interface "
-	[ "$MASTER_EXTERNAL_INT" = "" ] && MASTER_EXTERNAL_INT="unknown"
-	echo -n "[$MASTER_EXTERNAL_INT]: "
-	read externalint
-	if [ "$externalint" = ""  -a "$MASTER_EXTERNAL_INT" = "unknown" ]; then
-		echo "Wait.. What? I don't KNOW what the interface is. That's why it says 'unknown' there."
-		echo "Next time, really pick a network interface."
-		exit
-	fi
-	if [ "$externalint" = "" ]; then
-		externalint=$MASTER_EXTERNAL_INT
-	fi
-
-	if $(ip addr show $externalint > /dev/null 2>&1 ); then
-		MASTER_EXTERNAL_IP=`ip -o addr show $externalint | grep -v secondary | grep ${externalint}$|awk '{print $4}'|sed 's^/[0-9]*^^'`
-		if [ "$MASTER_EXTERNAL_IP" = "" ]; then
-			echo "I'm guessing that was a typo. I can't get an IP address from that interface."
-			echo "Try again."
-			exit
+		if $(ip addr show $externalint > /dev/null 2>&1 ); then
+			MY_EXTERNAL_IP=`ip -o addr show $externalint | grep -v secondary | grep ${externalint}$|awk '{print $4}'|sed 's^/[0-9]*^^'`
+			if [ "$MY_EXTERNAL_IP" = "" ]; then
+				echo "I'm guessing that was a typo. I can't get an IP address from that interface."
+				echo "Try again."
+				exit
+			fi
+			echo -e "\tSetting EXTERNAL interface to $externalint ($MY_EXTERNAL_IP)"
+			INTSVALID=true
+		else 
+			echo "I'm guessing that was a typo. I can't find that interface. Sorry. Try again"
 		fi
-		echo -e "\tSetting EXTERNAL interface to $externalint ($MASTER_EXTERNAL_IP)"
-	else 
-		echo "I'm guessing that was a typo. I can't find that interface. Sorry. Try again"
-		exit
+	done
+
+	INTSVALID=false
+	while [ $INTSVALID = false ]; do
+		echo -en "\tPlesae enter the INTERNAL, PRIVATE interface "
+		[ "$MY_INTERNAL_INT" = "" ] && MY_INTERNAL_INT="eth1"
+		echo -n "[$MY_INTERNAL_INT]: "
+		read internalint
+		if [ "$internalint" = "" ]; then
+			internalint=$MY_INTERNAL_INT
+		fi
+
+		if $(ip addr show $internalint > /dev/null 2>&1 ); then
+			MY_INTERNAL_IP=`ip -o addr show $internalint | grep -v secondary | grep ${internalint}$|awk '{print $4}'|sed 's^/[0-9]*^^'`
+			if [ "$MY_INTERNAL_IP" = "" ]; then
+				echo "I'm guessing that was a typo. I can't get an IP address from that interface."
+				echo "Try again."
+			fi
+			echo -e "\tSetting INTERNAL interface to $internalint ($MY_INTERNAL_IP)"
+			INTSVALID=true
+		else 
+			echo "I'm guessing that was a typo. I can't find that interface. Sorry. Try again"
+		fi
+	done
+
+	if [ $ISMASTER = YES ]; then
+		echo "MASTER_INTERNAL_IP=$MY_INTERNAL_IP" >> /etc/hipbx.d/hipbx.conf
+		echo "MASTER_INTERNAL_INT=$internalint" >> /etc/hipbx.d/hipbx.conf
+		echo "MASTER_EXTERNAL_IP=$MY_EXTERNAL_IP" >> /etc/hipbx.d/hipbx.conf
+		echo "MASTER_EXTERNAL_INT=$externalint" >> /etc/hipbx.d/hipbx.conf
+	else
+		echo "SLAVE_INTERNAL_IP=$MY_INTERNAL_IP" >> /etc/hipbx.d/hipbx.conf
+		echo "SLAVE_INTERNAL_INT=$internalint" >> /etc/hipbx.d/hipbx.conf
+		echo "SLAVE_EXTERNAL_IP=$MY_EXTERNAL_IP" >> /etc/hipbx.d/hipbx.conf
+		echo "SLAVE_EXTERNAL_INT=$externalint" >> /etc/hipbx.d/hipbx.conf
 	fi
-	echo "MASTER_EXTERNAL_IP=$MASTER_EXTERNAL_IP" >> /etc/hipbx.d/hipbx.conf
-	echo "MASTER_EXTERNAL_INT=$externalint" >> /etc/hipbx.d/hipbx.conf
+
 
 	if [ "$MULTICAST_ADDR" = "" ]; then
 		echo -en "\tGenerating Multicast Address..."
@@ -383,22 +409,7 @@ function config_networking {
 		MULTICAST_ADDR=239.${M1}.${M2}.${M3}
 	fi
 	echo "MULTICAST_ADDR=$MULTICAST_ADDR" >> /etc/hipbx.d/hipbx.conf
-	while [ "$SLAVE_INTERNAL_IP" = "" ]; do
-		echo -en "\tPlease enter SLAVE internal IP address: "
-		read slaveip
-		if $(ping -c1 $slaveip > /dev/null 2>&1); then
-			echo -e "\tMachine is up."
-			SLAVE_INTERNAL_IP=$slaveip
-		else
-			echo -e "\tMachine is down. I can continue if you're sure that's the right address,"
-			echo -e "\tbut for sanity checking, it's a good idea to have the slave machine up"
-			echo -e "\twhile you're installing."
-			echo -en "Are you sure you want to continue with \"$slaveip\" as the address? [yN]: "
-			read sure
-			[ "$sure" = "Y" -o "$sure" = "y" ] && SLAVE_INTERNAL_IP=$slaveip
-		fi
-	done
-	echo "SLAVE_INTERNAL_IP=$SLAVE_INTERNAL_IP" >> /etc/hipbx.d/hipbx.conf
+
 	echo "Configure Services"
 	echo -e "\tPlease enter the IP Addresses for the HiPBX Services. These addresses"
 	echo -e "\tshould NOT already exist, and they will be assigned to the interface"
@@ -627,7 +638,3 @@ function setup_mysql {
 	fi
 }
 
-function slavesetup {
-	echo Slave Setup not implemented yet.
-	exit
-}

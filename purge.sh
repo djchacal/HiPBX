@@ -27,7 +27,7 @@ for lv in /dev/mapper/*-drbd*
   do
     lvremove -f $lv
   done
-#rm -f /etc/hipbx.d/ssh_key*
+rm -f /etc/hipbx.d
 
 
 
