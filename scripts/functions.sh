@@ -219,59 +219,32 @@ function configure_lvm {
 
 function check_ssh {
 	echo "SSH:"
-	if [ "$SSH_MASTER" = "" ]; then
-		echo -e "\t\$SSH_MASTER not found."
+	if [ "$SSH_KEY" = "" ]; then
+		echo -e "\t\$SSH_KEY not found."
 		if [ -f /etc/hipbx.d/ssh_key_master -a -f /etc/hipbx.d/ssh_key_master.pub ]; then
 			echo -e "\tHowever, /etc/hipbx.d/ssh_key_master exists"
 		else
 			rm -f /etc/hipbx.d/ssh_key_master /etc/hipbx.d/ssh_key_master.pub
-			echo -en "\tGenerating MASTER ssh Public key..."
+			echo -en "\tGenerating Master ssh Public key..."
 			ssh-keygen -q -t dsa -f /etc/hipbx.d/ssh_key_master -N ""
 			echo "Done"
 		fi
-		SSH_MASTER=`cat /etc/hipbx.d/ssh_key_master.pub`
+		SSH_KEY=`cat /etc/hipbx.d/ssh_key_master.pub`
 	else
 		echo -en "\tMaster ssh key exists"
 		test=`cat /etc/hipbx.d/ssh_key_master.pub 2>/dev/null`
-		if [ "$SSH_MASTER" != "$test" ]; then
+		if [ "$SSH_KEY" != "$test" ]; then
 			echo -e " - but doesn't match hipbx.conf! Regenerating."
 			rm -f /etc/hipbx.d/ssh_key_master /etc/hipbx.d/ssh_key_master.pub
-			echo -en "\tGenerating MASTER ssh Public key..."
+			echo -en "\tGenerating Master ssh Public key..."
 			ssh-keygen -q -t dsa -f /etc/hipbx.d/ssh_key_master -N ""
-			SSH_MASTER=`cat /etc/hipbx.d/ssh_key_master.pub`
+			SSH_KEY=`cat /etc/hipbx.d/ssh_key_master.pub`
 			echo "Done"
 		else
 			echo " and seems valid"
 		fi
 	fi
-	echo "SSH_MASTER=\"$SSH_MASTER\"" >> /etc/hipbx.d/hipbx.conf
-
-	if [ "$SSH_SLAVE" = "" ]; then
-		echo -e "\t\$SSH_SLAVE not found."
-		if [ -f /etc/hipbx.d/ssh_key_slave -a -f /etc/hipbx.d/ssh_key_slave.pub ]; then
-			echo -e "\tHowever, /etc/hipbx.d/ssh_key_slave exists"
-		else
-			rm -f /etc/hipbx.d/ssh_key_slave /etc/hipbx.d/ssh_key_slave.pub
-			echo -en "\tGenerating SLAVE ssh Public key..."
-			ssh-keygen -q -t dsa -f /etc/hipbx.d/ssh_key_slave -N ""
-			echo "Done"
-		fi
-		SSH_SLAVE=`cat /etc/hipbx.d/ssh_key_slave.pub`
-	else
-		echo -en "\tSlave ssh key exists"
-		test=`cat /etc/hipbx.d/ssh_key_slave.pub 2>/dev/null`
-		if [ "$SSH_SLAVE" != "$test" ]; then
-			echo "- but doesn't match hipbx.conf! Regenerating."
-			rm -f /etc/hipbx.d/ssh_key_slave /etc/hipbx.d/ssh_key_slave.pub
-			echo -en "\tGenerating SLAVE ssh Public key..."
-			ssh-keygen -q -t dsa -f /etc/hipbx.d/ssh_key_slave -N ""
-			SSH_SLAVE=`cat /etc/hipbx.d/ssh_key_slave.pub`
-			echo "Done"
-		else
-			echo " and seems valid"
-		fi
-	fi
-	echo "SSH_SLAVE=\"$SSH_SLAVE\"" >> /etc/hipbx.d/hipbx.conf
+	echo "SSH_KEY=\"$SSH_KEY\"" >> /etc/hipbx.d/hipbx.conf
 }
 
 
