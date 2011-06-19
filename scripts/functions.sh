@@ -18,10 +18,9 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-# Check if SELinux is enabled. If so, disable it and warn that it's been
-# done.
-
 function selinux {
+	# Check if SELinux is enabled. If it is, disable it and warn that it's been
+	# done.
 	if selinuxenabled; then
 		echo "SELinux is enabled. I've turned it off for you. Be aware."
 		sed -i s/SELINUX=enforcing/SELINUX=disabled/ /etc/selinux/config
@@ -49,13 +48,13 @@ function installpackages {
 
 function disableall {
 	chkconfig mysqld off
-	/etc/init.d/mysqld stop
+	service mysqld status > /dev/null && service mysqld stop
 	chkconfig httpd off
-	/etc/init.d/httpd stop
+	service httpd status > /dev/null &&  service httpd stop
 	chkconfig iptables off
-	/etc/init.d/iptables stop
+	service iptables status > /dev/null && service iptables stop
 	chkconfig drbd off
-	/etc/init.d/drbd stop
+	service drbd status > /dev/null && service drbd stop
 	modprobe drbd
 }
 
@@ -69,7 +68,7 @@ function hipbx_init {
 function mysql_password {
 	# Generate a MySQL password, if one hasn't already been generated.
 	[ "$MYSQLPASS" = "" ] && MYSQLPASS=`tr -dc A-Za-z0-9 < /dev/urandom | head -c16`
-	echo MYSQLPASS=$MYSQLPASS > /etc/hipbx.conf
+	echo MYSQLPASS=$MYSQLPASS > /etc/hipbx.d/hipbx.conf
 }
 
 function fix_hostname {
@@ -118,7 +117,7 @@ function configure_lvm {
 		exit
 	fi
 
-	echo "$SERVSTRING)" >> /etc/hipbx.conf
+	echo "$SERVSTRING)" >> /etc/hipbx.d/hipbx.conf
 
 	echo "LVM Setup:"
 	echo -e "\tChecking for existing LVM volumes for drbd..."
@@ -129,7 +128,7 @@ function configure_lvm {
 		USED=`lvdisplay -C --noheadings --nosuffix --units g | grep drbd_${SERVICENAME[$x]} | awk ' { print $4 }'`
 		if [ "$USED" != "" ]; then 
 			echo -n "Found (${USED}G)"
-			echo "drbd_${SERVICENAME[$x]}=${USED}" >> /etc/hipbx.conf
+			echo "drbd_${SERVICENAME[$x]}=${USED}" >> /etc/hipbx.d/hipbx.conf
 			ALLOCATED=$(( $ALLOCATED + ${SERVICEPCNT[$x]} ))
 			USEDSPACE=$(( $USEDSPACE + `printf %0.f $USED` ))
 			SELECTEDVG=`lvdisplay -C --noheadings --nosuffix --units g | grep drbd_${SERVICENAME[$x]} | awk ' { print $2 }'`
@@ -204,7 +203,7 @@ function configure_lvm {
 			lvsize=`printf %0.f $lvsize`
 			echo "(${lvsize}G) "
 			if $(lvcreate -L${lvsize}g $VGNAME -n drbd_${SERVICENAME[${LVMAKE[$x]}]} > /dev/null); then
-				echo "drbd_${SERVICENAME[${LVMAKE[$x]}]}=${lvsize}" >> /etc/hipbx.conf
+				echo "drbd_${SERVICENAME[${LVMAKE[$x]}]}=${lvsize}" >> /etc/hipbx.d/hipbx.conf
 			else
 				echo "Something really bad has happened. I can't create the logical volume."
 				echo "This is the command I ran:"
@@ -214,7 +213,7 @@ function configure_lvm {
 			fi
 		done
 	fi
-	echo MASTER_VGNAME=$SELECTEDVG >> /etc/hipbx.conf
+	echo MASTER_VGNAME=$SELECTEDVG >> /etc/hipbx.d/hipbx.conf
 	MASTER_VGNAME=$SELECTEDVG
 }
 
@@ -245,7 +244,7 @@ function check_ssh {
 			echo " and seems valid"
 		fi
 	fi
-	echo "SSH_MASTER=\"$SSH_MASTER\"" >> /etc/hipbx.conf
+	echo "SSH_MASTER=\"$SSH_MASTER\"" >> /etc/hipbx.d/hipbx.conf
 
 	if [ "$SSH_SLAVE" = "" ]; then
 		echo -e "\t\$SSH_SLAVE not found."
@@ -272,7 +271,7 @@ function check_ssh {
 			echo " and seems valid"
 		fi
 	fi
-	echo "SSH_SLAVE=\"$SSH_SLAVE\"" >> /etc/hipbx.conf
+	echo "SSH_SLAVE=\"$SSH_SLAVE\"" >> /etc/hipbx.d/hipbx.conf
 }
 
 
@@ -319,8 +318,8 @@ function config_networking {
 		echo "I'm guessing that was a typo. I can't find that interface. Sorry. Try again"
 		exit
 	fi
-	echo "MASTER_INTERNAL_IP=$MASTER_INTERNAL_IP" >> /etc/hipbx.conf
-	echo "MASTER_INTERNAL_INT=$internalint" >> /etc/hipbx.conf
+	echo "MASTER_INTERNAL_IP=$MASTER_INTERNAL_IP" >> /etc/hipbx.d/hipbx.conf
+	echo "MASTER_INTERNAL_INT=$internalint" >> /etc/hipbx.d/hipbx.conf
 
 	echo -ne "\tPlease select the EXTERNAL, PUBLIC interface "
 	[ "$MASTER_EXTERNAL_INT" = "" ] && MASTER_EXTERNAL_INT="unknown"
@@ -347,8 +346,8 @@ function config_networking {
 		echo "I'm guessing that was a typo. I can't find that interface. Sorry. Try again"
 		exit
 	fi
-	echo "MASTER_EXTERNAL_IP=$MASTER_EXTERNAL_IP" >> /etc/hipbx.conf
-	echo "MASTER_EXTERNAL_INT=$externalint" >> /etc/hipbx.conf
+	echo "MASTER_EXTERNAL_IP=$MASTER_EXTERNAL_IP" >> /etc/hipbx.d/hipbx.conf
+	echo "MASTER_EXTERNAL_INT=$externalint" >> /etc/hipbx.d/hipbx.conf
 
 	if [ "$MULTICAST_ADDR" = "" ]; then
 		echo -en "\tGenerating Multicast Address..."
@@ -361,7 +360,7 @@ function config_networking {
 		echo "(239.${M1}.${M2}.${M3})"
 		MULTICAST_ADDR=239.${M1}.${M2}.${M3}
 	fi
-	echo "MULTICAST_ADDR=$MULTICAST_ADDR" >> /etc/hipbx.conf
+	echo "MULTICAST_ADDR=$MULTICAST_ADDR" >> /etc/hipbx.d/hipbx.conf
 	while [ "$SLAVE_INTERNAL_IP" = "" ]; do
 		echo -en "\tPlease enter SLAVE internal IP address: "
 		read slaveip
@@ -377,7 +376,7 @@ function config_networking {
 			[ "$sure" = "Y" -o "$sure" = "y" ] && SLAVE_INTERNAL_IP=$slaveip
 		fi
 	done
-	echo "SLAVE_INTERNAL_IP=$SLAVE_INTERNAL_IP" >> /etc/hipbx.conf
+	echo "SLAVE_INTERNAL_IP=$SLAVE_INTERNAL_IP" >> /etc/hipbx.d/hipbx.conf
 	echo "Configure Services"
 	echo -e "\tPlease enter the IP Addresses for the HiPBX Services. These addresses"
 	echo -e "\tshould NOT already exist, and they will be assigned to the interface"
@@ -403,7 +402,7 @@ function config_networking {
 	#		arping -w 1 -fI $MASTER_EXTERNAL_INT $newip
 	#		exit;
 	#	fi	
-		echo ${SERVICENAME[$x]}_IP=$newip >> /etc/hipbx.conf
+		echo ${SERVICENAME[$x]}_IP=$newip >> /etc/hipbx.d/hipbx.conf
 	done
 }
 
@@ -417,8 +416,8 @@ function calc_netmasks {
 	# Figure out netmasks. This isn't line noise, honest.
 	EXTERNAL_CLASS=`ip -o addr | grep -v secondary | grep ${MASTER_EXTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_'`
 	INTERNAL_CLASS=`ip -o addr | grep -v secondary | grep ${MASTER_INTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_'`
-	echo INTERNAL_CLASS=$INTERNAL_CLASS >> /etc/hipbx.conf
-	echo EXTERNAL_CLASS=$EXTERNAL_CLASS >> /etc/hipbx.conf
+	echo INTERNAL_CLASS=$INTERNAL_CLASS >> /etc/hipbx.d/hipbx.conf
+	echo EXTERNAL_CLASS=$EXTERNAL_CLASS >> /etc/hipbx.d/hipbx.conf
 }
 
 
@@ -518,7 +517,7 @@ function setup_drbd {
 		address ${SLAVE_INTERNAL_IP}:400${x};
 	}
 }" > /etc/drbd.d/${SERVICENAME[$x]}.res
-		echo ${SERVICENAME[$x]}_DISK=/dev/drbd$x >> /etc/hipbx.conf
+		echo ${SERVICENAME[$x]}_DISK=/dev/drbd$x >> /etc/hipbx.d/hipbx.conf
 		if $(drbdadm dump-md ${SERVICENAME[$x]} > /dev/null 2>&1); then
 			echo -e " (already initialized)"
 		else

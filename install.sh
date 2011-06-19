@@ -34,19 +34,18 @@ selinux
 # installer, the machine is obviously not in production.
 disableall
 
-# If /etc/hipbx.conf already exists, grab it and read the config
-if [ -f /etc/hipbx.conf ]; then
-	. /etc/hipbx.conf
+# If /etc/hipbx.d/hipbx.conf already exists, grab it and read the config
+if [ -f /etc/hipbx.d/hipbx.conf ]; then
+	cp /etc/hipbx.d/hipbx.conf /etc/hipbx.d/hipbx.conf.bak
+	. /etc/hipbx.d/hipbx.conf
 fi
-cp /etc/hipbx.conf /etc/hipbx.conf.bak
-
 
 # Make the /etc/hipbx.d directory if it doesn't already exist.
-hipbx-init
+hipbx_init
 
 # Is this the master or slave server?
 if [ "$ISMASTER" = "" ]; then
-	echo "This appears to be a new install - /etc/hipbx.conf doesn't exist."
+	echo "This appears to be a new install - /etc/hipbx.d/hipbx.conf doesn't exist."
 	echo "You need to select if this is the 'master' or 'slave' server."
 	echo "Please note that these names are pretty much arbritary, and don't"
 	echo "mean that one server is preferred over the other. The only reason"
@@ -82,7 +81,7 @@ fi
 # Set the hostname of the machine to be 'master' or 'slave'
 fix_hostname
 
-echo ISMASTER=$ISMASTER >> /etc/hipbx.conf
+echo ISMASTER=$ISMASTER >> /etc/hipbx.d/hipbx.conf
 
 if [ $NEWCLUSTER = YES ]; then
 	. scripts/setup-newcluster.sh
