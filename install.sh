@@ -28,6 +28,12 @@ fi
 # Load functions from installer 
 . scripts/functions.sh
 
+# If /etc/hipbx.d/hipbx.conf  exists, grab it and read the config
+if [ -f /etc/hipbx.d/hipbx.conf ]; then
+	cp /etc/hipbx.d/hipbx.conf /etc/hipbx.d/hipbx.conf.bak
+	. /etc/hipbx.d/hipbx.conf
+fi
+
 # Check if SElinux is enabled
 selinux
 
@@ -41,12 +47,6 @@ selinux
 # It doesn't matter if we shut down DRBD, as if you're running the
 # installer, the machine is obviously not in production.
 disableall
-
-# If /etc/hipbx.d/hipbx.conf already exists, grab it and read the config
-if [ -f /etc/hipbx.d/hipbx.conf ]; then
-	cp /etc/hipbx.d/hipbx.conf /etc/hipbx.d/hipbx.conf.bak
-	. /etc/hipbx.d/hipbx.conf
-fi
 
 # Make the /etc/hipbx.d directory if it doesn't already exist.
 hipbx_init
