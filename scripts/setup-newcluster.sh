@@ -30,7 +30,6 @@ else
 	MYNAME=slave
 fi 
 echo "Starting new cluster setup on $MYNAME."
-exit
 
 # Set up LVM
 configure_lvm

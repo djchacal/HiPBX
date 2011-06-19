@@ -22,10 +22,13 @@ function cfg {
 	VARNAME=$1
 	VARVAL=$2
 	[ ! -f /etc/hipbx.d/hipbx.conf ] && touch /etc/hipbx.d/hipbx.conf
+	if [[ $VARVAL != \(* ]]; then
+		VARVAL=\"$VARVAL\"
+	fi
 	if egrep "^${VARNAME}=" /etc/hipbx.d/hipbx.conf > /dev/null; then
-		sed -i "s/^${VARNAME}=.*/${VARNAME}=\"$VARVAL\"/" /etc/hipbx.d/hipbx.conf
+		sed -i "s!^${VARNAME}=.*!${VARNAME}=$VARVAL!" /etc/hipbx.d/hipbx.conf
 	else
-		echo ${VARNAME}=\"$VARVAL\" >> /etc/hipbx.d/hipbx.conf
+		echo ${VARNAME}=$VARVAL >> /etc/hipbx.d/hipbx.conf
 	fi
 }
 
@@ -79,7 +82,7 @@ function hipbx_init {
 function mysql_password {
 	# Generate a MySQL password, if one hasn't already been generated.
 	[ "$MYSQLPASS" = "" ] && MYSQLPASS=`tr -dc A-Za-z0-9 < /dev/urandom | head -c16`
-	echo MYSQLPASS=$MYSQLPASS > /etc/hipbx.d/hipbx.conf
+	cfg MYSQLPASS $MYSQLPASS
 }
 
 function fix_hostname {
@@ -116,7 +119,7 @@ function configure_lvm {
 	# Parse the SERVICES variable into arrays
 	NBRSVCS=$((${#SERVICES[@]} - 1))
 	SANITYSIZE=0
-	SERVSTRING="SERVICES=("
+	SERVSTRING="( "
 	for element in $(seq 0 $NBRSVCS); do
 		SERVSTRING="$SERVSTRING ${SERVICES[$element]} "
 		SERVICENAME[$element]=`echo ${SERVICES[$element]} | awk -F= ' { print $1 } '`
@@ -130,7 +133,7 @@ function configure_lvm {
 		exit
 	fi
 
-	echo "$SERVSTRING)" >> /etc/hipbx.d/hipbx.conf
+	cfg SERVICES "$SERVSTRING)"
 
 	echo "LVM Setup:"
 	echo -e "\tChecking for existing LVM volumes for drbd..."
@@ -159,7 +162,7 @@ function configure_lvm {
 			else
 				realspace=$USED
 			fi
-			echo "drbd_${SERVICENAME[$x]}=$realspace" >> /etc/hipbx.d/hipbx.conf
+			cfg drbd_${SERVICENAME[$x]} "$realspace"
 			ALLOCATED=$(( $ALLOCATED + ${SERVICEPCNT[$x]} ))
 			USEDSPACE=$(( $USEDSPACE + `printf %0.f $realspace` ))
 			SELECTEDVG=`lvdisplay -C --noheadings --nosuffix --units g | grep drbd_${SERVICENAME[$x]} | awk ' { print $2 }'`
@@ -243,7 +246,7 @@ function configure_lvm {
 			fi
 			echo "(${lvsize}G) "
 			if $(lvcreate -L${lvsize}g $VGNAME -n drbd_${SERVICENAME[${LVMAKE[$x]}]} > /dev/null); then
-				echo "drbd_${SERVICENAME[${LVMAKE[$x]}]}=${lvsize}" >> /etc/hipbx.d/hipbx.conf
+				cfg "drbd_${SERVICENAME[${LVMAKE[$x]}]}" "${lvsize}"
 			else
 				echo "Something really bad has happened. I can't create the logical volume."
 				echo "This is the command I ran:"
@@ -254,9 +257,9 @@ function configure_lvm {
 		done
 	fi
 	if [ $ISMASTER = YES ]; then
-		echo MASTER_VGNAME=$SELECTEDVG >> /etc/hipbx.d/hipbx.conf
+		cfg MASTER_VGNAME "$SELECTEDVG"
 	else
-		echo SLAVE_VGNAME=$SELECTEDVG >> /etc/hipbx.d/hipbx.conf
+		cfg SLAVE_VGNAME "$SELECTEDVG"
 	fi
 	MY_VGNAME=$SELECTEDVG
 }
@@ -288,7 +291,7 @@ function check_ssh {
 			echo " and seems valid"
 		fi
 	fi
-	echo "SSH_KEY=\"$SSH_KEY\"" >> /etc/hipbx.d/hipbx.conf
+	cfg SSH_KEY "$SSH_KEY"
 }
 
 function add_ssh {
@@ -385,15 +388,15 @@ function config_networking {
 	done
 
 	if [ $ISMASTER = YES ]; then
-		echo "MASTER_INTERNAL_IP=$MY_INTERNAL_IP" >> /etc/hipbx.d/hipbx.conf
-		echo "MASTER_INTERNAL_INT=$internalint" >> /etc/hipbx.d/hipbx.conf
-		echo "MASTER_EXTERNAL_IP=$MY_EXTERNAL_IP" >> /etc/hipbx.d/hipbx.conf
-		echo "MASTER_EXTERNAL_INT=$externalint" >> /etc/hipbx.d/hipbx.conf
+		cfg MASTER_INTERNAL_IP "$MY_INTERNAL_IP"
+		cfg MASTER_INTERNAL_INT "$internalint"
+		cfg MASTER_EXTERNAL_IP "$MY_EXTERNAL_IP"
+		cfg MASTER_EXTERNAL_INT "$externalint"
 	else
-		echo "SLAVE_INTERNAL_IP=$MY_INTERNAL_IP" >> /etc/hipbx.d/hipbx.conf
-		echo "SLAVE_INTERNAL_INT=$internalint" >> /etc/hipbx.d/hipbx.conf
-		echo "SLAVE_EXTERNAL_IP=$MY_EXTERNAL_IP" >> /etc/hipbx.d/hipbx.conf
-		echo "SLAVE_EXTERNAL_INT=$externalint" >> /etc/hipbx.d/hipbx.conf
+		cfg SLAVE_INTERNAL_IP "$MY_INTERNAL_IP"
+		cfg SLAVE_INTERNAL_INT "$internalint"
+		cfg SLAVE_EXTERNAL_IP "$MY_EXTERNAL_IP"
+		cfg SLAVE_EXTERNAL_INT "$externalint"
 	fi
 
 
@@ -408,7 +411,7 @@ function config_networking {
 		echo "(239.${M1}.${M2}.${M3})"
 		MULTICAST_ADDR=239.${M1}.${M2}.${M3}
 	fi
-	echo "MULTICAST_ADDR=$MULTICAST_ADDR" >> /etc/hipbx.d/hipbx.conf
+	cfg MULTICAST_ADDR "$MULTICAST_ADDR"
 
 	echo "Configure Services"
 	echo -e "\tPlease enter the IP Addresses for the HiPBX Services. These addresses"
@@ -435,7 +438,7 @@ function config_networking {
 	#		arping -w 1 -fI $MASTER_EXTERNAL_INT $newip
 	#		exit;
 	#	fi	
-		echo ${SERVICENAME[$x]}_IP=$newip >> /etc/hipbx.d/hipbx.conf
+		cfg ${SERVICENAME[$x]}_IP "$newip"
 	done
 }
 
@@ -449,8 +452,8 @@ function calc_netmasks {
 	# Figure out netmasks. This isn't line noise, honest.
 	EXTERNAL_CLASS=`ip -o addr | grep -v secondary | grep ${MASTER_EXTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_'`
 	INTERNAL_CLASS=`ip -o addr | grep -v secondary | grep ${MASTER_INTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_'`
-	echo INTERNAL_CLASS=$INTERNAL_CLASS >> /etc/hipbx.d/hipbx.conf
-	echo EXTERNAL_CLASS=$EXTERNAL_CLASS >> /etc/hipbx.d/hipbx.conf
+	cfg INTERNAL_CLASS $INTERNAL_CLASS
+	cfg EXTERNAL_CLASS $EXTERNAL_CLASS
 }
 
 
@@ -494,7 +497,7 @@ amf {
 
 aisexec {
 	user: root
-	grou: root
+	group: root
 }" > /etc/corosync/corosync.conf
 	echo "service {
 	name: pacemaker
@@ -550,7 +553,7 @@ function setup_drbd {
 		address ${SLAVE_INTERNAL_IP}:400${x};
 	}
 }" > /etc/drbd.d/${SERVICENAME[$x]}.res
-		echo ${SERVICENAME[$x]}_DISK=/dev/drbd$x >> /etc/hipbx.d/hipbx.conf
+		cfg "${SERVICENAME[$x]}_DISK" "/dev/drbd$x"
 		if $(drbdadm dump-md ${SERVICENAME[$x]} > /dev/null 2>&1); then
 			echo -e " (already initialized)"
 		else
