@@ -60,19 +60,19 @@ function disableall {
 }
 
 
-function hipbx-init {
+function hipbx_init {
 	# Make the /etc/hipbx.d directory if it doesn't already exist.
 	[ ! -d /etc/hipbx.d ] && mkdir /etc/hipbx.d
 	[ ! -d /var/run/heartbeat/crm ] && mkdir  -p /var/run/heartbeat/crm
 }
 
-function mysql-password {
+function mysql_password {
 	# Generate a MySQL password, if one hasn't already been generated.
 	[ "$MYSQLPASS" = "" ] && MYSQLPASS=`tr -dc A-Za-z0-9 < /dev/urandom | head -c16`
 	echo MYSQLPASS=$MYSQLPASS > /etc/hipbx.conf
 }
 
-function fix-hostname {
+function fix_hostname {
 	if [ $ISMASTER = YES ]; then
 		if [ `hostname` != master ]; then
 			echo "Fixing hostname - setting to 'master'"
@@ -89,7 +89,7 @@ function fix-hostname {
 }
 		
 
-function configure-lvm {
+function configure_lvm {
 
 	#### LVM Setup Begin
 	# Default storage percentages.  Minimum sizes (with 50GB lvm space used) in brackets
@@ -218,7 +218,7 @@ function configure-lvm {
 	MASTER_VGNAME=$SELECTEDVG
 }
 
-function check-ssh {
+function check_ssh {
 	echo "SSH:"
 	if [ "$SSH_MASTER" = "" ]; then
 		echo -e "\t\$SSH_MASTER not found."
@@ -276,7 +276,7 @@ function check-ssh {
 }
 
 
-function config-networking {
+function config_networking {
 	echo "Networking:"
 	INTS=( `ip -o addr | grep -v "1: lo" |grep -v secondary | grep inet\ | awk '{print $9"="$4}'| sed 's^/[0-9]*^^'` )
 	echo -e "\tThere needs to be at least two Ethernet Inferfaces for the cluster"
@@ -413,7 +413,7 @@ function fixhosts {
 	grep ${MASTER_INTERNAL_IP}.master /etc/hosts > /dev/null || echo -e "$MASTER_INTERNAL_IP\tmaster" >> /etc/hosts
 }
 
-function calc-netmasks {
+function calc_netmasks {
 	# Figure out netmasks. This isn't line noise, honest.
 	EXTERNAL_CLASS=`ip -o addr | grep -v secondary | grep ${MASTER_EXTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_'`
 	INTERNAL_CLASS=`ip -o addr | grep -v secondary | grep ${MASTER_INTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_'`
@@ -422,7 +422,7 @@ function calc-netmasks {
 }
 
 
-function gen-corosync {
+function gen_corosync {
 	if [ $ISMASTER = YES ]; then 
 		INTERNAL_IP=$MASTER_INTERNAL_IP
 	else
@@ -476,7 +476,7 @@ aisexec {
 	/etc/init.d/pacemaker start
 }
 
-function config-corosync {
+function config_corosync {
 	# Now corosync and pacemaker are up, lets make them work!
 	echo -en "Configuring corosync\n\t(This may take up to 60 seconds, if the cluster isn't fully up yet)..."
 	while :; do
@@ -496,7 +496,7 @@ function config-corosync {
 	echo "Done"
 }
 
-function setup-drbd {
+function setup_drbd {
 	echo "DRBD:"
 	if [ ! -f /etc/drbd.conf ]; then
 		echo "Looks like drbd isn't installed. Install all the RPMs in the 'rpms' directory"
@@ -566,7 +566,7 @@ function setup-drbd {
 }
 
 
-function setup-mysql {
+function setup_mysql {
 	echo "MySQL..."
 	# First, can we connect to MySQL without a password?
 	if (mysql -equit >/dev/null 2>&1); then

@@ -1,6 +1,5 @@
-# No bang-hash, this shuld be . included from the main setup script.
-# Check to make sure it is.
-
+# No bang-hash, this is not a standalone script. This shuld only be 
+# . included from the main setup script.  Check to make sure it is.
 if  ! (type -t configure_lvm | grep function > /dev/null) ; then
 	echo "This script cannot be run natively. Run setup.sh"
 	exit
@@ -13,29 +12,30 @@ else
 fi 
 echo "Starting new cluster setup on $MYNAME."
 exit
+
 # Set up LVM
-configure-lvm
+configure_lvm
 
 # Check SSH keys, and regenerate if needed
-check-ssh
+check_ssh
 
 # Configure Networking
-config-networking
+config_networking
 
 # Fix hosts file
 fixhosts
 
 # Calculate Netmasks
-calc-netmasks
+calc_netmasks
 
 # Create basic corosync configuration
-gen-corosync
+gen_corosync
 
 # Configure Corosync
-config-corosync
+config_corosync
 
 # Configure DRBD
-setup-drbd
+setup_drbd
 exit
 
 
