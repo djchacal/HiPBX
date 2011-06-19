@@ -51,6 +51,8 @@ fi
 # Make the /etc/hipbx.d directory if it doesn't already exist.
 hipbx_init
 
+NEWCLUSTER=NO
+
 # Is this the master or slave server?
 if [ "$ISMASTER" = "" ]; then
 	echo "This appears to be a new install - /etc/hipbx.d/hipbx.conf doesn't exist."
@@ -79,9 +81,7 @@ if [ "$ISMASTER" = "" ]; then
 	fi
 	echo -n "Are you creating a new HiPBX cluster? [N/y]: "
 	read resp
-	if [ "$resp" = "" -o "$resp" = "N" -o "$resp" = "n" ]; then
-		NEWCLUSTER=NO
-	else
+	if [ "$resp" = "Y" -o "$resp" = "y" ]; then
 		NEWCLUSTER=YES
 	fi
 fi
@@ -89,7 +89,7 @@ fi
 # Set the hostname of the machine to be 'master' or 'slave'
 fix_hostname
 
-if [ "$NEWCLUSTER" = "" -o "$NEWCLUSTER" = "YES" ]; then
+if [ "$NEWCLUSTER" = "YES" ]; then
 	. scripts/setup-newcluster.sh
 else
 	. scripts/setup-joincluster.sh

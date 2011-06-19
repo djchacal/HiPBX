@@ -56,3 +56,5 @@ echo ISMASTER=$ISMASTER >> /etc/hipbx.d/hipbx.conf
 
 
 configure_lvm
+check_ssh
+add_ssh

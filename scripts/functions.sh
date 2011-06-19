@@ -131,6 +131,8 @@ function configure_lvm {
 		USED=`lvdisplay -C --noheadings --nosuffix --units g | grep drbd_${SERVICENAME[$x]} | awk ' { print $4 }'`
 		drbd_varname=drbd_${SERVICENAME[$x]}
 		if [ "$USED" != "" ]; then 
+			# Integerify USED.
+			USED=`printf %0.f $USED`
 			echo -n "Found (${USED}G)"
 			if [ "${!drbd_varname}" != "" -a ${USED} -lt ${!drbd_varname} ]; then
 				echo -e "\nSevere Error. Amount of disk space allocated to this volume is"
