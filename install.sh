@@ -17,6 +17,14 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+if [ "$1" = "--i-like-pain" ]; then
+        echo "Enabling Masochist mode - You can now allocate a DRBD collection less than 50G"
+        IHATEROB=true
+else
+        IHATEROB=false
+fi
+
+
 # Load functions from installer 
 . scripts/functions.sh
 
@@ -59,7 +67,7 @@ if [ "$ISMASTER" = "" ]; then
 	echo "save yourself a lot of effort if you set the one with the SMALLER"
 	echo "amount of disk as the MASTER, and install that machine first."
 	echo -n "Is this the Master or Slave server? [m/s]: "
-	read -e resp
+	read resp
 	if [ "$resp" = "" ]; then
 		echo "No default. You must select 'M'aster or 'S'lave."
 		exit
@@ -69,21 +77,19 @@ if [ "$ISMASTER" = "" ]; then
 	else
 		ISMASTER=NO
 	fi
-	echo -n "Are you creating a new HiPBX cluster? [Y/n]: "
-	read -e resp
-	if [ "$resp" = "" -o "$resp" = "Y" -o "$resp" = "y" ]; then
-		NEWCLUSTER=YES
-	else
+	echo -n "Are you creating a new HiPBX cluster? [N/y]: "
+	read resp
+	if [ "$resp" = "" -o "$resp" = "N" -o "$resp" = "n" ]; then
 		NEWCLUSTER=NO
+	else
+		NEWCLUSTER=YES
 	fi
 fi
 
 # Set the hostname of the machine to be 'master' or 'slave'
 fix_hostname
 
-echo ISMASTER=$ISMASTER >> /etc/hipbx.d/hipbx.conf
-
-if [ $NEWCLUSTER = YES ]; then
+if [ "$NEWCLUSTER" = "" -o "$NEWCLUSTER" = "YES" ]; then
 	. scripts/setup-newcluster.sh
 else
 	. scripts/setup-joincluster.sh

@@ -98,6 +98,8 @@ function configure_lvm {
 	# dhcpd = 10 (5G)
 	# spare = 10 (5G)
 	# Don't try to use decimals here. Integers only.
+	# Note that changing these AFTER the cluster has been built won't work. Create
+	# a new cluster. Remember how I said set aside LOTS OF SPACE? I wasn't kidding.
 	[ "$SERVICES" = "" ] && SERVICES=( mysql=30 asterisk=30 httpd=20 dhcpd=10 spare=10 )
 
 	# Parse the SERVICES variable into arrays
@@ -113,7 +115,7 @@ function configure_lvm {
 
 	if [ $SANITYSIZE -gt 100 ]; then
 		echo -e "Severe programmer fail.\n The total percentages of SERVICES is greater than 100."
-		echo -e " Please fix the SERVICES variable, and then poke yourself in the eye."
+		echo -e "Please fix the SERVICES variable, and then poke yourself in the eye."
 		exit
 	fi
 
@@ -123,18 +125,35 @@ function configure_lvm {
 	echo -e "\tChecking for existing LVM volumes for drbd..."
 	ALLOCATED=0
 	USEDSPACE=0
+	REQUIRED=0
 	for x in $(seq 0 $NBRSVCS); do
 		echo -ne "\t\t${SERVICENAME[$x]} - "
 		USED=`lvdisplay -C --noheadings --nosuffix --units g | grep drbd_${SERVICENAME[$x]} | awk ' { print $4 }'`
+		drbd_varname=drbd_${SERVICENAME[$x]}
 		if [ "$USED" != "" ]; then 
 			echo -n "Found (${USED}G)"
-			echo "drbd_${SERVICENAME[$x]}=${USED}" >> /etc/hipbx.d/hipbx.conf
+			if [ "${!drbd_varname}" != "" -a ${USED} -lt ${!drbd_varname} ]; then
+				echo -e "\nSevere Error. Amount of disk space allocated to this volume is"
+				echo "LESS than the amount required by DRBD. This will corrupt your"
+				echo "filesystem if you force it to work. Delete the existing volumes and"
+				echo "let the installer script recreate them"
+				exit
+			fi
+			if [ "${!drbd_varname}" != "" ]; then 
+				realspace=${!drbd_varname}
+			else
+				realspace=$USED
+			fi
+			echo "drbd_${SERVICENAME[$x]}=$realspace" >> /etc/hipbx.d/hipbx.conf
 			ALLOCATED=$(( $ALLOCATED + ${SERVICEPCNT[$x]} ))
-			USEDSPACE=$(( $USEDSPACE + `printf %0.f $USED` ))
+			USEDSPACE=$(( $USEDSPACE + `printf %0.f $realspace` ))
 			SELECTEDVG=`lvdisplay -C --noheadings --nosuffix --units g | grep drbd_${SERVICENAME[$x]} | awk ' { print $2 }'`
 		else
 			echo "Not Found"
 			LVMAKE=( ${LVMAKE[@]-} $x )
+			if [ "${!drbd_varname}" != "" ]; then
+				REQUIRED=$(( $REQURED + ${!drbd_varname} ))
+			fi
 		fi
 	done
 
@@ -168,9 +187,10 @@ function configure_lvm {
 		exit
 	fi
 	
-	MASTER_VGNAME=$SELECTEDVG
-	echo -ne "\tYou picked $VGNAME with ${VGSPACE}G free.\n\tWould you like to use all available space? [Yn]: "
+	echo -e "\tYou picked $VGNAME with ${VGSPACE}G free."
+	echo "\n\tWould you like to use all available space? [Yn]: "
 	read usespace
+
 	if [ "$usespace" = "" -o "$usespace" = "Y" -o "$usespace" = "y" ]; then
 		echo -e "\tUsing all ${VGSPACE}G available."
 	else
@@ -199,8 +219,13 @@ function configure_lvm {
 		BASESIZE=`printf %0.f $BASESIZE`
 		for x in $(seq 0 $(( ${#LVMAKE[@]} - 1 )) ) ; do
 			echo -ne "\t\t${SERVICENAME[${LVMAKE[$x]}]} "
-			lvsize=`echo ${BASESIZE}*.${SERVICEPCNT[${LVMAKE[$x]}]} - .5 | bc`
-			lvsize=`printf %0.f $lvsize`
+			drbdvar=drbd_${SERVICENAME[${LVMAKE[$x]}]}
+			if [ "${!drbdvar}" != "" ]; then
+				lvsize=${!drbdvar}
+			else
+				lvsize=`echo ${BASESIZE}*.${SERVICEPCNT[${LVMAKE[$x]}]} - .5 | bc`
+				lvsize=`printf %0.f $lvsize`
+			fi
 			echo "(${lvsize}G) "
 			if $(lvcreate -L${lvsize}g $VGNAME -n drbd_${SERVICENAME[${LVMAKE[$x]}]} > /dev/null); then
 				echo "drbd_${SERVICENAME[${LVMAKE[$x]}]}=${lvsize}" >> /etc/hipbx.d/hipbx.conf
@@ -213,8 +238,12 @@ function configure_lvm {
 			fi
 		done
 	fi
-	echo MASTER_VGNAME=$SELECTEDVG >> /etc/hipbx.d/hipbx.conf
-	MASTER_VGNAME=$SELECTEDVG
+	if [ $ISMASTER = YES ]; then
+		echo MASTER_VGNAME=$SELECTEDVG >> /etc/hipbx.d/hipbx.conf
+	else
+		echo SLAVE_VGNAME=$SELECTEDVG >> /etc/hipbx.d/hipbx.conf
+	fi
+	MY_VGNAME=$SELECTEDVG
 }
 
 function check_ssh {
@@ -247,6 +276,24 @@ function check_ssh {
 	echo "SSH_KEY=\"$SSH_KEY\"" >> /etc/hipbx.d/hipbx.conf
 }
 
+function add_ssh {
+	if [ ! -f $HOME/.ssh/authorized_keys ]; then
+		echo -n "Creating SSH authorized_keys file on local machine..."
+		# Authorized Keys file doesn't exist. Create it.
+		cp /etc/hipbx.d/ssh_key_master.pub $HOME/.ssh/authorized_keys
+		echo "Done"
+	else
+		# It exists. Check to see if our key is in there
+		if grep "$SSH_KEY" $HOME/.ssh/authorized_keys > /dev/null; then
+			echo "HiPBX SSH Key already exists in authorized_keys"
+		else
+			echo -n "Adding HiPBX SSH Key to authorized_keys..."
+			cat /etc/hipbx.d/ssh_key_master.pub >> $HOME/.ssh/authorized_keys
+			echo "Done"
+		fi
+	fi
+}
+	
 
 function config_networking {
 	echo "Networking:"
