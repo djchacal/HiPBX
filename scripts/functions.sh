@@ -168,7 +168,7 @@ function configure_lvm {
 			SELECTEDVG=`lvdisplay -C --noheadings --nosuffix --units g | grep drbd_${SERVICENAME[$x]} | awk ' { print $2 }'`
 		else
 			echo "Not Found"
-			LVMAKE=( ${LVMAKE[@]-} $x 0)
+			LVMAKE=( ${LVMAKE[@]-} $x )
 			if [ "$presize" != "0" ]; then
 				REQUIRED=$(( $REQURED + $presize ))
 			fi
