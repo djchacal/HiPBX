@@ -236,8 +236,8 @@ function configure_lvm {
 		done
 		if [ $NEEDEDSPACE -gt $VGSPACE ]; then
 			echo "A problem has occured."
-			echo "The amount of space needed by DRBD - ${NEEDEDSPACE}G - according to /etc/hipbx.d/hipbx.conf"
-			echo "exceeds the amount of space you have requested - ${VGSPACE}G."
+			echo "The amount of space needed by DRBD (${NEEDEDSPACE}G) - according to /etc/hipbx.d/hipbx.conf"
+			echo "exceeds the amount of space you have requested (${VGSPACE}G)"
 			exit
 		fi
 
