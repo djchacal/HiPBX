@@ -524,7 +524,7 @@ function config_corosync {
 	for x in $(seq 0 $NBRSVCS); do
 		CLUSTER=${SERVICENAME[$x]}_IP
 		echo -en "\tCreating Cluster IP ${CLUSTER}.."
-		crm configure primitive ip_${SERVICENAME[$x]} ocf:heartbeat:IPaddr2 params ip=${!CLUSTER} cidr_netmask=$INTERNAL_CLASS op monitor interval=10s
+		crm configure primitive ip_${SERVICENAME[$x]} ocf:heartbeat:IPaddr2 params ip=${!CLUSTER} cidr_netmask=$INTERNAL_CLASS op monitor interval=59s
 		echo "Done"
 	done
 	echo "Done"
@@ -582,7 +582,7 @@ function setup_drbd {
 			fi
 			crm configure primitive drbd_${SERVICENAME[$x]} ocf:linbit:drbd \
 				params drbd_resource="${SERVICENAME[$x]}" \
-				op monitor interval="10s" > /dev/null 2>&1
+				op monitor interval="59s" > /dev/null 2>&1
 			crm configure ms ms_drbd_${SERVICENAME[$x]} drbd_${SERVICENAME[$x]} \
 				meta master-max="1" \
 				master-node-max="1" \
