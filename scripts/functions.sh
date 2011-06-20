@@ -22,6 +22,9 @@ function cfg {
 	VARNAME=$1
 	VARVAL=$2
 	[ ! -f /etc/hipbx.d/hipbx.conf ] && touch /etc/hipbx.d/hipbx.conf
+	# dualbus on freeode's #bash clued me up on this handy trick.
+	# Set the variable in the running bash.
+	printf -v "$VARNAME" $VARVAL
 	if [[ $VARVAL != \(* ]]; then
 		VARVAL=\"$VARVAL\"
 	fi
@@ -30,9 +33,6 @@ function cfg {
 	else
 		echo ${VARNAME}=$VARVAL >> /etc/hipbx.d/hipbx.conf
 	fi
-	# dualbus on freeode's #bash clued me up on this handy trick.
-	# Set the variable in the running bash.
-	printf -v "$VARNAME" $VARVAL
 }
 
 function selinux {
@@ -72,7 +72,10 @@ function disableall {
 	service iptables status > /dev/null && service iptables stop
 	chkconfig drbd off
 	service drbd status > /dev/null && service drbd stop
-	modprobe drbd
+	if ! modprobe drbd > /dev/null 2>&1; then
+		echo "Unable to load DRBD module. Please install DRBD rpms"
+		exit
+	fi
 }
 
 
