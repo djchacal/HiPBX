@@ -30,6 +30,9 @@ function cfg {
 	else
 		echo ${VARNAME}=$VARVAL >> /etc/hipbx.d/hipbx.conf
 	fi
+	# dualbus on freeode's #bash clued me up on this handy trick.
+	# Set the variable in the running bash.
+	printf -v "$VARNAME" $VARVAL
 }
 
 function selinux {
