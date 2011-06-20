@@ -1,5 +1,5 @@
 #!/bin/bash
-. /etc/hipbx.conf
+. /etc/hipbx.d/hipbx.conf
 
 for x in /drbd/*; do
 	umount $x
