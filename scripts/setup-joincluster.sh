@@ -58,3 +58,5 @@ echo ISMASTER=$ISMASTER >> /etc/hipbx.d/hipbx.conf
 configure_lvm
 check_ssh
 add_ssh
+gen_corosync
+setup_drbd
