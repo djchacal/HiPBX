@@ -603,7 +603,8 @@ function setup_drbd {
 				echo "Done"
 			fi
 			crm configure primitive drbd_${SERVICENAME[$x]} ocf:linbit:drbd \
-				params drbd_resource="${SERVICENAME[$x]}" \
+				params drbd_resource="${SERVICENAME[$x]}" target_role="Stopped" \
+				notify="true" \
 				op monitor interval="59s" > /dev/null 2>&1
 			crm configure ms ms_drbd_${SERVICENAME[$x]} drbd_${SERVICENAME[$x]} \
 				meta master-max="1" \
@@ -613,11 +614,12 @@ function setup_drbd {
 				notify="true" > /dev/null 2>&1
 			crm configure primitive fs_${SERVICENAME[$x]} ocf:heartbeat:Filesystem \
 				params device="/dev/drbd$x" \
+				target_role="Stopped" \
 				directory="/drbd/${SERVICENAME[$x]}" \
 				fstype="ext4" > /dev/null 2>&1
 			crm configure location loc_${SERVICENAME[$x]} ms_drbd_${SERVICENAME[$x]} rule role=master 100: \#uname eq master
 			crm configure group ${SERVICENAME[$x]} fs_${SERVICENAME[$x]} ip_${SERVICENAME[$x]} > /dev/null 2>&1
-			crm configure order order-${SERVICENAME[$x]} inf: ms_drbd_${SERVICENAME[$x]}:promote ${SERVICENAME[$x]}:start
+			crm configure order order-${SERVICENAME[$x]} inf: ms_drbd_${SERVICENAME[$x]} ${SERVICENAME[$x]}:start
 			crm configure colocation colo-${SERVICENAME[$x]} inf: ms_drbd_${SERVICENAME[$x]} fs_${SERVICENAME[$x]}
 			crm_resource --resource fs_${SERVICENAME[$x]} -C > /dev/null 2>&1
 		else
