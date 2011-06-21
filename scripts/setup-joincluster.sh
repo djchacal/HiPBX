@@ -1,4 +1,4 @@
-# No bang-hash, this is not a standalone script. Do not put one here, thinking it's an error.
+# No hash-bang, this is not a standalone script. Do not put one here, thinking it's an error.
 
 #  HiPBX Installer Script - Join an existing cluster.
 #  Copyright 2011, Rob Thomas <xrobau@gmail.com>
@@ -32,10 +32,10 @@ echo "the current cluster configuration. No changes will me made to the running"
 echo "node."
 echo -n "Please enter any IP address of the other node in the cluster: "
 read otherip
-if ! arping -w1 -fq $otherip ; then
-	echo "Unable to ping other node. Check IP address and connectivity"
-	exit
-fi
+#$if ! arping -w1 -fq $otherip ; then
+#$	echo "Unable to ping other node. Check IP address and connectivity"
+#$	exit
+#fi
 echo "I will now retrieve the contents of the /etc/hipbx.d directory from"
 echo "the other node, using SSH. You may be prompted to verify the host key,"
 echo "and then for the root password."
