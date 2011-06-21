@@ -2,27 +2,26 @@ node master
 node slave
 primitive drbd_asterisk ocf:linbit:drbd \
         params drbd_resource="asterisk" \
-        op monitor interval="59s" notify="true" \
-        meta target-role="Stopped"
+        op monitor interval="59s" notify="true"
 primitive fs_asterisk ocf:heartbeat:Filesystem \
-        params device="/dev/drbd0" directory="/drbd/asterisk" fstype="ext4" \
-        meta target-role="Stopped"
+        params device="/dev/drbd1" directory="/drbd/asterisk" fstype="ext4" \
+        meta target-role="Started" \
+        op monitor interval="59s" notify="true"
 primitive ip_asterisk ocf:heartbeat:IPaddr2 \
         params ip="10.4.100.2" cidr_netmask="24" \
         op monitor interval="59s" notify="true" \
-        meta target-role="Stopped"
+        meta target-role="Started"
+group asterisk fs_asterisk ip_asterisk
 ms ms_drbd_asterisk drbd_asterisk \
-        meta master-max="1" master-node-max="1" clone-max="2" clone-node-max="1" target-role="Stopped"
-colocation colo-asterisk-1 inf: ms_drbd_asterisk fs_asterisk
-colocation colo-asterisk-2 inf: fs_asterisk ip_asterisk
-order order-asterisk-1 inf: ms_drbd_asterisk:promote fs_asterisk:start
-order order-asterisk-2 inf: fs_asterisk:promote ip_asterisk:start
+        meta master-max="1" master-node-max="1" clone-max="2" clone-node-max="1" target-role="Started" notify="true"
+order order-asterisk-1 inf: ms_drbd_asterisk:promote asterisk:start
 property $id="cib-bootstrap-options" \
         dc-version="1.1.2-f059ec7ced7a86f18e5490b67ebf4a0b963bccfe" \
         cluster-infrastructure="openais" \
         expected-quorum-votes="2" \
         stonith-enabled="false" \
         no-quorum-policy="ignore" \
-        default-action-timeout="240"
+        default-action-timeout="240" \
+        last-lrm-refresh="1308643646"
 rsc_defaults $id="rsc-options" \
         resource-stickiness="100"
