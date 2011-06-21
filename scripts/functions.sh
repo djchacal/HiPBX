@@ -542,6 +542,11 @@ function config_corosync {
 	crm configure property no-quorum-policy=ignore
 	crm configure property default-action-timeout=240
 	crm configure rsc_defaults resource-stickiness=100
+	if [ "$ISMASTER" = "YES" ]; then
+		crm node standby master
+	else
+		crm node standby slave
+	fi
 
 	for x in $(seq 0 $NBRSVCS); do
 		CLUSTER=${SERVICENAME[$x]}_IP
@@ -604,18 +609,17 @@ function setup_drbd {
 			fi
 			crm configure primitive drbd_${SERVICENAME[$x]} ocf:linbit:drbd \
 				params drbd_resource="${SERVICENAME[$x]}" \
-				op monitor interval="59s" notify="true" > /dev/null 2>&1
+				op monitor interval="15s" notify="true"
 			crm configure ms ms_drbd_${SERVICENAME[$x]} drbd_${SERVICENAME[$x]} \
 				meta master-max="1" master-node-max="1" clone-max="2" \
-				clone-node-max="1" target role="Stopped" \
-				notify="true" > /dev/null 2>&1
+				clone-node-max="1" notify="true"
 			crm configure primitive fs_${SERVICENAME[$x]} ocf:heartbeat:Filesystem \
 				params device="/dev/drbd$x" directory="/drbd/${SERVICENAME[$x]}" \
 				fstype="ext4" \
-				meta target_role="Stopped"  > /dev/null 2>&1
-			crm configure group ${SERVICENAME[$x]} fs_${SERVICENAME[$x]} ip_${SERVICENAME[$x]} > /dev/null 2>&1
+				op monitor interval="59s" notify="true"
+			crm configure group ${SERVICENAME[$x]} fs_${SERVICENAME[$x]} ip_${SERVICENAME[$x]}
 			crm configure colocation colo-${SERVICENAME[$x]} inf: ${SERVICENAME[$x]} ms_drbd_${SERVICENAME[$x]}:Master
-			crm configure order order-${SERVICENAME[$x]} inf: ms_drbd_${SERVICENAME[$x]} ${SERVICENAME[$x]}:start
+			crm configure order order-${SERVICENAME[$x]} inf: ms_drbd_${SERVICENAME[$x]}:promote ${SERVICENAME[$x]}:start
 		else
 			drbdadm up  ${SERVICENAME[$x]}
 		fi
