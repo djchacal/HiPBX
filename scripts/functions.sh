@@ -546,7 +546,7 @@ function config_corosync {
 	for x in $(seq 0 $NBRSVCS); do
 		CLUSTER=${SERVICENAME[$x]}_IP
 		echo -en "\tCreating Cluster IP ${CLUSTER}.."
-		crm configure primitive ip_${SERVICENAME[$x]} ocf:heartbeat:IPaddr2 params ip=${!CLUSTER} cidr_netmask=$INTERNAL_CLASS op monitor interval=59s
+		crm configure primitive ip_${SERVICENAME[$x]} ocf:heartbeat:IPaddr2 params ip=${!CLUSTER} cidr_netmask=$INTERNAL_CLASS op monitor interval=59s notify="true"
 		echo "Done"
 	done
 	echo "Done"
@@ -603,25 +603,19 @@ function setup_drbd {
 				echo "Done"
 			fi
 			crm configure primitive drbd_${SERVICENAME[$x]} ocf:linbit:drbd \
-				params drbd_resource="${SERVICENAME[$x]}" target_role="Stopped" \
-				notify="true" \
-				op monitor interval="59s" > /dev/null 2>&1
+				params drbd_resource="${SERVICENAME[$x]}" \
+				op monitor interval="59s" notify="true" > /dev/null 2>&1
 			crm configure ms ms_drbd_${SERVICENAME[$x]} drbd_${SERVICENAME[$x]} \
-				meta master-max="1" \
-				master-node-max="1" \
-				clone-max="2" \
-				clone-node-max="1" \
+				meta master-max="1" master-node-max="1" clone-max="2" \
+				clone-node-max="1" target role="Stopped" \
 				notify="true" > /dev/null 2>&1
 			crm configure primitive fs_${SERVICENAME[$x]} ocf:heartbeat:Filesystem \
-				params device="/dev/drbd$x" \
-				target_role="Stopped" \
-				directory="/drbd/${SERVICENAME[$x]}" \
-				fstype="ext4" > /dev/null 2>&1
-			crm configure location loc_${SERVICENAME[$x]} ms_drbd_${SERVICENAME[$x]} rule role=master 100: \#uname eq master
+				params device="/dev/drbd$x" directory="/drbd/${SERVICENAME[$x]}" \
+				fstype="ext4" \
+				meta target_role="Stopped"  > /dev/null 2>&1
 			crm configure group ${SERVICENAME[$x]} fs_${SERVICENAME[$x]} ip_${SERVICENAME[$x]} > /dev/null 2>&1
+			crm configure colocation colo-${SERVICENAME[$x]} inf: ${SERVICENAME[$x]} ms_drbd_${SERVICENAME[$x]}:Master
 			crm configure order order-${SERVICENAME[$x]} inf: ms_drbd_${SERVICENAME[$x]} ${SERVICENAME[$x]}:start
-			crm configure colocation colo-${SERVICENAME[$x]} inf: ms_drbd_${SERVICENAME[$x]} fs_${SERVICENAME[$x]}
-			crm_resource --resource fs_${SERVICENAME[$x]} -C > /dev/null 2>&1
 		else
 			drbdadm up  ${SERVICENAME[$x]}
 		fi
