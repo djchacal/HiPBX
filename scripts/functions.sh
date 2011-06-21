@@ -203,30 +203,46 @@ function configure_lvm {
 			fi
 		done
 	
-	if [ $SELECTEDVG = not-found ]; then
-		echo "Unfortunately, we couldn't agree on a VG to use. That's something you'll need to take up with your LVM."
-		exit
-	fi
-	
-	echo -e "\tYou picked $VGNAME with ${VGSPACE}G free."
-	echo -en "\n\tWould you like to use all available space? [Yn]: "
-	read usespace
-
-	if [ "$usespace" = "" -o "$usespace" = "Y" -o "$usespace" = "y" ]; then
-		echo -e "\tUsing all ${VGSPACE}G available."
-	else
-		echo -ne "\tHow much space would you like to use (in Gigabytes, minimum 50) [50]: "
-		read wantedspace
-		[ "$wantedspace" == "" ] && wantedspace=50
-		if [ $IHATEROB = false -a $(echo "$wantedspace < 50" | bc) -eq 1 ]; then
-			echo -e "\tLook. You can't expand a DRBD volume. You REALLY want to give it as much"
-			echo -e "\tspace as you can at the start. If you ABSOLUTELY MUST use less than 50G,"
-			echo -e "\trestart install.sh with the parameter --i-like-pain. That will bypass this"
-			echo -e "\tmessage"
+		if [ $SELECTEDVG = not-found ]; then
+			echo "Unfortunately, we couldn't agree on a VG to use. That's something you'll need to take up with your LVM."
 			exit
 		fi
-		VGSPACE=$wantedspace
-	fi
+	
+		echo -e "\tYou picked $VGNAME with ${VGSPACE}G free."
+		echo -en "\n\tWould you like to use all available space? [Yn]: "
+		read usespace
+
+		if [ "$usespace" = "" -o "$usespace" = "Y" -o "$usespace" = "y" ]; then
+			echo -e "\tUsing all ${VGSPACE}G available."
+		else
+			echo -ne "\tHow much space would you like to use (in Gigabytes, minimum 50) [50]: "
+			read wantedspace
+			[ "$wantedspace" == "" ] && wantedspace=50
+			if [ $IHATEROB = false -a $(echo "$wantedspace < 50" | bc) -eq 1 ]; then
+				echo -e "\tLook. You can't expand a DRBD volume. You REALLY want to give it as much"
+				echo -e "\tspace as you can at the start. If you ABSOLUTELY MUST use less than 50G,"
+				echo -e "\trestart install.sh with the parameter --i-like-pain. That will bypass this"
+				echo -e "\tmessage"
+				exit
+			fi
+			VGSPACE=$wantedspace
+		fi
+
+		# Check if the amount of space wanted is less than the amount needed.
+		NEEDEDSPACE=0
+		for x in $(seq 0 $NBRSVCS); do
+			#echo -ne "\t\t${SERVICENAME[$x]} - "
+			if [ ! "drbd_${SERVICENAME[$x]}" = "" ]; then
+				varname=drbd_${SERVICENAME[$x]}
+				NEEDEDSPACE=$(( $NEEDEDSPACE +  ${!varname} ))
+			fi
+		done
+		if [ $NEEDEDSPACE -gt $VGSPACE ]; then
+			echo "A problem has occured."
+			echo "The amount of space needed by DRBD - ${NEEDEDSPACE}G - according to /etc/hipbx.d/hipbx.conf"
+			echo "exceeds the amount of space you have requested - ${VGSPACE}G."
+			exit
+		fi
 
 		echo -e "\tCreating LVs..."
 		# Calculate how much is allocated already, and base our calculations off that.
