@@ -616,7 +616,7 @@ function setup_drbd {
 				fstype="ext4" \
 				op monitor interval="59s" notify="true"\
 				meta target-role="Stopped"
-			crm configure group ${SERVICENAME[$x]} fs_${SERVICENAME[$x]} ip_${SERVICENAME[$x]}
+			crm configure group ${SERVICENAME[$x]} fs_${SERVICENAME[$x]} ip_${SERVICENAME[$x]} meta target-role="Stopped"
 			crm configure colocation colo-${SERVICENAME[$x]} inf: ${SERVICENAME[$x]} ms_drbd_${SERVICENAME[$x]}:Master
 			crm configure order order-${SERVICENAME[$x]} inf: ms_drbd_${SERVICENAME[$x]}:promote ${SERVICENAME[$x]}:start
 			# For some reason, an error always occurs when you create a DRBD RA. Clean it up.
@@ -757,9 +757,6 @@ function mysql_install {
 	done
 	printf "\bOK - $mysql_mount\n"
 	sync
-	echo -n "Pausing for 1 second to wait for filesystem to stabilise..."
-	sleep 1
-	echo
 	
 	if [ "$mysql_mount" = "/drbd/mysql" ]; then
 		# This is a new install
@@ -774,6 +771,7 @@ function mysql_install {
 	else
 		echo -e "\tData move not needed"
 	fi
-	# Add MySQL RA to the MySQL :wq
-
+	# Add MySQL RA
+	crm configure primitive mysqld lsb:mysqld meta target-role="Stopped"
+	echo group mysql fs_mysql ip_mysql mysqld | crm configure load-update - 
 }
