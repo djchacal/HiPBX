@@ -551,7 +551,7 @@ function config_corosync {
 	for x in $(seq 0 $NBRSVCS); do
 		CLUSTER=${SERVICENAME[$x]}_IP
 		echo -en "\tCreating Cluster IP ${CLUSTER}.."
-		crm configure primitive ip_${SERVICENAME[$x]} ocf:heartbeat:IPaddr2 params ip=${!CLUSTER} cidr_netmask=$INTERNAL_CLASS op monitor interval=59s notify="true"
+		crm configure primitive ip_${SERVICENAME[$x]} ocf:heartbeat:IPaddr2 params ip=${!CLUSTER} cidr_netmask=32 op monitor interval=59s notify="true"
 		echo "Done"
 	done
 	echo "Done"
@@ -621,6 +621,8 @@ function setup_drbd {
 			crm configure colocation colo-${SERVICENAME[$x]} inf: ${SERVICENAME[$x]} ms_drbd_${SERVICENAME[$x]}:Master
 			crm configure order order-${SERVICENAME[$x]} inf: ms_drbd_${SERVICENAME[$x]}:promote ${SERVICENAME[$x]}:start
 		else
+			# Invalidate the local drbd volume. We don't know what's there. Blow it away!
+			echo yes|drbdadm create-md  ${SERVICENAME[$x]} > /dev/null  2>&1
 			drbdadm up  ${SERVICENAME[$x]}
 		fi
 	done
