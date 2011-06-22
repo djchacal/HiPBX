@@ -541,7 +541,7 @@ function config_corosync {
 		spinner
 		sleep 1;
 	done
-	printf "\bUp!"
+	printf "\bUp!\n"
 	this_node_standby
 	crm configure property stonith-enabled=false
 	crm configure property no-quorum-policy=ignore
