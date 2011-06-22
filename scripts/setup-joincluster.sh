@@ -32,10 +32,10 @@ echo "the current cluster configuration. No changes will me made to the running"
 echo "node."
 echo -n "Please enter any IP address of the other node in the cluster: "
 read otherip
-#$if ! arping -w1 -fq $otherip ; then
-#$	echo "Unable to ping other node. Check IP address and connectivity"
-#$	exit
-#fi
+if ! ping -w1 -q $otherip ; then
+	echo "Unable to ping other node. Check IP address and connectivity"
+	exit
+fi
 echo "I will now retrieve the contents of the /etc/hipbx.d directory from"
 echo "the other node, using SSH. You may be prompted to verify the host key,"
 echo "and then for the root password."
@@ -47,9 +47,7 @@ if [ ! -f /etc/hipbx.d/hipbx.conf ]; then
 	exit
 fi
 
-# Yes, I know. But the last one takes precedence over the first. So it doesn't
-# matter what is actually in the file.
-echo ISMASTER=$ISMASTER >> /etc/hipbx.d/hipbx.conf
+cfg ISMASTER $ISMASTER 
 
 # Load our configuration. Huzzah! 
 . /etc/hipbx.d/hipbx.conf

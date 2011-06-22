@@ -542,16 +542,11 @@ function config_corosync {
 		sleep 1;
 	done
 	printf "\bUp!"
+	this_node_standby
 	crm configure property stonith-enabled=false
 	crm configure property no-quorum-policy=ignore
 	crm configure property default-action-timeout=240
 	crm configure rsc_defaults resource-stickiness=100
-	if [ "$ISMASTER" = "YES" ]; then
-		crm node standby master
-	else
-		crm node standby slave
-	fi
-
 	for x in $(seq 0 $NBRSVCS); do
 		CLUSTER=${SERVICENAME[$x]}_IP
 		echo -en "\tCreating Cluster IP ${CLUSTER}.."
@@ -710,4 +705,14 @@ function spinner {
 	chars="${chars#?}${chars%???}"
 	printf '\b%.1s' "$chars"
 }
+
+function this_node_standby {
+
+	if [ "$ISMASTER" = "YES" ]; then
+		crm node standby master
+	else
+		crm node standby slave
+	fi
+}
+
 
