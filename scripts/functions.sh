@@ -622,6 +622,8 @@ function setup_drbd {
 			crm configure group ${SERVICENAME[$x]} fs_${SERVICENAME[$x]} ip_${SERVICENAME[$x]}
 			crm configure colocation colo-${SERVICENAME[$x]} inf: ${SERVICENAME[$x]} ms_drbd_${SERVICENAME[$x]}:Master
 			crm configure order order-${SERVICENAME[$x]} inf: ms_drbd_${SERVICENAME[$x]}:promote ${SERVICENAME[$x]}:start
+			# For some reason, an error always occurs when you create a DRBD RA. Clean it up.
+			crm_resource --resource drbd_${SERVICENAME[$x]} -C > /dev/null 2>&1
 		else
 			# Invalidate the local drbd volume. We don't know what's there. Blow it away!
 			echo yes|drbdadm create-md  ${SERVICENAME[$x]} > /dev/null  2>&1
