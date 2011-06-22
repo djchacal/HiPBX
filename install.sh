@@ -76,8 +76,11 @@ if [ "$ISMASTER" = "" ]; then
 	fi
 	if [ "$resp" = "M" -o "$resp" = "m" ]; then
 		ISMASTER=YES
-	else
+	elif [ "$resp" = "S" -o "$resp" = "s" ]; then
 		ISMASTER=NO
+	else 
+		echo "Sorry. You must select 'M'aster or 'Slave'."
+		exit
 	fi
 	echo -n "Are you creating a new HiPBX cluster? [N/y]: "
 	read resp
