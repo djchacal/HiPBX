@@ -438,7 +438,7 @@ function config_networking {
 	echo "Configure Services"
 	echo -e "\tPlease enter the IP Addresses for the HiPBX Services. These addresses"
 	echo -e "\tshould NOT already exist, and they will be assigned to the interface"
-	echo -e "\tyou previously tselected ($MASTER_EXTERNAL_INT). These will be the"
+	echo -e "\tyou previously selected ($MASTER_EXTERNAL_INT). These will be the"
 	echo -e "\t'floating' addresses that are linked to a service, rather than a"
 	echo -e "\tmachine. Please don't duplicate IP addresses when assigning them."
 	for x in $(seq 0 $NBRSVCS); do
