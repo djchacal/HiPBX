@@ -15,6 +15,7 @@ crm configure erase
 rm -f /var/lib/heartbeat/crm/*
 for x in /etc/drbd.d/*.res
  do
+  drbdadm down `echo $x|sed 's_/etc/drbd.d/\(.*\).res_\1_'`
   echo yes|drbdadm wipe-md `echo $x|sed 's_/etc/drbd.d/\(.*\).res_\1_'`
  done
 rm -f /etc/drbd.d/*.res
