@@ -32,9 +32,12 @@ echo "the current cluster configuration. No changes will me made to the running"
 echo "node."
 echo -n "Please enter any IP address of the other node in the cluster: "
 read otherip
-if ! ping -w1 -q $otherip ; then
-	echo "Unable to ping other node. Check IP address and connectivity"
+echo -n "Checking if machine is reachable..."
+if ! ping -w1 -q $otherip > /dev/null; then
+	echo -e "Fail.\nUnable to ping other node. Check IP address and connectivity"
 	exit
+else
+	echo "Up."
 fi
 echo "I will now retrieve the contents of the /etc/hipbx.d directory from"
 echo "the other node, using SSH. You may be prompted to verify the host key,"
@@ -57,4 +60,5 @@ configure_lvm
 check_ssh
 add_ssh
 gen_corosync
+this_node_standby
 setup_drbd
