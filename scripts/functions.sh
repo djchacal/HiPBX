@@ -234,12 +234,13 @@ function configure_lvm {
 		# Check if the amount of space wanted is less than the amount needed.
 		NEEDEDSPACE=0
 		for x in $(seq 0 $NBRSVCS); do
-			#echo -ne "\t\t${SERVICENAME[$x]} - "
-			if [ ! "drbd_${SERVICENAME[$x]}" = "" ]; then
-				varname=drbd_${SERVICENAME[$x]}
+			varname=drbd_${SERVICENAME[$x]}
+			if [ "${!varname}" != "" ]; then
 				NEEDEDSPACE=$(( $NEEDEDSPACE +  ${!varname} ))
 			fi
 		done
+		# Integerify VGSPACE
+		VGSPACE=`printf %0.f $VGSPACE`
 		if [ $NEEDEDSPACE -gt $VGSPACE ]; then
 			echo "A problem has occured."
 			echo "The amount of space needed by DRBD (${NEEDEDSPACE}G) - according to /etc/hipbx.d/hipbx.conf"
@@ -467,6 +468,7 @@ function fixhosts {
 	echo -en "\tUpdating hosts file..."
 	grep ${SLAVE_INTERNAL_IP}.slave /etc/hosts > /dev/null || echo -e "$SLAVE_INTERNAL_IP\tslave" >> /etc/hosts
 	grep ${MASTER_INTERNAL_IP}.master /etc/hosts > /dev/null || echo -e "$MASTER_INTERNAL_IP\tmaster" >> /etc/hosts
+	echo "Done"
 }
 
 function calc_netmasks {
@@ -539,7 +541,7 @@ function config_corosync {
 		spinner
 		sleep 1;
 	done
-	echo "Up!"
+	printf "\bUp!"
 	crm configure property stonith-enabled=false
 	crm configure property no-quorum-policy=ignore
 	crm configure property default-action-timeout=240
@@ -556,7 +558,6 @@ function config_corosync {
 		crm configure primitive ip_${SERVICENAME[$x]} ocf:heartbeat:IPaddr2 params ip=${!CLUSTER} cidr_netmask=32 op monitor interval=59s notify="true"
 		echo "Done"
 	done
-	echo "Done"
 }
 
 function setup_drbd {
