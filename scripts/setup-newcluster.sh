@@ -31,6 +31,9 @@ else
 fi 
 echo "Starting new cluster setup on $MYNAME."
 
+# Sanity check for required packages
+mysql_validate
+
 # Set up LVM
 configure_lvm
 
@@ -57,6 +60,13 @@ config_corosync
 
 # Configure DRBD
 setup_drbd
+
+# Start this node
+this_node_online
+
+# Do MySQL
+mysql_install
+
 exit
 
 

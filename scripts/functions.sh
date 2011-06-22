@@ -609,12 +609,13 @@ function setup_drbd {
 				params drbd_resource="${SERVICENAME[$x]}" \
 				op monitor interval="15s" notify="true"
 			crm configure ms ms_drbd_${SERVICENAME[$x]} drbd_${SERVICENAME[$x]} \
-				meta master-max="1" master-node-max="1" clone-max="2" \
+				meta master-max="1" master-node-max="1" clone-max="2" target-role="Stopped"\
 				clone-node-max="1" notify="true"
 			crm configure primitive fs_${SERVICENAME[$x]} ocf:heartbeat:Filesystem \
 				params device="/dev/drbd$x" directory="/drbd/${SERVICENAME[$x]}" \
 				fstype="ext4" \
-				op monitor interval="59s" notify="true"
+				op monitor interval="59s" notify="true"\
+				meta target-role="Stopped"
 			crm configure group ${SERVICENAME[$x]} fs_${SERVICENAME[$x]} ip_${SERVICENAME[$x]}
 			crm configure colocation colo-${SERVICENAME[$x]} inf: ${SERVICENAME[$x]} ms_drbd_${SERVICENAME[$x]}:Master
 			crm configure order order-${SERVICENAME[$x]} inf: ms_drbd_${SERVICENAME[$x]}:promote ${SERVICENAME[$x]}:start
@@ -715,4 +716,64 @@ function this_node_standby {
 	fi
 }
 
+function this_node_online {
 
+	if [ "$ISMASTER" = "YES" ]; then
+		crm node online master
+	else
+		crm node online slave
+	fi
+}
+
+function mysql_validate {
+	# Check to make sure the required RPM's are installed.
+	ISOK=false
+	rpm -q mysql-server > /dev/null && ISOK=true
+}
+
+function mysql_install {
+	echo "Starting MySQL Filesystem..."
+	crm resource start ms_drbd_mysql
+	crm resource start fs_mysql
+	# Make sure that I am the machine managing the resource
+	echo "Migrating resource to this server..."
+	crm resource migrate fs_mysql `hostname` >/dev/null 2>&1
+	# Check to see where the DRBD mysql resource is mounted, when it turns up.
+	echo "Relocating MySQL data to Cluster Filesystem... "
+	echo -en "\tFinding mountpoint..."
+	mysql_mount=`grep /dev/drbd0 /proc/mounts | cut -d\  -f2`
+	mount_count=0
+	while [ "$mysql_mount" = "" ]; do
+		if [ $mount_count -gt 30 ]; then
+			echo -e "Error.\nI've waited 30 seconds for the drbd disk to be ready. Please fix the disk"
+			echo "and run again."
+			echo "Timeout waiting for Pacemaker to mount /dev/drbd0 somewhere."
+			exit
+		fi
+		spinner
+		sleep 1
+		mysql_mount=`grep drbd0 /proc/mounts | cut -d\  -f2`
+		mount_count=$(( $mount_count + 1 ))
+	done
+	printf "\bOK - $mysql_mount\n"
+	sync
+	echo -n "Pausing for 1 second to wait for filesystem to stabilise..."
+	sleep 1
+	echo
+	
+	if [ "$mysql_mount" = "/drbd/mysql" ]; then
+		# This is a new install
+		# Check to see if MySQL has stuff in /var/lib/mysql, and migrate it if it does.
+		if [ -d /var/lib/mysql/mysql ]; then
+			mv /var/lib/mysql/* /drbd/mysql
+		fi
+		# Now we have everything in /drbd/mysql, Tell pacemaker the new location.
+		crm resource stop fs_mysql
+		crm resource param fs_mysql set directory "/var/lib/mysql"
+		crm resource start fs_mysql
+	else
+		echo -e "\tData move not needed"
+	fi
+	# Add MySQL RA to the MySQL :wq
+
+}
