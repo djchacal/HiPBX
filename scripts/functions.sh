@@ -602,7 +602,7 @@ function setup_drbd {
 				echo -e "\t\tFilesystem OK"
 			else
 				echo -ne "\t\tCreating filesystem..."
-				mkfs.ext4 -L drbd_${SERVICENAME[$x]} -M /drbd/${SERVICENAME[$x]} /dev/drbd$x >/dev/null 2>&1
+				mkfs.ext4 -j -L drbd_${SERVICENAME[$x]} -M /drbd/${SERVICENAME[$x]} /dev/drbd$x >/dev/null 2>&1
 				echo "Done"
 			fi
 			crm configure primitive drbd_${SERVICENAME[$x]} ocf:linbit:drbd \
