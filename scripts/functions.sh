@@ -534,11 +534,13 @@ aisexec {
 
 function config_corosync {
 	# Now corosync and pacemaker are up, lets make them work!
-	echo -en "Configuring corosync\n\t(This may take up to 60 seconds, if the cluster isn't fully up yet)..."
-	while :; do
-		crm configure property stonith-enabled=false 2>&1 | grep ERROR > /dev/null || break
-		echo -n "."
+	echo -en "Configuring corosync\n\t(This may take up to 60 seconds, if the cluster isn't fully up yet)... "
+	while ( crm status | grep Current\ DC:\ NONE > /dev/null); do
+		spinner
+		sleep 1;
 	done
+	echo "Up!"
+	crm configure property stonith-enabled=false
 	crm configure property no-quorum-policy=ignore
 	crm configure property default-action-timeout=240
 	crm configure rsc_defaults resource-stickiness=100
@@ -698,3 +700,11 @@ function get_peer_addr {
 	[ $PEER = SLAVE ] && SLAVE_INTERNAL_IP=$PEER_IP
 	[ $PEER = MASTER ] && MASTER_INTERNAL_IP=$PEER_IP
 }
+
+function spinner {
+	# Spin a bit, while we're waiting for things to happen. 
+	[ "$chars" = "" ] && chars='\|/-'
+	chars="${chars#?}${chars%???}"
+	printf '\b%.1s' "$chars"
+}
+
