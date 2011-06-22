@@ -773,5 +773,5 @@ function mysql_install {
 	fi
 	# Add MySQL RA
 	crm configure primitive mysqld lsb:mysqld meta target-role="Stopped"
-	echo group mysql fs_mysql ip_mysql mysqld | crm configure load-update - 
+	echo group mysql fs_mysql ip_mysql mysqld | crm configure load update - 
 }
