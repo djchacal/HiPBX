@@ -1,0 +1,280 @@
+#!/bin/sh
+#
+# OCF Asterisk Resource Agent script.
+# Copyright (c) 2011 Rob Thomas <xrobau@gmail.com>
+
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# This script is based on the 'anything' OCF RA
+
+# OCF instance parameters
+#       OCF_RESKEY_binfile
+#       OCF_RESKEY_cmdline_options
+#       OCF_RESKEY_logfile
+#       OCF_RESKEY_errlogfile
+#       OCF_RESKEY_user
+#       OCF_RESKEY_monitor_hook
+#       OCF_RESKEY_stop_timeout
+#
+# This RA starts $binfile with $cmdline_options as $user and writes a $pidfile from that. 
+# If you want it to, it logs:
+# - stdout to $logfile, stderr to $errlogfile or 
+# - stdout and stderr to $logfile
+# - or to will be captured by lrmd if these options are omitted.
+# Monitoring is done through $pidfile or your custom $monitor_hook script. 
+# The RA expects the program to keep running "daemon-like" and
+# not just quit and exit. So this is NOT (yet - feel free to
+# enhance) a way to just run a single one-shot command which just
+# does something and then exits.
+
+# Initialization:
+: ${OCF_FUNCTIONS_DIR=${OCF_ROOT}/resource.d/heartbeat}
+. ${OCF_FUNCTIONS_DIR}/.ocf-shellfuncs
+
+if [ -z "$OCF_RESKEY_pidfile" ]; then
+	pidfile="/var/run/asterisk/asterisk.pid"
+else
+	pidfile="$OCF_RESKEY_pidfile"
+fi
+
+instance_name="$OCF_RESOURCE_INSTANCE"
+binfile="$OCF_RESKEY_binfile"
+cmdline_options="$OCF_RESKEY_cmdline_options"
+logfile="$OCF_RESKEY_logfile"
+errlogfile="$OCF_RESKEY_errlogfile"
+user="$OCF_RESKEY_user"
+[ -z "$user" ] && user=root
+
+getpid() {
+        grep -o '[0-9]*' $1
+}
+
+asterisk_status() {
+	if test -f "$pidfile"
+	then
+		if pid=`getpid $pidfile` && [ "$pid" ] && kill -0 $pid
+		then
+			return $OCF_RUNNING
+		else
+			# pidfile w/o process means the process died
+			return $OCF_ERR_GENERIC
+		fi
+	else
+		return $OCF_NOT_RUNNING
+	fi
+}
+
+asterisk_start() {
+	if ! asterisk_status
+	then
+		if [ -n "$logfile" -a -n "$errlogfile" ]
+		then
+			# We have logfile and errlogfile, so redirect STDOUT und STDERR to different files
+			cmd="su - $user -c \"nohup $binfile $cmdline_options >> $logfile 2>> $errlogfile & \"'echo \$!' "
+		else if [ -n "$logfile" ]
+			then
+				# We only have logfile so redirect STDOUT and STDERR to the same file
+				cmd="su - $user -c \"nohup $binfile $cmdline_options >> $logfile 2>&1 & \"'echo \$!' "
+			else
+				# We have neither logfile nor errlogfile, so we're not going to redirect anything
+				cmd="su - $user -c \"nohup $binfile $cmdline_options & \"'echo \$!'"
+			fi
+		fi
+		ocf_log debug "Starting $instance_name: $cmd"
+		# Execute the command as created above
+		eval $cmd > $pidfile
+		if asterisk_status
+		then
+			ocf_log debug "$instance_name: $cmd started successfully"
+			return $OCF_SUCCESS
+		else 
+			ocf_log err "$instance_name: $cmd could not be started"
+			return $OCF_ERR_GENERIC
+		fi
+	else
+		# If already running, consider start successful
+		ocf_log debug "$instance_name: $cmd is already running"
+		return $OCF_SUCCESS
+	fi
+}
+
+asterisk_stop() {
+        if [ -n "$OCF_RESKEY_stop_timeout" ]
+        then
+                stop_timeout=$OCF_RESKEY_stop_timeout
+        elif [ -n "$OCF_RESKEY_CRM_meta_timeout" ]; then
+                # Allow 2/3 of the action timeout for the orderly shutdown
+                # (The origin unit is ms, hence the conversion)
+                stop_timeout=$((OCF_RESKEY_CRM_meta_timeout/1500))
+        else
+                stop_timeout=10
+        fi
+	if asterisk_status
+	then
+                pid=`getpid $pidfile`
+                kill $pid
+                i=0
+                while [ $i -lt $stop_timeout ]
+                do
+                        if ! asterisk_status
+                        then
+                        	rm -f $pidfile
+                                return $OCF_SUCCESS
+                        fi
+                        sleep 1 
+                        let "i++"
+                done
+                ocf_log warn "Stop with SIGTERM failed/timed out, now sending SIGKILL."
+                kill -9 $pid
+                rm -f $pidfile
+                if ! asterisk_status
+                then
+                        ocf_log warn "SIGKILL did the job."
+                        return $OCF_SUCCESS
+                else
+                        ocf_log err "Failed to stop - even with SIGKILL."
+                        return $OCF_ERR_GENERIC
+                fi
+	else
+		# was not running, so stop can be considered successful
+		rm -f $pidfile 
+		return $OCF_SUCCESS
+	fi
+}
+
+asterisk_monitor() {
+	asterisk_status
+	ret=$?
+	if [ $ret -eq $OCF_SUCCESS ]
+	then
+		if [ -n "$OCF_RESKEY_monitor_hook" ]; then
+			eval "$OCF_RESKEY_monitor_hook"
+                        if [ $? -ne $OCF_SUCCESS ]; then
+                                return ${OCF_ERR_GENERIC}
+                        fi
+			return $OCF_SUCCESS
+		else
+			true
+		fi
+	else
+		return $ret
+	fi
+}
+
+asterisk_validate() {
+	if ! su - $user -c "test -x $binfile"
+	then
+		ocf_log err "binfile $binfile does not exist or is not executable by $user."
+		exit $OCF_ERR_INSTALLED
+	fi
+	if ! getent passwd $user >/dev/null 2>&1
+	then
+		ocf_log err "user $user does not exist."
+		exit $OCF_ERR_INSTALLED
+	fi
+	for logfilename in "$logfile" "$errlogfile"
+	do
+		if [ -n "$logfilename" ]; then
+			mkdir -p `dirname $logfilename` || {
+				ocf_log err "cannot create $(dirname $logfilename)"
+				exit $OCF_ERR_INSTALLED
+			}
+		fi
+	done
+	return $OCF_SUCCESS
+}
+
+asterisk_meta() {
+cat <<END
+<?xml version="1.0"?>
+<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
+<resource-agent name="asterisk">
+<version>1.0</version>
+<longdesc lang="en">
+This is an OCF RA to manage Asterisk. It will try to auto-restart Asterisk if it discovers it down for any reason (in 'monitor'). This may be an unwanted option, and if so, set a paramater of 'no-auto-restart' to any non-null string.
+</longdesc>
+<shortdesc lang="en">Manages an Asterisk service</shortdesc>
+<parameters>
+	<parameter name="binfile" required="0">
+		<longdesc lang="en"> The name of the Asterisk binary. Defaults to 'asterisk'.  </longdesc>
+		<shortdesc lang="en">Full path name to asterisk</shortdesc>
+		<content type="string" default="asterisk"/>
+	</parameter>
+	<parameter name="cmdline_options" required="0">
+		<longdesc lang="en"> Command line options to pass to Asterisk</longdesc>
+		<shortdesc lang="en">Command line options</shortdesc>
+		<content type="string" default=""/>
+	</parameter>
+	<parameter name="pidfile" required="0">
+		<longdesc lang="en">Optional file to read the PID from. Defaults to /var/run/asterisk/asterisk.pid</longdesc>
+		<shortdesc lang="en">File to read PID from</shortdesc>
+		<content type="string" default="/var/run/asterisk/asterisk.pid"/>
+	</parameter>
+	<parameter name="logfile" required="0">
+		<longdesc lang="en"> File to write Asterisk STDOUT output to. Defaults to /var/run/asterisk/asterisk.stdout</longdesc>
+		<shortdesc lang="en">File for Asterisk output</shortdesc>
+		<content type="string" default="/var/run/asterisk/asterisk.stdout"/>
+	</parameter>
+	<parameter name="errlogfile" required="0">
+		<longdesc lang="en"> File to write Asterisk STDERR output to. Defaults to /var/run/asterisk/asterisk.stderr</longdesc>
+		<shortdesc lang="en">File to write STDERR to</shortdesc>
+		<content type="string" default="/var/run/asterisk/asterisk.stderr"/>
+	</parameter>
+	<parameter name="user" required="0">
+		<longdesc lang="en">User to run Asterisk as.</longdesc>
+		<shortdesc lang="en">User to run Asterisk as</shortdesc>
+		<content type="string" default="apache"/>
+	</parameter>
+	<parameter name="stop_timeout">
+		<longdesc lang="en">
+		In the stop operation: Seconds to wait for kill -TERM to succeed
+		before sending kill -SIGKILL. Defaults to 2/3 of the stop operation timeout.
+		</longdesc>
+		<shortdesc lang="en">Seconds to wait after sending a 'core stop/shortdesc>
+		<content type="string" default=""/>
+	</parameter>
+</parameters>
+<actions>
+<action name="start"   timeout="20s" />
+<action name="stop"    timeout="20s" />
+<action name="monitor" depth="0"  timeout="20s" interval="10" />
+<action name="meta-data"  timeout="5" />
+<action name="validate-all"  timeout="5" />
+</actions>
+</resource-agent>
+END
+exit 0
+}
+
+case "$1" in
+	meta-data|metadata|meta_data)
+		asterisk_meta
+	;;
+	start)
+		asterisk_start
+	;;
+	stop)
+		asterisk_stop
+	;;
+	monitor)
+		asterisk_monitor
+	;;
+	validate-all)
+		asterisk_validate
+	;;
+	*)
+		ocf_log err "$0 was called with unsupported arguments: $*"
+		exit $OCF_ERR_UNIMPLEMENTED
+	;;
+esac
