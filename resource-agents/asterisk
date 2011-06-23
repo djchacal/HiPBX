@@ -51,12 +51,19 @@ else
 	pidfile="$OCF_RESKEY_pidfile"
 fi
 
+# defaults
+directory="/usr/sbin"
+logfile=" /var/run/asterisk/asterisk.stdout"
+errlogfile=" /var/run/asterisk/asterisk.stderr"
+user="apache"
+group="apache"
+[ -z "$OCF_RESKEY_directory" ] || directory="$OCF_RESKEY_directory"
+[ -z "$OCF_RESKEY_logfile" ]  || logfile="$OCF_RESKEY_logfile"
+[ -z "$OCF_RESKEY_errlogfile" ] || errlogfile="$OCF_RESKEY_errlogfile"
+[ -z "$OCF_RESKEY_user" ] || user="$OCF_RESKEY_user"
+[ -z "$OCF_RESKEY_group" ]  || group="$OCF_RESKEY_group"
 instance_name="$OCF_RESOURCE_INSTANCE"
-binfile="$OCF_RESKEY_binfile"
 cmdline_options="$OCF_RESKEY_cmdline_options"
-logfile="$OCF_RESKEY_logfile"
-errlogfile="$OCF_RESKEY_errlogfile"
-user="$OCF_RESKEY_user"
 [ -z "$user" ] && user=root
 
 getpid() {
@@ -64,137 +71,30 @@ getpid() {
 }
 
 asterisk_status() {
-	if test -f "$pidfile"
-	then
-		if pid=`getpid $pidfile` && [ "$pid" ] && kill -0 $pid
-		then
-			return $OCF_RUNNING
-		else
-			# pidfile w/o process means the process died
-			return $OCF_ERR_GENERIC
-		fi
+	if $(asterisk -rx "core show status" > /dev/null 2>&1) ; then
+		return $OCF_RUNNING
 	else
 		return $OCF_NOT_RUNNING
 	fi
 }
 
 asterisk_start() {
-	if ! asterisk_status
-	then
-		if [ -n "$logfile" -a -n "$errlogfile" ]
-		then
-			# We have logfile and errlogfile, so redirect STDOUT und STDERR to different files
-			cmd="su - $user -c \"nohup $binfile $cmdline_options >> $logfile 2>> $errlogfile & \"'echo \$!' "
-		else if [ -n "$logfile" ]
-			then
-				# We only have logfile so redirect STDOUT and STDERR to the same file
-				cmd="su - $user -c \"nohup $binfile $cmdline_options >> $logfile 2>&1 & \"'echo \$!' "
-			else
-				# We have neither logfile nor errlogfile, so we're not going to redirect anything
-				cmd="su - $user -c \"nohup $binfile $cmdline_options & \"'echo \$!'"
-			fi
-		fi
-		ocf_log debug "Starting $instance_name: $cmd"
-		# Execute the command as created above
-		eval $cmd > $pidfile
-		if asterisk_status
-		then
-			ocf_log debug "$instance_name: $cmd started successfully"
-			return $OCF_SUCCESS
-		else 
-			ocf_log err "$instance_name: $cmd could not be started"
-			return $OCF_ERR_GENERIC
-		fi
-	else
-		# If already running, consider start successful
-		ocf_log debug "$instance_name: $cmd is already running"
-		return $OCF_SUCCESS
-	fi
+	ocf_log debug "Starting $instance_name"
+	cmdline="$directory/asterisk -U$user -G$group $cmdline_options > $logfile 2> $errlogfile"
+	echo $cmdline >> /tmp/log
+	$cmdline && return 0
+	return 1
 }
 
 asterisk_stop() {
-        if [ -n "$OCF_RESKEY_stop_timeout" ]
-        then
-                stop_timeout=$OCF_RESKEY_stop_timeout
-        elif [ -n "$OCF_RESKEY_CRM_meta_timeout" ]; then
-                # Allow 2/3 of the action timeout for the orderly shutdown
-                # (The origin unit is ms, hence the conversion)
-                stop_timeout=$((OCF_RESKEY_CRM_meta_timeout/1500))
-        else
-                stop_timeout=10
-        fi
-	if asterisk_status
-	then
-                pid=`getpid $pidfile`
-                kill $pid
-                i=0
-                while [ $i -lt $stop_timeout ]
-                do
-                        if ! asterisk_status
-                        then
-                        	rm -f $pidfile
-                                return $OCF_SUCCESS
-                        fi
-                        sleep 1 
-                        let "i++"
-                done
-                ocf_log warn "Stop with SIGTERM failed/timed out, now sending SIGKILL."
-                kill -9 $pid
-                rm -f $pidfile
-                if ! asterisk_status
-                then
-                        ocf_log warn "SIGKILL did the job."
-                        return $OCF_SUCCESS
-                else
-                        ocf_log err "Failed to stop - even with SIGKILL."
-                        return $OCF_ERR_GENERIC
-                fi
-	else
-		# was not running, so stop can be considered successful
-		rm -f $pidfile 
-		return $OCF_SUCCESS
-	fi
+	ocf_log error "Stopping $instance_name: "
 }
 
 asterisk_monitor() {
 	asterisk_status
-	ret=$?
-	if [ $ret -eq $OCF_SUCCESS ]
-	then
-		if [ -n "$OCF_RESKEY_monitor_hook" ]; then
-			eval "$OCF_RESKEY_monitor_hook"
-                        if [ $? -ne $OCF_SUCCESS ]; then
-                                return ${OCF_ERR_GENERIC}
-                        fi
-			return $OCF_SUCCESS
-		else
-			true
-		fi
-	else
-		return $ret
-	fi
 }
 
 asterisk_validate() {
-	if ! su - $user -c "test -x $binfile"
-	then
-		ocf_log err "binfile $binfile does not exist or is not executable by $user."
-		exit $OCF_ERR_INSTALLED
-	fi
-	if ! getent passwd $user >/dev/null 2>&1
-	then
-		ocf_log err "user $user does not exist."
-		exit $OCF_ERR_INSTALLED
-	fi
-	for logfilename in "$logfile" "$errlogfile"
-	do
-		if [ -n "$logfilename" ]; then
-			mkdir -p `dirname $logfilename` || {
-				ocf_log err "cannot create $(dirname $logfilename)"
-				exit $OCF_ERR_INSTALLED
-			}
-		fi
-	done
 	return $OCF_SUCCESS
 }
 
@@ -221,14 +121,16 @@ someone is sending a 20 page Fax that will take 10 minutes to complete.
 </longdesc>
 <shortdesc lang="en">Manages an Asterisk service</shortdesc>
 <parameters>
-	<parameter name="binfile" required="0">
-		<longdesc lang="en"> The name of the Asterisk binary. 
-Defaults to 'asterisk'.  </longdesc>
-		<shortdesc lang="en">Full path name to asterisk</shortdesc>
-		<content type="string" default="asterisk"/>
+	<parameter name="directory" required="0">
+		<longdesc lang="en">The location of the Asterisk binary.
+Defaults to '/usr/sbin'.  </longdesc>
+		<shortdesc lang="en">Full path of asterisk</shortdesc>
+		<content type="string" default="/usr/sbin"/>
 	</parameter>
 	<parameter name="cmdline_options" required="0">
-		<longdesc lang="en"> Command line options to pass to Asterisk</longdesc>
+		<longdesc lang="en"> Command line options to pass to Asterisk. 
+If you're running multiple Asterisk on the same machine, you would put
+the configuraiton file here - such as "-C /etc/asterisk/node1/asterisk.conf"</longdesc>
 		<shortdesc lang="en">Command line options</shortdesc>
 		<content type="string" default=""/>
 	</parameter>
