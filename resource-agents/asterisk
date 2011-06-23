@@ -17,6 +17,8 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # This script is based on the 'anything' OCF RA
+# API is based on the documentation provided at
+# http://www.opencf.org/cgi-bin/viewcvs.cgi/specs/ra/resource-agent-api.txt?rev=HEAD
 
 # OCF instance parameters
 #       OCF_RESKEY_binfile
@@ -38,6 +40,7 @@
 # enhance) a way to just run a single one-shot command which just
 # does something and then exits.
 
+OCF_ROOT=/usr/lib/ocf
 # Initialization:
 : ${OCF_FUNCTIONS_DIR=${OCF_ROOT}/resource.d/heartbeat}
 . ${OCF_FUNCTIONS_DIR}/.ocf-shellfuncs
@@ -202,12 +205,25 @@ cat <<END
 <resource-agent name="asterisk">
 <version>1.0</version>
 <longdesc lang="en">
-This is an OCF RA to manage Asterisk. It will try to auto-restart Asterisk if it discovers it down for any reason (in 'monitor'). This may be an unwanted option, and if so, set a paramater of 'no-auto-restart' to any non-null string.
+This is an OCF RA to manage Asterisk. It will try to auto-restart Asterisk 
+if it finds it down for any reason (check in 'monitor'). This may be an unwanted
+action, and if so, create a paramater of 'no-auto-restart' and set it to any
+non-null string.
+
+Note that a 'stop' will not immediately terminate Asterisk, and will wait 
+the 'stop' timeout value for all calls to complete, before forcing a stop. 
+
+There may need to be some fine-tuning of your settings, as Asterisk will not
+accept calls whilst it's in a shutting-down state. So a too-long pause will
+result in people not being able to create a new call whilst, for example,
+someone is sending a 20 page Fax that will take 10 minutes to complete. 
+
 </longdesc>
 <shortdesc lang="en">Manages an Asterisk service</shortdesc>
 <parameters>
 	<parameter name="binfile" required="0">
-		<longdesc lang="en"> The name of the Asterisk binary. Defaults to 'asterisk'.  </longdesc>
+		<longdesc lang="en"> The name of the Asterisk binary. 
+Defaults to 'asterisk'.  </longdesc>
 		<shortdesc lang="en">Full path name to asterisk</shortdesc>
 		<content type="string" default="asterisk"/>
 	</parameter>
@@ -217,40 +233,51 @@ This is an OCF RA to manage Asterisk. It will try to auto-restart Asterisk if it
 		<content type="string" default=""/>
 	</parameter>
 	<parameter name="pidfile" required="0">
-		<longdesc lang="en">Optional file to read the PID from. Defaults to /var/run/asterisk/asterisk.pid</longdesc>
+		<longdesc lang="en">Optional file to read the PID from. 
+Defaults to /var/run/asterisk/asterisk.pid</longdesc>
 		<shortdesc lang="en">File to read PID from</shortdesc>
 		<content type="string" default="/var/run/asterisk/asterisk.pid"/>
 	</parameter>
 	<parameter name="logfile" required="0">
-		<longdesc lang="en"> File to write Asterisk STDOUT output to. Defaults to /var/run/asterisk/asterisk.stdout</longdesc>
+		<longdesc lang="en"> File to write Asterisk STDOUT output to. 
+Defaults to /var/run/asterisk/asterisk.stdout</longdesc>
 		<shortdesc lang="en">File for Asterisk output</shortdesc>
 		<content type="string" default="/var/run/asterisk/asterisk.stdout"/>
 	</parameter>
 	<parameter name="errlogfile" required="0">
-		<longdesc lang="en"> File to write Asterisk STDERR output to. Defaults to /var/run/asterisk/asterisk.stderr</longdesc>
+		<longdesc lang="en"> File to write Asterisk STDERR output to. 
+Defaults to /var/run/asterisk/asterisk.stderr</longdesc>
 		<shortdesc lang="en">File to write STDERR to</shortdesc>
 		<content type="string" default="/var/run/asterisk/asterisk.stderr"/>
 	</parameter>
 	<parameter name="user" required="0">
-		<longdesc lang="en">User to run Asterisk as.</longdesc>
+		<longdesc lang="en">User to run Asterisk as. Note that this is required to be 'apache' for 
+FreePBX installs.If you're not using FreePBX you should change this.
+Defaults to 'apache' </longdesc>
 		<shortdesc lang="en">User to run Asterisk as</shortdesc>
 		<content type="string" default="apache"/>
 	</parameter>
+	<parameter name="group" required="0">
+		<longdesc lang="en">Group to run Asterisk as. Note that this is required to be 'apache' for 
+FreePBX installs. If you're not using FreePBX you should change this.
+Defaults to 'apache' </longdesc>
+		<shortdesc lang="en">Group to run Asterisk as</shortdesc>
+		<content type="string" default="apache"/>
+	</parameter>
 	<parameter name="stop_timeout">
-		<longdesc lang="en">
-		In the stop operation: Seconds to wait for kill -TERM to succeed
-		before sending kill -SIGKILL. Defaults to 2/3 of the stop operation timeout.
-		</longdesc>
-		<shortdesc lang="en">Seconds to wait after sending a 'core stop/shortdesc>
-		<content type="string" default=""/>
+		<longdesc lang="en">Waits for this amount of time for Asterisk to shut down. ('core stop now'). 
+After this amount of time, Asterisk is forefully shut down. This is done with a kill -9.
+Defaults to 30 seconds</longdesc>
+		<shortdesc lang="en">Seconds to wait after sending a 'core stop now'</shortdesc>
+		<content type="string" default="30"/>
 	</parameter>
 </parameters>
 <actions>
-<action name="start"   timeout="20s" />
-<action name="stop"    timeout="20s" />
-<action name="monitor" depth="0"  timeout="20s" interval="10" />
-<action name="meta-data"  timeout="5" />
-<action name="validate-all"  timeout="5" />
+	<action name="start"   timeout="20s" />
+	<action name="stop"    timeout="60s" />
+	<action name="monitor" depth="0"  timeout="5s" interval="10" />
+	<action name="meta-data"  timeout="5" />
+	<action name="validate-all"  timeout="5" />
 </actions>
 </resource-agent>
 END
