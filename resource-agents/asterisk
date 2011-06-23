@@ -20,11 +20,14 @@
 # for Linux. http://hipbx.org
 
 # OCF instance parameters
-#       OCF_RESKEY_cmdline_options
+#       OCF_RESKEY_directory
 #       OCF_RESKEY_logfile
 #       OCF_RESKEY_user
 #       OCF_RESKEY_group
 #       OCF_RESKEY_stop_timeout
+#       OCF_RESKEY_pidfile
+#       OCF_RESKEY_cmdline_options
+#       OCF_RESKEY_no_auto_restart
 
 OCF_ROOT=/usr/lib/ocf
 # Initialization:
@@ -32,19 +35,27 @@ OCF_ROOT=/usr/lib/ocf
 . ${OCF_FUNCTIONS_DIR}/.ocf-shellfuncs
 
 # defaults
-directory="/usr/sbin"
-logfile=" /var/run/asterisk/asterisk.out"
-user="apache"
-group="apache"
-stop_timeout=3
-pidfile="/var/run/saterisk/asterisk.pid"
+default_directory="/usr/sbin"
+default_logfile=" /var/run/asterisk/asterisk.out"
+default_user="apache"
+default_group="apache"
+default_stop_timeout=3
+default_pidfile="/var/run/saterisk/asterisk.pid"
+default_no_auto_restart=""
 
-[ ! -z "$OCF_RESKEY_directory" ] && directory="$OCF_RESKEY_directory"
-[ ! -z "$OCF_RESKEY_logfile" ]  && logfile="$OCF_RESKEY_logfile"
-[ ! -z "$OCF_RESKEY_user" ] && user="$OCF_RESKEY_user"
-[ ! -z "$OCF_RESKEY_group" ] && group="$OCF_RESKEY_group"
-[ ! -z "$OCF_RESKEY_stop_timeout" ] && stop_timeout="$OCF_RESKEY_stop_timeout"
-[ ! -z "$OCF_RESKEY_pidfile" ] && pidfile="$OCF_RESKEY_pidfile"
+
+for var in directory logfile user group stop_timeout pidfile no_auto_restart
+	do
+	ocfvar="OCF_RESKEY_$var"
+	if [ -z "${!ocfvar}" ]; then
+		# No value supplied, set it to default
+		defvar="default_$var"
+		printf -v $var "${!defvar}"
+	else
+		# Override default, a value has been given.
+		printf -v $var "${!defvar}"
+	fi
+done
 
 instance_name="$OCF_RESOURCE_INSTANCE"
 cmdline_options="$OCF_RESKEY_cmdline_options"
@@ -113,7 +124,17 @@ asterisk_stop() {
 
 asterisk_monitor() {
 	asterisk_status
-#	if [ $? -eq $OCF_NOT_RUNNING ]; then
+	if [ $? -eq $OCF_NOT_RUNNING ]; then
+		if [ -z $no_auto_restart ]; then
+			# I'm allowed to try to auto-restart it.
+			asterisk_start
+			return $?
+		else
+			# It's dead, and I'm not allowed to restart it.
+			return $OCF_NOT_RUNNING
+		fi
+	fi
+	return 0
 }
 
 asterisk_validate() {
@@ -145,9 +166,9 @@ someone is sending a 20 page Fax that will take 10 minutes to complete.
 <parameters>
 	<parameter name="directory" required="0">
 		<longdesc lang="en">The location of the Asterisk binary.
-Defaults to '/usr/sbin'.  </longdesc>
+Defaults to '$default_directory'.  </longdesc>
 		<shortdesc lang="en">Full path of asterisk</shortdesc>
-		<content type="string" default="/usr/sbin"/>
+		<content type="string" default="$default_directory"/>
 	</parameter>
 	<parameter name="cmdline_options" required="0">
 		<longdesc lang="en"> Command line options to pass to Asterisk. 
@@ -158,42 +179,43 @@ the configuraiton file here - such as "-C /etc/asterisk/node1/asterisk.conf"</lo
 	</parameter>
 	<parameter name="pidfile" required="0">
 		<longdesc lang="en">Optional file to read the PID from. 
-Defaults to /var/run/asterisk/asterisk.pid</longdesc>
+Defaults to '$default_pidfile'</longdesc>
 		<shortdesc lang="en">File to read PID from</shortdesc>
-		<content type="string" default="/var/run/asterisk/asterisk.pid"/>
+		<content type="string" default="$pidfile"/>
 	</parameter>
 	<parameter name="logfile" required="0">
 		<longdesc lang="en"> File to write all Asterisk output to. 
-Defaults to /var/run/asterisk/asterisk.out</longdesc>
+Defaults to $default_logfile</longdesc>
 		<shortdesc lang="en">File for Asterisk output</shortdesc>
-		<content type="string" default="/var/run/asterisk/asterisk.out"/>
+		<content type="string" default="$default_logfile"/>
 	</parameter>
 	<parameter name="user" required="0">
 		<longdesc lang="en">User to run Asterisk as. Note that this is required to be 'apache' for 
 FreePBX installs.If you're not using FreePBX you should change this.
-Defaults to 'apache' </longdesc>
+Defaults to '$default_user' </longdesc>
 		<shortdesc lang="en">User to run Asterisk as</shortdesc>
-		<content type="string" default="apache"/>
+		<content type="string" default="$default_user"/>
 	</parameter>
 	<parameter name="group" required="0">
 		<longdesc lang="en">Group to run Asterisk as. Note that this is required to be 'apache' for 
 FreePBX installs. If you're not using FreePBX you should change this.
-Defaults to 'apache' </longdesc>
+Defaults to '$default_group' </longdesc>
 		<shortdesc lang="en">Group to run Asterisk as</shortdesc>
-		<content type="string" default="apache"/>
+		<content type="string" default="$default_group"/>
 	</parameter>
 	<parameter name="stop_timeout">
 		<longdesc lang="en">Waits for this amount of time for Asterisk to finish all calls and shut
-down. ('core stop gracefully'). After that time, send 'core stop now', and if asterisk hasn't exited within
-5 seconds, Asterisk is forefully shut down. This is done with a kill -9.
-Defaults to 30 seconds</longdesc>
+down. ('core stop gracefully'). After that time, send 'core stop now',
+and if asterisk hasn't exited within a further 5 seconds, Asterisk is
+forefully shut down. This is done with a kill -9.
+Defaults to $default_stop_timeout seconds</longdesc>
 		<shortdesc lang="en">Seconds to wait after sending a 'core stop now'</shortdesc>
-		<content type="string" default="30"/>
+		<content type="string" default="$default_stop_timeout"/>
 	</parameter>
 </parameters>
 <actions>
 	<action name="start"   timeout="20s" />
-	<action name="stop"    timeout="60s" />
+	<action name="stop"    timeout="$(( $default_stop_timeout + 10 ))s" />
 	<action name="monitor" depth="0"  timeout="5s" interval="10" />
 	<action name="meta-data"  timeout="5" />
 	<action name="validate-all"  timeout="5" />
