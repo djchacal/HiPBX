@@ -67,6 +67,8 @@ this_node_online
 # Do MySQL
 mysql_install
 
+# Do Asterisk
+
 exit
 
 

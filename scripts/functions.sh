@@ -87,19 +87,19 @@ function hipbx_init {
 
 function mysql_password {
 	# Generate a MySQL password, if one hasn't already been generated.
-	[ "$MYSQLPASS" = "" ] && MYSQLPASS=`tr -dc A-Za-z0-9 < /dev/urandom | head -c16`
+	[ "$MYSQLPASS" = "" ] && MYSQLPASS=$(tr -dc A-Za-z0-9 < /dev/urandom | head -c16)
 	cfg MYSQLPASS $MYSQLPASS
 }
 
 function fix_hostname {
 	if [ $ISMASTER = YES ]; then
-		if [ `hostname` != master ]; then
+		if [ $(hostname) != master ]; then
 			echo "Fixing hostname - setting to 'master'"
 			hostname master
 			sed -i "s/^HOSTNAME=.*/HOSTNAME=master/" /etc/sysconfig/network
 		fi
 	else
-		if [ `hostname` != slave ]; then
+		if [ $(hostname) != slave ]; then
 			echo "Fixing hostname - setting to 'slave'"
 			hostname slave
 			sed -i "s/^HOSTNAME=.*/HOSTNAME=slave/" /etc/sysconfig/network
@@ -128,8 +128,8 @@ function configure_lvm {
 	SERVSTRING="( "
 	for element in $(seq 0 $NBRSVCS); do
 		SERVSTRING="$SERVSTRING ${SERVICES[$element]} "
-		SERVICENAME[$element]=`echo ${SERVICES[$element]} | awk -F= ' { print $1 } '`
-		SERVICEPCNT[$element]=`echo ${SERVICES[$element]} | awk -F= ' { print $2 } '`
+		SERVICENAME[$element]=$(echo ${SERVICES[$element]} | awk -F= ' { print $1 } ')
+		SERVICEPCNT[$element]=$(echo ${SERVICES[$element]} | awk -F= ' { print $2 } ')
 		SANITYSIZE=$(( $SANITYSIZE + ${SERVICEPCNT[$element]} ))
 	done
 
@@ -148,13 +148,13 @@ function configure_lvm {
 	REQUIRED=0
 	for x in $(seq 0 $NBRSVCS); do
 		echo -ne "\t\t${SERVICENAME[$x]} - "
-		USED=`lvdisplay -C --noheadings --nosuffix --units g | grep drbd_${SERVICENAME[$x]} | awk ' { print $4 }'`
+		USED=$(lvdisplay -C --noheadings --nosuffix --units g | grep drbd_${SERVICENAME[$x]} | awk ' { print $4 }')
 		varname=drbd_${SERVICENAME[$x]}
 		presize=${!varname}
 		[ "$presize" = "" ] && presize=0
 		if [ "$USED" != "" ]; then 
 			# Integerify USED.
-			USED=`printf %0.f $USED`
+			USED=$(printf %0.f $USED)
 			echo  "Found (${USED}G)"
 			if [ "$presize" != "0" -a "${USED}" -lt "$presize" ]; then
 				echo -e "\nSevere Error. Amount of disk space allocated to this volume is"
@@ -170,8 +170,8 @@ function configure_lvm {
 			fi
 			cfg drbd_${SERVICENAME[$x]} "$realspace"
 			ALLOCATED=$(( $ALLOCATED + ${SERVICEPCNT[$x]} ))
-			USEDSPACE=$(( $USEDSPACE + `printf %0.f $realspace` ))
-			SELECTEDVG=`lvdisplay -C --noheadings --nosuffix --units g | grep drbd_${SERVICENAME[$x]} | awk ' { print $2 }'`
+			USEDSPACE=$(( $USEDSPACE + $(printf %0.f $realspace) ))
+			SELECTEDVG=$(lvdisplay -C --noheadings --nosuffix --units g | grep drbd_${SERVICENAME[$x]} | awk ' { print $2 }')
 		else
 			echo "Not Found"
 			LVMAKE=( ${LVMAKE[@]-} $x )
@@ -183,11 +183,11 @@ function configure_lvm {
 
 	if [ "$LVMAKE" != "" ]; then
 		echo -e "\tLooking for vg's with spare space..."
-		VGS=`vgdisplay -C --noheadings --nosuffix --units g | awk ' { print $1"="$7 }'`
+		VGS=$(vgdisplay -C --noheadings --nosuffix --units g | awk ' { print $1"="$7 }')
 		SELECTEDVG=not-found  # '-' is an invalid character in a volume group, so not-found will never be a valid answer
 			for vg in $VGS; do
-				VGNAME=`echo $vg | awk -F= ' { print $1 } '`
-				VGSPACE=`echo $vg | awk -F= ' { print $2 } '`
+				VGNAME=$(echo $vg | awk -F= ' { print $1 } ')
+				VGSPACE=$(echo $vg | awk -F= ' { print $2 } ')
 				if [ $VGSPACE = 0 ]; then
 					echo -e "\tVG $VGNAME has no free space, skipping."
 					continue
@@ -240,7 +240,7 @@ function configure_lvm {
 			fi
 		done
 		# Integerify VGSPACE
-		VGSPACE=`printf %0.f $VGSPACE`
+		VGSPACE=$(printf %0.f $VGSPACE)
 		if [ $NEEDEDSPACE -gt $VGSPACE ]; then
 			echo "A problem has occured."
 			echo "The amount of space needed by DRBD (${NEEDEDSPACE}G) - according to /etc/hipbx.d/hipbx.conf"
@@ -253,19 +253,19 @@ function configure_lvm {
 		if [ $ALLOCATED = 0 ]; then
 			BASESIZE=$VGSPACE
 		else
-			BASESIZE=`echo scale=8\; $USEDSPACE / \( $ALLOCATED / 100 \) | bc`
+			BASESIZE=$(echo scale=8\; $USEDSPACE / \( $ALLOCATED / 100 \) | bc)
 		fi
 		# Round DOWN basesize
-		BASESIZE=`echo $BASESIZE - .5 | bc`
-		BASESIZE=`printf %0.f $BASESIZE`
+		BASESIZE=$(echo $BASESIZE - .5 | bc)
+		BASESIZE=$(printf %0.f $BASESIZE)
 		for x in $(seq 0 $(( ${#LVMAKE[@]} - 1 )) ) ; do
 			echo -ne "\t\t${SERVICENAME[${LVMAKE[$x]}]} "
 			drbdvar=drbd_${SERVICENAME[${LVMAKE[$x]}]}
 			if [ "${!drbdvar}" != "" ]; then
 				lvsize=${!drbdvar}
 			else
-				lvsize=`echo ${BASESIZE}*.${SERVICEPCNT[${LVMAKE[$x]}]} - .5 | bc`
-				lvsize=`printf %0.f $lvsize`
+				lvsize=$(echo ${BASESIZE}*.${SERVICEPCNT[${LVMAKE[$x]}]} - .5 | bc)
+				lvsize=$(printf %0.f $lvsize)
 			fi
 			echo "(${lvsize}G) "
 			if $(lvcreate -L${lvsize}g $VGNAME -n drbd_${SERVICENAME[${LVMAKE[$x]}]} > /dev/null); then
@@ -299,16 +299,16 @@ function check_ssh {
 			ssh-keygen -q -t dsa -f /etc/hipbx.d/ssh_key_master -N ""
 			echo "Done"
 		fi
-		SSH_KEY=`cat /etc/hipbx.d/ssh_key_master.pub`
+		SSH_KEY=$(cat /etc/hipbx.d/ssh_key_master.pub)
 	else
 		echo -en "\tMaster ssh key exists"
-		test=`cat /etc/hipbx.d/ssh_key_master.pub 2>/dev/null`
+		test=$(cat /etc/hipbx.d/ssh_key_master.pub 2>/dev/null)
 		if [ "$SSH_KEY" != "$test" ]; then
 			echo -e " - but doesn't match hipbx.conf! Regenerating."
 			rm -f /etc/hipbx.d/ssh_key_master /etc/hipbx.d/ssh_key_master.pub
 			echo -en "\tGenerating Master ssh Public key..."
 			ssh-keygen -q -t dsa -f /etc/hipbx.d/ssh_key_master -N ""
-			SSH_KEY=`cat /etc/hipbx.d/ssh_key_master.pub`
+			SSH_KEY=$(cat /etc/hipbx.d/ssh_key_master.pub)
 			echo "Done"
 		else
 			echo " and seems valid"
@@ -338,7 +338,7 @@ function add_ssh {
 
 function config_networking {
 	echo "Networking:"
-	INTS=( `ip -o addr | grep -v "1: lo" |grep -v secondary | grep inet\ | awk '{print $9"="$4}'| sed 's^/[0-9]*^^'` )
+	INTS=( $(ip -o addr | grep -v "1: lo" |grep -v secondary | grep inet\ | awk '{print $9"="$4}'| sed 's^/[0-9]*^^') )
 	echo -e "\tThere needs to be at least two Ethernet Inferfaces for the cluster"
 	echo -e "\tto work. The first interface is the 'internal' link. This should be"
 	echo -e "\ta crossover cable, or even better, a pair of crossover cables"
@@ -349,9 +349,9 @@ function config_networking {
 	echo -e "\tBoth of these network interfaces should already be configured, tested"
 	echo -e "\tand working. If not, abort now (Ctrl-C) and do that.\n"
 	echo -e "\tI can detect ${#INTS[@]} network interfaces with an IP address:"
-	for x in `seq 0 $(( ${#INTS[@]} - 1 ))`; do
-		iname=`echo ${INTS[$x]} | awk -F= '{print $1}'`
-		iaddr=`echo ${INTS[$x]} | awk -F= '{print $2}'`
+	for x in $(seq 0 $(( ${#INTS[@]} - 1 ))); do
+		iname=$(echo ${INTS[$x]} | awk -F= '{print $1}')
+		iaddr=$(echo ${INTS[$x]} | awk -F= '{print $2}')
 		echo -e "\t\t$iname\t$iaddr"
 	done
 
@@ -374,7 +374,7 @@ function config_networking {
 		fi
 
 		if $(ip addr show $externalint > /dev/null 2>&1 ); then
-			MY_EXTERNAL_IP=`ip -o addr show $externalint | grep -v secondary | grep ${externalint}$|awk '{print $4}'|sed 's^/[0-9]*^^'`
+			MY_EXTERNAL_IP=$(ip -o addr show $externalint | grep -v secondary | grep ${externalint}$|awk '{print $4}'|sed 's^/[0-9]*^^')
 			if [ "$MY_EXTERNAL_IP" = "" ]; then
 				echo "I'm guessing that was a typo. I can't get an IP address from that interface."
 				echo "Try again."
@@ -397,7 +397,7 @@ function config_networking {
 		fi
 
 		if $(ip addr show $internalint > /dev/null 2>&1 ); then
-			MY_INTERNAL_IP=`ip -o addr show $internalint | grep -v secondary | grep ${internalint}$|awk '{print $4}'|sed 's^/[0-9]*^^'`
+			MY_INTERNAL_IP=$(ip -o addr show $internalint | grep -v secondary | grep ${internalint}$|awk '{print $4}'|sed 's^/[0-9]*^^')
 			if [ "$MY_INTERNAL_IP" = "" ]; then
 				echo "I'm guessing that was a typo. I can't get an IP address from that interface."
 				echo "Try again."
@@ -424,12 +424,12 @@ function config_networking {
 
 	if [ "$MULTICAST_ADDR" = "" ]; then
 		echo -en "\tGenerating Multicast Address..."
-		M1=`tr -dc 0-9 < /dev/urandom | head -c3`
-		M1=`echo ${M1}%256 | bc`
-		M2=`tr -dc 0-9 < /dev/urandom | head -c3`
-		M2=`echo ${M2}%256 | bc`
-		M3=`tr -dc 0-9 < /dev/urandom | head -c3`
-		M3=`echo ${M3}%256 | bc`
+		M1=$(tr -dc 0-9 < /dev/urandom | head -c3)
+		M1=$(echo ${M1}%256 | bc)
+		M2=$(tr -dc 0-9 < /dev/urandom | head -c3)
+		M2=$(echo ${M2}%256 | bc)
+		M3=$(tr -dc 0-9 < /dev/urandom | head -c3)
+		M3=$(echo ${M3}%256 | bc)
 		echo "(239.${M1}.${M2}.${M3})"
 		MULTICAST_ADDR=239.${M1}.${M2}.${M3}
 	fi
@@ -473,8 +473,8 @@ function fixhosts {
 
 function calc_netmasks {
 	# Figure out netmasks. This isn't line noise, honest.
-	EXTERNAL_CLASS=`ip -o addr | grep -v secondary | grep ${MASTER_EXTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_'`
-	INTERNAL_CLASS=`ip -o addr | grep -v secondary | grep ${MASTER_INTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_'`
+	EXTERNAL_CLASS=$(ip -o addr | grep -v secondary | grep ${MASTER_EXTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_')
+	INTERNAL_CLASS=$(ip -o addr | grep -v secondary | grep ${MASTER_INTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_')
 	cfg INTERNAL_CLASS $INTERNAL_CLASS
 	cfg EXTERNAL_CLASS $EXTERNAL_CLASS
 }
@@ -755,7 +755,7 @@ function mysql_install {
 	crm resource start fs_mysql
 	# Make sure that I am the machine managing the resource
 	echo "Migrating resource to this server..."
-	crm resource migrate fs_mysql `hostname` >/dev/null 2>&1
+	crm resource migrate fs_mysql $(hostname) >/dev/null 2>&1
 	# Check to see where the DRBD mysql resource is mounted, when it turns up.
 	echo "Relocating MySQL data to Cluster Filesystem... "
 	if [ $(find_mount 0) = "/drbd/mysql" ]; then
@@ -783,6 +783,6 @@ function asterisk_install {
 	crm resource start fs_asterisk
 	# Make sure that I am the machine managing the resource
 	echo "Migrating resource to this server..."
-	crm resource migrate fs_asterisk `hostname` >/dev/null 2>&1
+	crm resource migrate fs_asterisk $(hostname) >/dev/null 2>&1
 	
 }
