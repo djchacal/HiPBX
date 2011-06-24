@@ -731,6 +731,24 @@ function mysql_validate {
 	rpm -q mysql-server > /dev/null && ISOK=true
 }
 
+function find_mount {
+	resourcenum=$1
+	find_mount=$(grep /dev/drbd$resourcenum /proc/mounts | cut -d\  -f2)
+	mount_count=0
+	while [ "$find_mount" = "" ]; do
+		if [ $mount_count -gt 5 ]; then
+			echo -e "Error.\nI've waited 30 seconds for the drbd disk to be ready. Please fix the disk" 1>&2
+			echo "and run this script again." 1>&2
+			echo "Timeout waiting for Pacemaker to mount /dev/drbd$resourcenum somewhere." 1>&2
+			exit
+		fi
+		sleep 1
+		find_mount=$(grep drbd$resourcenum /proc/mounts | cut -d\  -f2)
+		mount_count=$(( $mount_count + 1 ))
+	done
+	echo $find_mount
+}
+
 function mysql_install {
 	echo "Starting MySQL Filesystem..."
 	crm resource start ms_drbd_mysql
@@ -740,25 +758,7 @@ function mysql_install {
 	crm resource migrate fs_mysql `hostname` >/dev/null 2>&1
 	# Check to see where the DRBD mysql resource is mounted, when it turns up.
 	echo "Relocating MySQL data to Cluster Filesystem... "
-	echo -en "\tFinding mountpoint..."
-	mysql_mount=`grep /dev/drbd0 /proc/mounts | cut -d\  -f2`
-	mount_count=0
-	while [ "$mysql_mount" = "" ]; do
-		if [ $mount_count -gt 30 ]; then
-			echo -e "Error.\nI've waited 30 seconds for the drbd disk to be ready. Please fix the disk"
-			echo "and run again."
-			echo "Timeout waiting for Pacemaker to mount /dev/drbd0 somewhere."
-			exit
-		fi
-		spinner
-		sleep 1
-		mysql_mount=`grep drbd0 /proc/mounts | cut -d\  -f2`
-		mount_count=$(( $mount_count + 1 ))
-	done
-	printf "\bOK - $mysql_mount\n"
-	sync
-	
-	if [ "$mysql_mount" = "/drbd/mysql" ]; then
+	if [ $(find_mount 0) = "/drbd/mysql" ]; then
 		# This is a new install
 		# Check to see if MySQL has stuff in /var/lib/mysql, and migrate it if it does.
 		if [ -d /var/lib/mysql/mysql ]; then
@@ -774,4 +774,15 @@ function mysql_install {
 	# Add MySQL RA
 	crm configure primitive mysqld lsb:mysqld meta target-role="Stopped"
 	echo group mysql fs_mysql ip_mysql mysqld | crm configure load update - 
+	crm resource start mysqld
+}
+
+function asterisk_install {
+	echo "Starting Asterisk Filesystem.."
+	crm resource start ms_asterisk_mysql
+	crm resource start fs_asterisk
+	# Make sure that I am the machine managing the resource
+	echo "Migrating resource to this server..."
+	crm resource migrate fs_asterisk `hostname` >/dev/null 2>&1
+	
 }
