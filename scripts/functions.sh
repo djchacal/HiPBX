@@ -794,35 +794,85 @@ function asterisk_install {
 	crm resource migrate fs_asterisk $(hostname) >/dev/null 2>&1
 	# Wait for the partition to be mounted...
 	find_mount 1 > /dev/null
-	if [ -f /drbd/asterisk/etc/asterisk.conf ]; then
-		# We already have data in /drbd/asterisk, so now lets make sure that
-		# /etc/asterisk is a symlink
-		if [[ ! -L /etc/asterisk && -f /etc/asterisk/* ]]; then
-			echo "I have a conflict. There are files in /etc/asterisk, AND there are files"
-			echo "(at least /etc/asterisk/asterisk.conf) in /drbd/asterisk/etc. I don't know"
-			echo "which one wins, so I'm just going to give up and let you sort it out."
-			echo "Either delete the entire /etc/asterisk directory, or delete the entire"
-			echo "/drbd/asterisk/etc directory. There can be only one. Re-run setup when"
-			echo "you've done that and I'll continue on."
-			echo "This can happen in a disaster-recovery situation. You most probably want"
-			echo "to delete /etc/asterisk if this is the case"
-			exit 
-		fi
-		# Kill it if it's an empty directory
-		[ -d /etc/asterisk ] && rm -rf /etc/asterisk
-	else
-		# There's nothing in /drbd/asterisk/etc. Move stuff from /etc/asterisk, if it exists.
-		[ ! -d /drbd/asterisk/etc ] && mkdir /drbd/asterisk/etc
-		mv /etc/asterisk/* /drbd/asterisk/etc
-	fi
-	# If it's not a symlink, kill it, and make it one.
-	if [ ! -L /etc/asterisk ]; then
-		rm -rf /etc/asterisk
-		ln -s /drbd/asterisk/etc /etc/asterisk
-	fi
+	# Create the symbolic links and move any files if they exist
+	create_links /etc/asterisk /drbd/asterisk/etc yes
 	# Add HiPBX Asterisk RA
 	crm configure primitive asteriskd ocf:hipbx:asterisk meta target-role="Stopped"
 	echo group asterisk fs_asterisk ip_asterisk asteriskd | crm configure load update - 
 	echo -e "\tStarting Clustered Asterisk service"
 	crm resource start asterisk
+}
+
+function dir_contains_files {
+	# Found this handy bit of code on Stack Overflow - http://stackoverflow.com/questions/91368
+	# Written by Pumbaa80 - http://stackoverflow.com/users/27862
+	dirname=$1
+	shopt -q nullglob || resetnullglob=1;
+	shopt -s nullglob;
+	shopt -q dotglob || resetdotglob=1;
+	shopt -s dotglob;
+	files=($dirname/*); 
+	[ "$resetdotglob" ] && shopt -u dotglob;
+	[ "$resetnullglob" ] && shopt -u nullglob;
+	[ "$files" ] && return 0
+	return 1
+}
+
+function create_links {
+	# Params:
+	# $1 = source
+	# $2 = dest
+	# $3 = preserve data
+
+	src=$1
+	dst=$2
+	keep=$3
+	# Is it already set up and pointing to the right place? If so, good, we're done.
+	if [ -L "$src" ]; then
+		if [ "$(readlink $src)" = "$dst" ]; then
+			return 0
+		else
+			# It's pointing somewhere wrong.
+			rm -f $src
+			mkdir -p $dst
+			ln -s $dst $src
+		fi
+	fi
+
+	# It's not a symlink, so, is there anything in there?
+	if dir_contains_files $src; then
+		# If keep is explicitly set to 'no', we don't care what's in there.
+ 		if [ "$keep" = "no" ]; then
+			# Blow it away, our job here is done.
+			rm -rf $src
+			ln -s $dst $src
+			return 0
+		fi
+		# OK, we may or may not care. Is there stuff in dst already?
+		if dir_contains_files $dst; then
+			# There are files in src _and_ dst. We wern't explicitly told to blow
+			# away dst, so abort and cry.
+			echo "I have a conflict. There are files in $src AND there are files"
+			echo "in $dst."
+			echo "I don't know which one wins, so I'm just going to give up and let you"
+			echo "sort it out. Either delete the entire $src, or"
+			echo "delete the entire $dst directory. There can be only one."
+			echo "Re-run setup when you've done that and I'll continue on."
+			echo "This can happen in a disaster-recovery situation. You most probably want"
+			echo "to delete $src if this is the case"
+			exit 
+		else
+			# Nothing in dst. Or it may not even exist.
+			# Wait, lets make sure it does
+			mkdir -p $dst
+			mv $src/* $dst
+			rm -rf $src
+			ln -s $dst $src
+		fi
+	else
+		# Nothing in src. No problems.
+		rm -rf $src
+		ln -s $dst $src
+		return 0
+	fi
 }
