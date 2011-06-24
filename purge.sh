@@ -1,12 +1,14 @@
 #!/bin/bash
 . /etc/hipbx.d/hipbx.conf
 
-for x in /drbd/*; do
-	umount $x
-done
 for x in `crm configure show | grep ^primitive | awk '{print $2}'`; do
 	crm resource stop $x
 done
+
+for x in /drbd/*; do
+	umount $x
+done
+umount /var/lib/mysql
 
 crm configure erase
 

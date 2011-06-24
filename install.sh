@@ -42,6 +42,9 @@ selinux
 # just uncomment when required.
 #installpackages
 
+# Sanity check for required packages
+packages_validate
+
 # Ensure that mysqld, httpd, iptables and drbd are off, and won't 
 # automatically start up
 # It doesn't matter if we shut down DRBD, as if you're running the

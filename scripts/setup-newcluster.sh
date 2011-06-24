@@ -31,9 +31,6 @@ else
 fi 
 echo "Starting new cluster setup on $MYNAME."
 
-# Sanity check for required packages
-mysql_validate
-
 # Set up LVM
 configure_lvm
 
@@ -68,6 +65,7 @@ this_node_online
 mysql_install
 
 # Do Asterisk
+asterisk_install
 
 exit
 

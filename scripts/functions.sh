@@ -725,10 +725,15 @@ function this_node_online {
 	fi
 }
 
-function mysql_validate {
+function packages_validate {
 	# Check to make sure the required RPM's are installed.
-	ISOK=false
-	rpm -q mysql-server > /dev/null && ISOK=true
+	Packages=( mysql-server asterisk asterisk-voicemail )
+	for p in ${Packages[@]}; do
+		if ! rpm -q $p >/dev/null 2>&1; then
+			echo REQUIRED Package $p not installed.
+			exit
+		fi
+	done
 }
 
 function find_mount {
@@ -754,35 +759,67 @@ function mysql_install {
 	crm resource start ms_drbd_mysql
 	crm resource start fs_mysql
 	# Make sure that I am the machine managing the resource
-	echo "Migrating resource to this server..."
+	echo -e "\tMigrating resource to this server..."
 	crm resource migrate fs_mysql $(hostname) >/dev/null 2>&1
 	# Check to see where the DRBD mysql resource is mounted, when it turns up.
-	echo "Relocating MySQL data to Cluster Filesystem... "
 	if [ $(find_mount 0) = "/drbd/mysql" ]; then
 		# This is a new install
 		# Check to see if MySQL has stuff in /var/lib/mysql, and migrate it if it does.
 		if [ -d /var/lib/mysql/mysql ]; then
+			echo -en "\tRelocating MySQL data to Cluster Filesystem..."
 			mv /var/lib/mysql/* /drbd/mysql
+			echo "Done"
+		else
+			echo -e "\tData move not needed."
 		fi
 		# Now we have everything in /drbd/mysql, Tell pacemaker the new location.
+		echo -e "\tRemounting under /var/lib/mysql"
 		crm resource stop fs_mysql
 		crm resource param fs_mysql set directory "/var/lib/mysql"
 		crm resource start fs_mysql
-	else
-		echo -e "\tData move not needed"
 	fi
 	# Add MySQL RA
 	crm configure primitive mysqld lsb:mysqld meta target-role="Stopped"
 	echo group mysql fs_mysql ip_mysql mysqld | crm configure load update - 
+	echo -e "\tStarting Clustered MySQL service"
 	crm resource start mysqld
 }
 
 function asterisk_install {
 	echo "Starting Asterisk Filesystem.."
-	crm resource start ms_asterisk_mysql
+	crm resource start ms_drbd_asterisk
 	crm resource start fs_asterisk
 	# Make sure that I am the machine managing the resource
 	echo "Migrating resource to this server..."
 	crm resource migrate fs_asterisk $(hostname) >/dev/null 2>&1
-	
+	# Wait for the partition to be mounted...
+	find_mount 1 > /dev/null
+	if [ -f /drbd/asterisk/etc/asterisk.conf ]; then
+		# We already have data in /drbd/asterisk, so now lets make sure that
+		# /etc/asterisk is a symlink
+		if [ ! -L /etc/asterisk -a -f /etc/asterisk/* ]; then
+			echo "I have a conflict. There are files in /etc/asterisk, AND there are files"
+			echo "(at least /etc/asterisk/asterisk.conf) in /drbd/asterisk/etc. I don't know"
+			echo "which one wins, so I'm just going to give up and let you sort it out."
+			echo "Either delete the entire /etc/asterisk directory, or delete the entire"
+			echo "/drbd/asterisk/etc directory. There can be only one. Re-run setup when"
+			echo "you've done that and I'll continue on."
+			echo "This can happen in a disaster-recovery situation. You most probably want"
+			echo "to delete /etc/asterisk if this is the case"
+			exit 
+		fi
+		# Kill it if it's an empty directory
+		[ -d /etc/asterisk ] && rm -rf /etc/asterisk
+	else
+		# There's nothing in /drbd/asterisk/etc. Move stuff from /etc/asterisk, if it exists.
+		[ ! -d /drbd/asterisk/etc ] && mkdir /drbd/asterisk/etc
+		mv /etc/asterisk/* /drbd/asterisk/etc
+	fi
+	# If it's not a symlink, kill it, and make it one.
+	if [ ! -L /etc/asterisk ]; then
+		rm -rf /etc/asterisk
+		ln -s /drbd/asterisk/etc /etc/asterisk
+	fi
+	# Add HiPBX Asterisk RA
+	crm configure primitive asteriskd ocf:hipbx:asterisk meta target-role="Stopped"
 }

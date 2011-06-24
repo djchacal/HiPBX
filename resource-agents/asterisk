@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/bin/sh 
 #
 # OCF Asterisk Resource Agent script.
 # Copyright (c) 2011 Rob Thomas <xrobau@gmail.com>
@@ -41,7 +41,7 @@ default_user="apache"
 default_group="apache"
 default_stop_timeout=3
 default_pidfile="/var/run/saterisk/asterisk.pid"
-default_no_auto_restart=""
+default_no_auto_restart="true"
 
 for var in directory logfile user group stop_timeout pidfile no_auto_restart
 	do
