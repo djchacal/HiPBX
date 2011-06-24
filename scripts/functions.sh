@@ -71,7 +71,6 @@ function disableall {
 	chkconfig iptables off
 	service iptables status > /dev/null && service iptables stop
 	chkconfig drbd off
-	service drbd status > /dev/null && service drbd stop
 	if ! modprobe drbd > /dev/null 2>&1; then
 		echo "Unable to load DRBD module. Please install DRBD rpms"
 		exit
@@ -759,7 +758,7 @@ function mysql_install {
 	crm resource start ms_drbd_mysql
 	crm resource start fs_mysql
 	# Make sure that I am the machine managing the resource
-	echo -e "\tMigrating resource to this server..."
+	echo -e "\tMigrating mysqld resource to this server..."
 	crm resource migrate fs_mysql $(hostname) >/dev/null 2>&1
 	# Check to see where the DRBD mysql resource is mounted, when it turns up.
 	if [ $(find_mount 0) = "/drbd/mysql" ]; then
