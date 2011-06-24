@@ -27,7 +27,6 @@
 #       OCF_RESKEY_stop_timeout
 #       OCF_RESKEY_pidfile
 #       OCF_RESKEY_cmdline_options
-#       OCF_RESKEY_no_auto_restart
 
 OCF_ROOT=/usr/lib/ocf
 # Initialization:
@@ -39,11 +38,10 @@ default_directory="/usr/sbin"
 default_logfile=" /var/run/asterisk/asterisk.out"
 default_user="apache"
 default_group="apache"
-default_stop_timeout=3
+default_stop_timeout=30
 default_pidfile="/var/run/asterisk/asterisk.pid"
-default_no_auto_restart="true"
 
-for var in directory logfile user group stop_timeout pidfile no_auto_restart
+for var in directory logfile user group stop_timeout pidfile
 	do
 	ocfvar="OCF_RESKEY_$var"
 	if [ -z "${!ocfvar}" ]; then
@@ -107,7 +105,7 @@ asterisk_stop() {
 	# we need to shut down.
 	ocf_log debug "Forcing $instance_name to shut down"
 	$directory/asterisk $cmdline_options -rx 'core stop now' > $logfile 2>&1
-	sleep 1
+	sleep 2
 	[  $(asterisk_status; echo $?) -eq $OCF_NOT_RUNNING ] && return $OCF_SUCCESS
 
 	# If Asterisk is still running, something bad has happened inside it. It should
@@ -122,18 +120,7 @@ asterisk_stop() {
 }
 
 asterisk_monitor() {
-	asterisk_status
-	if [ $? -eq $OCF_NOT_RUNNING ]; then
-		if [ -z $no_auto_restart ]; then
-			# I'm allowed to try to auto-restart it.
-			asterisk_start
-			return $?
-		else
-			# It's dead, and I'm not allowed to restart it.
-			return $OCF_NOT_RUNNING
-		fi
-	fi
-	return 0
+	asterisk_status 
 }
 
 asterisk_validate() {
@@ -158,10 +145,7 @@ cat <<END
 <resource-agent name="asterisk">
 <version>1.0</version>
 <longdesc lang="en">
-This is an OCF RA to manage Asterisk. It will try to auto-restart Asterisk 
-if it finds it down for any reason (check in 'monitor'). This may be an unwanted
-action, and if so, create a paramater of 'no-auto-restart' and set it to any
-non-null string.
+This is an OCF RA to manage Asterisk. 
 
 Note that a 'stop' will not immediately terminate Asterisk, and will wait 
 the 'stop' timeout value for all calls to complete, before forcing a stop. 
