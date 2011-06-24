@@ -40,7 +40,7 @@ default_logfile=" /var/run/asterisk/asterisk.out"
 default_user="apache"
 default_group="apache"
 default_stop_timeout=3
-default_pidfile="/var/run/saterisk/asterisk.pid"
+default_pidfile="/var/run/asterisk/asterisk.pid"
 default_no_auto_restart="true"
 
 for var in directory logfile user group stop_timeout pidfile no_auto_restart
@@ -62,15 +62,15 @@ cmdline_options="$OCF_RESKEY_cmdline_options"
 asterisk_status() {
 
 	# Is there a pidfile, and is it valid?
-	[ ! -f $pidfile] && return $OCF_NOT_RUNNING
+	[ ! -f "$pidfile"] && return $OCF_NOT_RUNNING
 
 	pid=$(cat $pidfile)
 	
 	# Is there a task with that pid?
-	[ ! -d /proc/$pid ] && return $OCF_NOT_RUNNING
+	[ ! -d "/proc/$pid" ] && return $OCF_NOT_RUNNING
 
 	# Is that task asterisk?
-	[ $(readlink /proc/$pid/exe) != "$directory/asterisk" ] && return $OCF_NOT_RUNNING
+	[ "$(readlink /proc/$pid/exe)" != "$directory/asterisk" ] && return $OCF_NOT_RUNNING
 
 	# All good. Now just make sure we can talk to it..
 	if $(asterisk -rx "core show status" > /dev/null 2>&1) ; then
@@ -82,7 +82,7 @@ asterisk_status() {
 
 asterisk_start() {
 	ocf_log debug "Starting $instance_name:"
-	[  $(asterisk_status; echo $?) -eq 0 ] && return $OCF_SUCCESS
+	[  "$(asterisk_status; echo $?)" -eq 0 ] && return $OCF_SUCCESS
 	cmdline="$directory/asterisk -U$user -G$group $cmdline_options > $logfile 2>&1"
 	$cmdline && return 0
 	return 1
@@ -140,8 +140,10 @@ asterisk_validate() {
 	# There's not much we can do to validate the settings, apart from
 	# actually STARTING asterisk. And we shouldn't start a process when
 	# we're just seeing if it'll work. So we'll do some basic checks
-	# to make sure asterisk is installed, but that's about all we can
-	# do.
+	# to make sure asterisk is installed, and try to fix anything that's
+	# broken but not terminally so, but that's about all we can do.
+	[ ! -d $(dirname $pidfile) ] && mkdir -p $(dirname $pidfile)
+	[ ! -d $(dirname $logfile) ] && mkdir -p $(dirname $logfile)
 	[ ! -d $directory ] && return $OCF_ERROR_INSTALLED
 	[ ! -f $directory/asterisk ] && return $OCF_ERROR_INSTALLED
 	id $user > /dev/null 2>&1 || return $OCF_ERROR_CONFIGURED

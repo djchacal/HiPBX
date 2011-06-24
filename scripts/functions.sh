@@ -733,6 +733,7 @@ function packages_validate {
 			exit
 		fi
 	done
+	cp -f resource-agents/asterisk /usr/lib/ocf/resource.d/hipbx/asterisk
 }
 
 function find_mount {
@@ -821,4 +822,7 @@ function asterisk_install {
 	fi
 	# Add HiPBX Asterisk RA
 	crm configure primitive asteriskd ocf:hipbx:asterisk meta target-role="Stopped"
+	echo group asterisk fs_asterisk ip_asterisk asteriskd | crm configure load update - 
+	echo -e "\tStarting Clustered Asterisk service"
+	crm resource start asterisk
 }
