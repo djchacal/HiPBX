@@ -78,18 +78,19 @@ if [ "$ISMASTER" = "" ]; then
 		exit
 	fi
 	if [ "$resp" = "M" -o "$resp" = "m" ]; then
-		ISMASTER=YES
+		cfg ISMASTER YES
 	elif [ "$resp" = "S" -o "$resp" = "s" ]; then
-		ISMASTER=NO
+		cfg ISMASTER NO
 	else 
 		echo "Sorry. You must select 'M'aster or 'Slave'."
 		exit
 	fi
-	echo -n "Are you creating a new HiPBX cluster? [N/y]: "
-	read resp
-	if [ "$resp" = "Y" -o "$resp" = "y" ]; then
-		NEWCLUSTER=YES
-	fi
+fi
+
+echo -n "Are you creating a new HiPBX cluster? [N/y]: "
+read resp
+if [ "$resp" = "Y" -o "$resp" = "y" ]; then
+	NEWCLUSTER=YES
 fi
 
 # Set the hostname of the machine to be 'master' or 'slave'

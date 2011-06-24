@@ -373,7 +373,7 @@ function config_networking {
 		fi
 
 		if $(ip addr show $externalint > /dev/null 2>&1 ); then
-			MY_EXTERNAL_IP=$(ip -o addr show $externalint | grep -v secondary | grep ${externalint}$|awk '{print $4}'|sed 's^/[0-9]*^^')
+			MY_EXTERNAL_IP=$(ip -o addr show $externalint | grep -v secondary | grep -v /32 | grep ${externalint}$|awk '{print $4}'|sed 's^/[0-9]*^^')
 			if [ "$MY_EXTERNAL_IP" = "" ]; then
 				echo "I'm guessing that was a typo. I can't get an IP address from that interface."
 				echo "Try again."
@@ -396,7 +396,7 @@ function config_networking {
 		fi
 
 		if $(ip addr show $internalint > /dev/null 2>&1 ); then
-			MY_INTERNAL_IP=$(ip -o addr show $internalint | grep -v secondary | grep ${internalint}$|awk '{print $4}'|sed 's^/[0-9]*^^')
+			MY_INTERNAL_IP=$(ip -o addr show $internalint | grep -v secondary | grep -v /32 | grep ${internalint}$|awk '{print $4}'|sed 's^/[0-9]*^^')
 			if [ "$MY_INTERNAL_IP" = "" ]; then
 				echo "I'm guessing that was a typo. I can't get an IP address from that interface."
 				echo "Try again."
@@ -796,7 +796,7 @@ function asterisk_install {
 	if [ -f /drbd/asterisk/etc/asterisk.conf ]; then
 		# We already have data in /drbd/asterisk, so now lets make sure that
 		# /etc/asterisk is a symlink
-		if [ ! -L /etc/asterisk -a -f /etc/asterisk/* ]; then
+		if [[ ! -L /etc/asterisk && -f /etc/asterisk/* ]]; then
 			echo "I have a conflict. There are files in /etc/asterisk, AND there are files"
 			echo "(at least /etc/asterisk/asterisk.conf) in /drbd/asterisk/etc. I don't know"
 			echo "which one wins, so I'm just going to give up and let you sort it out."
