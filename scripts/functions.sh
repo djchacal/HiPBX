@@ -77,7 +77,6 @@ function disableall {
 	fi
 }
 
-
 function hipbx_init {
 	# Make the /etc/hipbx.d directory if it doesn't already exist.
 	[ ! -d /etc/hipbx.d ] && mkdir /etc/hipbx.d
@@ -465,11 +464,27 @@ function config_networking {
 
 function fixhosts {
 	echo -en "\tUpdating hosts file..."
-	grep ${SLAVE_INTERNAL_IP}.slave /etc/hosts > /dev/null || echo -e "$SLAVE_INTERNAL_IP\tslave" >> /etc/hosts
-	grep ${MASTER_INTERNAL_IP}.master /etc/hosts > /dev/null || echo -e "$MASTER_INTERNAL_IP\tmaster" >> /etc/hosts
+	addreplace_host slave $SLAVE_INTERNAL_IP
+	addreplace_host master $MASTER_INTERNAL_IP
+	addreplace_host mysql $mysql_IP
+	addreplace_host asterisk $asterisk_IP
 	echo "Done"
 }
 
+function addreplace_host {
+	h=/etc/hosts
+	hostnm=$1
+	hostip=$2
+	# If either of the things are blank, don't do anything.
+	[[ "$hostip" = ""  || "$hostnm" = "" ]] && return 0
+	hoststxt=$(egrep -v "[[:space:]]${hostnm}($|[[:space:]])" $h) 2> /dev/null
+	# The host may have existed in /etc/hosts, but it doesn't in  hoststxt.
+	hoststxt="$hoststxt
+$hostip		$hostnm"
+	echo "$hoststxt" > $h
+}
+		
+		
 function calc_netmasks {
 	# Figure out netmasks. This isn't line noise, honest.
 	EXTERNAL_CLASS=$(ip -o addr | grep -v secondary | grep ${MASTER_EXTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_')
@@ -754,55 +769,6 @@ function find_mount {
 	echo $find_mount
 }
 
-function mysql_install {
-	echo "Starting MySQL Filesystem..."
-	crm resource start ms_drbd_mysql
-	crm resource start fs_mysql
-	# Make sure that I am the machine managing the resource
-	echo -e "\tMigrating mysqld resource to this server..."
-	crm resource migrate fs_mysql $(hostname) >/dev/null 2>&1
-	# Check to see where the DRBD mysql resource is mounted, when it turns up.
-	if [ $(find_mount 0) = "/drbd/mysql" ]; then
-		# This is a new install
-		# Check to see if MySQL has stuff in /var/lib/mysql, and migrate it if it does.
-		if [ -d /var/lib/mysql/mysql ]; then
-			echo -en "\tRelocating MySQL data to Cluster Filesystem..."
-			mv /var/lib/mysql/* /drbd/mysql
-			echo "Done"
-		else
-			echo -e "\tData move not needed."
-		fi
-		# Now we have everything in /drbd/mysql, Tell pacemaker the new location.
-		echo -e "\tRemounting under /var/lib/mysql"
-		crm resource stop fs_mysql
-		crm resource param fs_mysql set directory "/var/lib/mysql"
-		crm resource start fs_mysql
-	fi
-	# Add MySQL RA
-	crm configure primitive mysqld lsb:mysqld meta target-role="Stopped"
-	echo group mysql fs_mysql ip_mysql mysqld | crm configure load update - 
-	echo -e "\tStarting Clustered MySQL service"
-	crm resource start mysqld
-}
-
-function asterisk_install {
-	echo "Starting Asterisk Filesystem.."
-	crm resource start ms_drbd_asterisk
-	crm resource start fs_asterisk
-	# Make sure that I am the machine managing the resource
-	echo "Migrating resource to this server..."
-	crm resource migrate fs_asterisk $(hostname) >/dev/null 2>&1
-	# Wait for the partition to be mounted...
-	find_mount 1 > /dev/null
-	# Create the symbolic links and move any files if they exist
-	create_links /etc/asterisk /drbd/asterisk/etc yes
-	# Add HiPBX Asterisk RA
-	crm configure primitive asteriskd ocf:hipbx:asterisk meta target-role="Stopped"
-	echo group asterisk fs_asterisk ip_asterisk asteriskd | crm configure load update - 
-	echo -e "\tStarting Clustered Asterisk service"
-	crm resource start asterisk
-}
-
 function dir_contains_files {
 	# Found this handy bit of code on Stack Overflow - http://stackoverflow.com/questions/91368
 	# Written by Pumbaa80 - http://stackoverflow.com/users/27862
@@ -875,4 +841,55 @@ function create_links {
 		ln -s $dst $src
 		return 0
 	fi
+}
+
+function mysql_install {
+	echo "Starting MySQL Filesystem..."
+	crm resource start ms_drbd_mysql
+	crm resource start fs_mysql
+	# Make sure that I am the machine managing the resource
+	echo -e "\tMigrating mysqld resource to this server..."
+	crm resource migrate fs_mysql $(hostname) >/dev/null 2>&1
+	# Check to see where the DRBD mysql resource is mounted, when it turns up.
+	if [ $(find_mount 0) = "/drbd/mysql" ]; then
+		# This is a new install
+		# Check to see if MySQL has stuff in /var/lib/mysql, and migrate it if it does.
+		if [ -d /var/lib/mysql/mysql ]; then
+			echo -en "\tRelocating MySQL data to Cluster Filesystem..."
+			mv /var/lib/mysql/* /drbd/mysql
+			echo "Done"
+		else
+			echo -e "\tData move not needed."
+		fi
+		# Now we have everything in /drbd/mysql, Tell pacemaker the new location.
+		echo -e "\tRemounting under /var/lib/mysql"
+		crm resource stop fs_mysql
+		crm resource param fs_mysql set directory "/var/lib/mysql"
+		crm resource start fs_mysql
+	fi
+	# Add MySQL RA
+	crm configure primitive mysqld lsb:mysqld meta target-role="Stopped"
+	echo group mysql fs_mysql ip_mysql mysqld | crm configure load update - 
+	echo -e "\tStarting Clustered MySQL service"
+	crm resource start mysqld
+	crm resource unmigrate fs_mysql >/dev/null 2>&1
+}
+
+function asterisk_install {
+	echo "Starting Asterisk Filesystem.."
+	crm resource start ms_drbd_asterisk
+	crm resource start fs_asterisk
+	# Make sure that I am the machine managing the resource
+	echo "Migrating resource to this server..."
+	crm resource migrate fs_asterisk $(hostname) >/dev/null 2>&1
+	# Wait for the partition to be mounted...
+	find_mount 1 > /dev/null
+	# Create the symbolic links and move any files if they exist
+	create_links /etc/asterisk /drbd/asterisk/etc yes
+	# Add HiPBX Asterisk RA
+	crm configure primitive asteriskd ocf:hipbx:asterisk meta target-role="Stopped"
+	echo group asterisk fs_asterisk ip_asterisk asteriskd | crm configure load update - 
+	echo -e "\tStarting Clustered Asterisk service"
+	crm resource start asterisk
+	crm resource unmigrate fs_asterisk >/dev/null 2>&1
 }
