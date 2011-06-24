@@ -43,7 +43,6 @@ default_stop_timeout=3
 default_pidfile="/var/run/saterisk/asterisk.pid"
 default_no_auto_restart=""
 
-
 for var in directory logfile user group stop_timeout pidfile no_auto_restart
 	do
 	ocfvar="OCF_RESKEY_$var"
@@ -53,7 +52,7 @@ for var in directory logfile user group stop_timeout pidfile no_auto_restart
 		printf -v $var "${!defvar}"
 	else
 		# Override default, a value has been given.
-		printf -v $var "${!defvar}"
+		printf -v $var "${!ocfvar}"
 	fi
 done
 
@@ -138,6 +137,15 @@ asterisk_monitor() {
 }
 
 asterisk_validate() {
+	# There's not much we can do to validate the settings, apart from
+	# actually STARTING asterisk. And we shouldn't start a process when
+	# we're just seeing if it'll work. So we'll do some basic checks
+	# to make sure asterisk is installed, but that's about all we can
+	# do.
+	[ ! -d $directory ] && return $OCF_ERROR_INSTALLED
+	[ ! -f $directory/asterisk ] && return $OCF_ERROR_INSTALLED
+	id $user > /dev/null 2>&1 || return $OCF_ERROR_CONFIGURED
+	grep "^$group:" /etc/group > /dev/null 2>&1 || return $OCF_ERROR_CONFIGURED
 	return $OCF_SUCCESS
 }
 
