@@ -846,6 +846,7 @@ function create_links {
  		if [ "$keep" = "no" ]; then
 			# Blow it away, our job here is done.
 			rm -rf $src
+			mkdir -p $dst
 			ln -s $dst $src
 			return 0
 		fi
@@ -873,6 +874,7 @@ function create_links {
 	else
 		# Nothing in src. No problems.
 		rm -rf $src
+		mkdir -p $dst
 		ln -s $dst $src
 		return 0
 	fi
@@ -924,7 +926,7 @@ function asterisk_install {
 	create_links /var/log/asterisk /drbd/asterisk/log no
 	create_links /var/spool/asterisk /drbd/asterisk/spool no
 	create_links /var/lib/asterisk /drbd/asterisk/lib no
-	create_links /usr/lib/asterisk/modules /drbd/asterisk/modules no
+	create_links /usr/lib64/asterisk/modules /drbd/asterisk/modules no
 	
 	# Add HiPBX Asterisk RA
 	crm configure primitive asteriskd ocf:hipbx:asterisk meta target-role="Stopped"
