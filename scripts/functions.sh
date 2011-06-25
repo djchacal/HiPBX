@@ -698,7 +698,7 @@ function setup_mysql {
 	else
 		echo "Failed."
 		echo -en "\tCreating HiPBX mysql users .. "
-		for host in localhost master slave cluster mysql; do
+		for host in localhost master slave cluster mysql $PEER_IP; do
 			echo -n "$host "
 			CREATE='CREATE USER "hipbx"@"'$host'" IDENTIFIED BY "'$MYSQLPASS'"'
 			mysql -p$MYSQLPASS -e"$CREATE"
