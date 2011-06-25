@@ -54,6 +54,9 @@ disableall
 # Make the /etc/hipbx.d directory if it doesn't already exist.
 hipbx_init
 
+# Organise the MySQL Password, we'll need this laster
+mysql_password
+
 NEWCLUSTER=NO
 
 # Is this the master or slave server?
