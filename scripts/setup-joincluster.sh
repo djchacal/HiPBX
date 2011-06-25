@@ -62,5 +62,6 @@ add_ssh
 gen_corosync
 this_node_standby
 setup_drbd
+fixhosts
 # Create Asterisk links
 create_links /etc/asterisk /drbd/asterisk/etc no
