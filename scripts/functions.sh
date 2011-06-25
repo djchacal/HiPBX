@@ -336,12 +336,13 @@ function add_ssh {
 function get_ssh_keys {
 	# This should be run on the second machine to be brought online, so it's called from 'joincluster'
 	if [ "$ISMASTER" = "YES" ]; then
-		# We need to get the slave keys, and load slave with ours.
+		# We need to get slaves keys, and load slave with ours.
 		ssh -i /etc/hipbx.d/ssh_key_master -o StrictHostKeyChecking=no slave "ssh -i /etc/hipbx.d/ssh_key_master -o StrictHostKeyChecking=no master exit"
 	else
-		# We're slave, and we need to get master, and load master with ours.
+		# We're slave, and we need to get masters, and load masters with ours.
 		ssh -i /etc/hipbx.d/ssh_key_master -o StrictHostKeyChecking=no master "ssh -i /etc/hipbx.d/ssh_key_master -o StrictHostKeyChecking=no slave exit"
-		
+	fi
+}
 
 function config_networking {
 	echo "Networking:"
