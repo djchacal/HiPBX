@@ -36,6 +36,7 @@ configure_lvm
 
 # Check SSH keys, and regenerate if needed
 check_ssh
+add_ssh
 
 # Configure Networking
 config_networking
