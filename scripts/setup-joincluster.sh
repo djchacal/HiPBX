@@ -59,6 +59,7 @@ cfg ISMASTER $ISMASTER
 configure_lvm
 check_ssh
 add_ssh
+get_ssh_keys
 gen_corosync
 this_node_standby
 setup_drbd
