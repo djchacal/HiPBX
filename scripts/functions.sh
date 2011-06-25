@@ -921,6 +921,11 @@ function asterisk_install {
 	find_mount 1 > /dev/null
 	# Create the symbolic links and move any files if they exist
 	create_links /etc/asterisk /drbd/asterisk/etc yes
+	create_links /var/log/asterisk /drbd/asterisk/log no
+	create_links /var/spool/asterisk /drbd/asterisk/spool no
+	create_links /var/lib/asterisk /drbd/asterisk/lib no
+	create_links /usr/lib/asterisk/modules /drbd/asterisk/modules no
+	
 	# Add HiPBX Asterisk RA
 	crm configure primitive asteriskd ocf:hipbx:asterisk meta target-role="Stopped"
 	echo group asterisk fs_asterisk ip_asterisk asteriskd | crm configure load update - 
