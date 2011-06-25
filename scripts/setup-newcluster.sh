@@ -63,6 +63,7 @@ this_node_online
 
 # Do MySQL
 mysql_install
+setup_mysql
 
 # Do Asterisk
 asterisk_install

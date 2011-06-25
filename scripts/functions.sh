@@ -644,8 +644,33 @@ function setup_drbd {
 }
 
 
+function wait_for_mysql_start {
+	# Wait here until MySQL is contactable.
+	# We'll only do this locally. 
+	echo -n "Waiting for MySQL startup..."
+
+        nowt=$(date +%s)
+        fint=$(( $nowt + 30 ))
+
+	res=$(mysql -equit 2>&1)
+        while [[ "$res" = "ERROR 2002"* ]]; do
+                [ $(date +%s) -gt $fint ] && break
+                sleep 0.2 # Sleep 200msec
+        	nowt=$(date +%s)
+		if [ "$nowt" -gt "$fint" ]; then
+			echo "I'm unable to connet to MySQL. Maybe it hasn't started, or maybe something"
+			echo "bad has happened. I don't know. I'm giving up. Please fix me."
+			exit
+		fi
+		res=$(mysql -equit 2>&1)
+        done
+	echo "Up!"
+}
+
+	
 function setup_mysql {
 	echo "MySQL..."
+	wait_for_mysql_start
 	# First, can we connect to MySQL without a password?
 	if (mysql -equit >/dev/null 2>&1); then
 		# We can. Set the password.
@@ -673,7 +698,7 @@ function setup_mysql {
 	else
 		echo "Failed."
 		echo -en "\tCreating HiPBX mysql users .. "
-		for host in localhost master slave cluster; do
+		for host in localhost master slave cluster mysql; do
 			echo -n "$host "
 			CREATE='CREATE USER "hipbx"@"'$host'" IDENTIFIED BY "'$MYSQLPASS'"'
 			mysql -p$MYSQLPASS -e"$CREATE"
