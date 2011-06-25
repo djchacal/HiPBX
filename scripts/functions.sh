@@ -564,7 +564,7 @@ function config_corosync {
 	for x in $(seq 0 $NBRSVCS); do
 		CLUSTER=${SERVICENAME[$x]}_IP
 		echo -en "\tCreating Cluster IP ${CLUSTER}.."
-		crm configure primitive ip_${SERVICENAME[$x]} ocf:heartbeat:IPaddr2 params ip=${!CLUSTER} cidr_netmask=32 op monitor interval=59s notify="true"
+		crm configure primitive ip_${SERVICENAME[$x]} ocf:heartbeat:IPaddr2 params ip=${!CLUSTER} cidr_netmask=$(EXTERNAL_CLASS) op monitor interval=59s notify="true"
 		echo "Done"
 	done
 }
