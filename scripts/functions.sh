@@ -823,11 +823,15 @@ function create_links {
 	# Params:
 	# $1 = source
 	# $2 = dest
-	# $3 = preserve data
+	# $3 = preserve dest data
 
 	src=$1
 	dst=$2
 	keep=$3
+
+	# Make sure dst exists.
+	mkdir -p $dst
+
 	# Is it already set up and pointing to the right place? If so, good, we're done.
 	if [ -L "$src" ]; then
 		if [ "$(readlink $src)" = "$dst" ]; then
@@ -835,49 +839,48 @@ function create_links {
 		else
 			# It's pointing somewhere wrong.
 			rm -f $src
-			mkdir -p $dst
 			ln -s $dst $src
 		fi
 	fi
 
 	# It's not a symlink, so, is there anything in there?
-	if dir_contains_files $src; then
-		# If keep is explicitly set to 'no', we don't care what's in there.
- 		if [ "$keep" = "no" ]; then
-			# Blow it away, our job here is done.
+	if dir_contains_files $dst; then
+		# OK, dst has files. What about src?
+		if dir_contains_files $src; then
+			# We have files in both src and dst. 
+			if [ "$keep" = "no" ]; then
+				# Blow away src, move src into dst
+				rm -rf $src
+				ln -s $dst $src
+				return 0
+			else
+				# There are files in src _and_ dst. We wern't explicitly told to blow
+				# away dst, so abort and cry.
+				echo "I have a conflict. There are files in $src AND there are files"
+				echo "in $dst."
+				echo "I don't know which one wins, so I'm just going to give up and let you"
+				echo "sort it out. Either delete the entire $src, or"
+				echo "delete the entire $dst directory. There can be only one."
+				echo "Re-run setup when you've done that and I'll continue on."
+				echo "This can happen in a disaster-recovery situation. You most probably want"
+				echo "to delete $src if this is the case"
+				exit 
+			fi
+		else 
+			# Files in dst, but none in src. 
 			rm -rf $src
-			mkdir -p $dst
 			ln -s $dst $src
 			return 0
 		fi
-		# OK, we may or may not care. Is there stuff in dst already?
-		if dir_contains_files $dst; then
-			# There are files in src _and_ dst. We wern't explicitly told to blow
-			# away dst, so abort and cry.
-			echo "I have a conflict. There are files in $src AND there are files"
-			echo "in $dst."
-			echo "I don't know which one wins, so I'm just going to give up and let you"
-			echo "sort it out. Either delete the entire $src, or"
-			echo "delete the entire $dst directory. There can be only one."
-			echo "Re-run setup when you've done that and I'll continue on."
-			echo "This can happen in a disaster-recovery situation. You most probably want"
-			echo "to delete $src if this is the case"
-			exit 
-		else
-			# Nothing in dst. Or it may not even exist.
-			# Wait, lets make sure it does
-			mkdir -p $dst
-			mv $src/* $dst
-			rm -rf $src
-			ln -s $dst $src
-		fi
-	else
-		# Nothing in src. No problems.
-		rm -rf $src
-		mkdir -p $dst
-		ln -s $dst $src
-		return 0
+			
 	fi
+	# Dst doesn't contain files. 
+	if dir_contains_files $src; then
+		mv $src/* $dst
+	fi
+	rm -rf $src
+	ln -s $dst $src
+	return 0
 }
 
 function mysql_install {
@@ -923,6 +926,7 @@ function asterisk_install {
 	find_mount 1 > /dev/null
 	# Create the symbolic links and move any files if they exist
 	create_links /etc/asterisk /drbd/asterisk/etc yes
+	create_links /etc/dahdi /drbd/asterisk/dahdi yes
 	create_links /var/log/asterisk /drbd/asterisk/log no
 	create_links /var/spool/asterisk /drbd/asterisk/spool no
 	create_links /var/lib/asterisk /drbd/asterisk/lib no
