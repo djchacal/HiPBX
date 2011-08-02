@@ -61,8 +61,10 @@ function installpackages {
 	yum -y install libxml2-devel ncurses-devel libtiff-devel libogg-devel
 	yum -y install libvorbis vorbis-tools
 	yum -y install pacemaker
+	yum -y install unixODBC
 	# Missing pacakges in CentOS 6:
 	# fxload, php-fpdf, php-pear-DB, iksemel, iksemel-devel
+	# Add: libresample
 }
 
 function disableall {
