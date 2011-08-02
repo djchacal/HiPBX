@@ -67,8 +67,8 @@ mysql_install
 setup_mysql
 
 # Do Asterisk
-asterisk_install
 fix_dahdi_perms
+asterisk_install
 
 # Apache
 apache_install
