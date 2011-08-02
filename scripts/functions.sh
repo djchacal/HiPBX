@@ -709,7 +709,6 @@ function setup_mysql {
 	fi
 }
 
-
 function get_peer_addr {
 	if [ $ISMASTER = YES ]; then
 		PEER=SLAVE
@@ -897,6 +896,14 @@ function mysql_install {
 		crm resource stop fs_mysql
 		crm resource param fs_mysql set directory "/var/lib/mysql"
 		crm resource start fs_mysql
+	fi
+	# MySQL Config file.
+	if [ ! -h /etc/my.cnf ] ; then
+		if [ ! -e /var/lib/mysql/my.cnf ]; then 
+			cp /etc/my.cnf /var/lib/mysql/my.cnf
+			rm -f /etc/my.cnf
+			ln -s /var/lib/mysql/my.cnf /etc/my.cnf
+		fi
 	fi
 	# Add MySQL RA
 	crm configure primitive mysqld lsb:mysqld meta target-role="Stopped"
