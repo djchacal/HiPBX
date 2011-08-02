@@ -372,7 +372,7 @@ function config_networking {
 		fi
 
 		if $(ip addr show $externalint > /dev/null 2>&1 ); then
-			MY_EXTERNAL_IP=$(ip -o addr show $externalint | grep -v secondary | grep -v /32 | grep ${externalint}$|awk '{print $4}'|sed 's^/[0-9]*^^')
+			MY_EXTERNAL_IP=$(ip -o addr show $externalint | grep -v inet6 | grep -v secondary | grep -v /32 | grep ${externalint}$|awk '{print $4}'|sed 's^/[0-9]*^^')
 			if [ "$MY_EXTERNAL_IP" = "" ]; then
 				echo "I'm guessing that was a typo. I can't get an IP address from that interface."
 				echo "Try again."
@@ -395,7 +395,7 @@ function config_networking {
 		fi
 
 		if $(ip addr show $internalint > /dev/null 2>&1 ); then
-			MY_INTERNAL_IP=$(ip -o addr show $internalint | grep -v secondary | grep -v /32 | grep ${internalint}$|awk '{print $4}'|sed 's^/[0-9]*^^')
+			MY_INTERNAL_IP=$(ip -o addr show $internalint | grep -v inet6 | grep -v secondary | grep -v /32 | grep ${internalint}$|awk '{print $4}'|sed 's^/[0-9]*^^')
 			if [ "$MY_INTERNAL_IP" = "" ]; then
 				echo "I'm guessing that was a typo. I can't get an IP address from that interface."
 				echo "Try again."
@@ -487,8 +487,8 @@ $hostip		$hostnm"
 		
 function calc_netmasks {
 	# Figure out netmasks. This isn't line noise, honest.
-	EXTERNAL_CLASS=$(ip -o addr | grep -v secondary | grep ${MASTER_EXTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_')
-	INTERNAL_CLASS=$(ip -o addr | grep -v secondary | grep ${MASTER_INTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_')
+	EXTERNAL_CLASS=$(ip -o addr | grep -v inet6 | grep -v secondary | grep ${MASTER_EXTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_')
+	INTERNAL_CLASS=$(ip -o addr | grep -v inet6 | grep -v secondary | grep ${MASTER_INTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_')
 	cfg INTERNAL_CLASS $INTERNAL_CLASS
 	cfg EXTERNAL_CLASS $EXTERNAL_CLASS
 }
