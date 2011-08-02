@@ -47,21 +47,7 @@ function selinux {
 
 function installpackages {
 	yum -y groupinstall "Development tools"
-	yum -y install atrpms-repo    # For fxload, iksemel and spandsp
-	yum -y install epel-release # for php-pear-DB, soon to be removed as a prereq.
-	yum -y install bc vim sox
-	yum -y install libusb-devel 
-	yum -y install fxload
-	yum -y install iksemel iksemel-devel
-	yum -y install httpd php php-gd php-pear
-	yum -y install mysql-server
-	yum -y install curl
-	yum -y install mysql mysql-devel
-	yum -y install php-pear-DB php-process
-	yum -y install libxml2-devel ncurses-devel libtiff-devel libogg-devel
-	yum -y install libvorbis vorbis-tools
-	yum -y install pacemaker
-	yum -y install unixODBC
+	yum -y install bc vim sox libusb-devel httpd php php-gd php-pear mysql-server curl mysql mysql-devel php-process libxml2-devel ncurses-devel libtiff-devel libogg-devel libvorbis vorbis-tools pacemaker unixODBC
 	# Missing pacakges in CentOS 6:
 	# fxload, php-fpdf, php-pear-DB, iksemel, iksemel-devel
 	# Add: libresample
