@@ -990,9 +990,9 @@ function fix_dahdi_perms {
 	sed -i s/asterisk/apache/g /etc/udev/rules.d/dahdi.rules
 }
 
-function install_freepbx {
+function freepbx_install {
 	cd freepbx-2.9.0
 	mysql -hmysql -uhipbx -p$MYSQLPASS hipbx < SQL/newinstall.sql
 	mysql -hmysql -uhipbx -p$MYSQLPASS hipbx < SQL/cdr_mysql_table.sql
-	./install_amp --dbhost=mysql --dbname=hipbx --username=hipbx --password=$MYSQLPASS --uid=apache --gid=apache --freepbxip=$httpd_IP --scripted
+	./install_amp --dbhost=mysql --dbname=hipbx --username=hipbx --password=$MYSQLPASS --uid=apache --gid=apache --freepbxip=$http_IP --scripted
 }

@@ -73,6 +73,8 @@ asterisk_install
 # Apache
 apache_install
 
+freepbx_install
+
 exit
 
 
