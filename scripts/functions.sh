@@ -773,6 +773,7 @@ function packages_validate {
 			exit
 		fi
 	done
+	mkdir -p /usr/lib/ocf/resource.d/hipbx
 	cp -f resource-agents/asterisk /usr/lib/ocf/resource.d/hipbx/asterisk
 }
 
