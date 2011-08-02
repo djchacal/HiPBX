@@ -700,20 +700,36 @@ function setup_mysql {
 	# MySQL is now secured, which is important, so now we check for the hipbx database
 	if (mysql -p$MYSQLPASS hipbx -equit 2>&1 | grep Unknown\ database > /dev/null); then
 		# Database does not exist. Create.
-		echo -e "\tCreating HiPBX database"
+		echo -e "\tCreating HiPBX databases"
 		mysqladmin -p$MYSQLPASS create hipbx
+		mysqladmin -p$MYSQLPASS create asteriskcdrdb
 	fi
-	echo -en "\tChecking for correct GRANTs..."
+	echo -en "\tChecking for correct GRANTs on hipbx database..."
 	if (mysql -uhipbx -p$MYSQLPASS -hlocalhost hipbx -equit > /dev/null 2>&1); then
+		echo "OK"
+	else
+		echo "Failed."
+		echo -en "\tCreating HiPBX mysql users .. "
+		CREATE='CREATE USER "hipbx"@"'$host'" IDENTIFIED BY "'$MYSQLPASS'"'
+		mysql -p$MYSQLPASS -e"$CREATE"
+		for host in localhost master slave cluster mysql $PEER_IP %; do
+			echo -n "$host "
+			GRANT='GRANT ALL PRIVILEGES ON hipbx.* TO "hipbx"@"'$host'" IDENTIFIED BY "'$MYSQLPASS'"'
+			mysql -p$MYSQLPASS -e"$GRANT"
+			GRANT='GRANT ALL PRIVILEGES ON asteriskcdrdb.* TO "hipbx"@"'$host'" IDENTIFIED BY "'$MYSQLPASS'"'
+			mysql -p$MYSQLPASS -e"$GRANT"
+		done
+		echo ""
+	fi
+	echo -en "\tChecking for correct GRANTs on asteriskcdrdb database..."
+	if (mysql -uhipbx -p$MYSQLPASS -hlocalhost asteriskcdrdb -equit > /dev/null 2>&1); then
 		echo "OK"
 	else
 		echo "Failed."
 		echo -en "\tCreating HiPBX mysql users .. "
 		for host in localhost master slave cluster mysql $PEER_IP %; do
 			echo -n "$host "
-			CREATE='CREATE USER "hipbx"@"'$host'" IDENTIFIED BY "'$MYSQLPASS'"'
-			mysql -p$MYSQLPASS -e"$CREATE"
-			GRANT='GRANT ALL PRIVILEGES ON hipbx.* TO "hipbx"@"'$host'" IDENTIFIED BY "'$MYSQLPASS'"'
+			GRANT='GRANT ALL PRIVILEGES ON asteriskcdrdb.* TO "hipbx"@"'$host'" IDENTIFIED BY "'$MYSQLPASS'"'
 			mysql -p$MYSQLPASS -e"$GRANT"
 		done
 		echo ""
@@ -998,6 +1014,6 @@ function fix_dahdi_perms {
 function freepbx_install {
 	cd freepbx-2.9.0
 	mysql -hmysql -uhipbx -p$MYSQLPASS hipbx < SQL/newinstall.sql
-	mysql -hmysql -uhipbx -p$MYSQLPASS hipbx < SQL/cdr_mysql_table.sql
+	mysql -hmysql -uhipbx -p$MYSQLPASS asteriskcdrdb < SQL/cdr_mysql_table.sql
 	./install_amp --dbhost=mysql --dbname=hipbx --username=hipbx --password=$MYSQLPASS --uid=apache --gid=apache --freepbxip=$http_IP --scripted
 }
