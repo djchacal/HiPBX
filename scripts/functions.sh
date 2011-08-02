@@ -267,7 +267,12 @@ function configure_lvm {
 			fi
 		done
 	fi
-	cfg ${MYNAME}_VGNAME "$SELECTEDVG"
+
+	if [ $ISMASTER = YES ]; then
+		cfg MASTER_VGNAME "$SELECTEDVG"
+	else
+		cfg SLAVE_VGNAME "$SELECTEDVG"
+	fi
 	MY_VGNAME=$SELECTEDVG
 }
 
