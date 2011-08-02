@@ -82,8 +82,10 @@ if [ "$ISMASTER" = "" ]; then
 	fi
 	if [ "$resp" = "M" -o "$resp" = "m" ]; then
 		cfg ISMASTER YES
+		MYNAME=MASTER
 	elif [ "$resp" = "S" -o "$resp" = "s" ]; then
 		cfg ISMASTER NO
+		MYNAME=SLAVE
 	else 
 		echo "Sorry. You must select 'M'aster or 'Slave'."
 		exit

@@ -267,11 +267,7 @@ function configure_lvm {
 			fi
 		done
 	fi
-	if [ $ISMASTER = YES ]; then
-		cfg MASTER_VGNAME "$SELECTEDVG"
-	else
-		cfg SLAVE_VGNAME "$SELECTEDVG"
-	fi
+	cfg ${MYNAME}_VGNAME "$SELECTEDVG"
 	MY_VGNAME=$SELECTEDVG
 }
 
@@ -487,8 +483,13 @@ $hostip		$hostnm"
 		
 function calc_netmasks {
 	# Figure out netmasks. This isn't line noise, honest.
-	EXTERNAL_CLASS=$(ip -o addr | grep -v inet6 | grep -v secondary | grep ${MASTER_EXTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_')
-	INTERNAL_CLASS=$(ip -o addr | grep -v inet6 | grep -v secondary | grep ${MASTER_INTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_')
+	if [ $ISMASTER = YES ] ; then
+		EXTERNAL_CLASS=$(ip -o addr | grep -v inet6 | grep -v secondary | grep ${MASTER_EXTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_')
+		INTERNAL_CLASS=$(ip -o addr | grep -v inet6 | grep -v secondary | grep ${MASTER_INTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_')
+	else
+		EXTERNAL_CLASS=$(ip -o addr | grep -v inet6 | grep -v secondary | grep ${SLAVE_EXTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_')
+		INTERNAL_CLASS=$(ip -o addr | grep -v inet6 | grep -v secondary | grep ${SLAVE_INTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_')
+	fi
 	cfg INTERNAL_CLASS $INTERNAL_CLASS
 	cfg EXTERNAL_CLASS $EXTERNAL_CLASS
 }
@@ -934,7 +935,8 @@ function asterisk_install {
 	
 	# Add HiPBX Asterisk RA
 	crm configure primitive asteriskd ocf:hipbx:asterisk meta target-role="Stopped"
-	echo group asterisk fs_asterisk ip_asterisk asteriskd | crm configure load update - 
+	crm configure primitive dahdi lsb:dahdi meta target-role="Stopped"
+	echo group asterisk fs_asterisk ip_asterisk dahdi asteriskd | crm configure load update - 
 	echo -e "\tStarting Clustered Asterisk service"
 	crm resource start asterisk
 	crm resource unmigrate fs_asterisk >/dev/null 2>&1
@@ -953,8 +955,22 @@ function apache_install {
 	create_links /var/log/httpd /drbd/http/logs yes
 	create_links /etc/php.d /drbd/http/php yes
 	chown -R apache /drbd/http/*
-	[ ! -f /etc/php.ini ] && mv /etc/php.ini /drbd/http/php.ini
-	[ ! -h /etc/php.ini ] && ln -s /drbd/http/php.ini /etc/php.ini
+	if [ -f /etc/php.ini ] ; then 
+		if [ -f /drbd/http/php.ini ] ; then
+			rm -f /etc/php.ini
+			ln -s /drbd/http/php.ini /etc/php.ini
+		else
+			mv /etc/php.ini /drbd/http/php.ini
+			ln -s /drbd/http/php.ini /etc/php.ini
+		fi
+	else 
+		if [ -f /drbd/http/php.ini ] ; then
+			ln -s /drbd/http/php.ini /etc/php.ini
+		else
+			echo "**** ERROR ****. I can't find a php.ini file. Apache will be sad. Please fix."
+			exit
+		fi
+	fi
 	# Fix timezone in php.ini..
 	. /etc/sysconfig/clock
 	sed -i "s_^;*date.timezone.*\$_date.timezone = '$ZONE'_" /drbd/http/php.ini
