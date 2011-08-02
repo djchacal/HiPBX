@@ -49,11 +49,11 @@ function installpackages {
 	yum -y groupinstall "Development tools"
 	yum -y install atrpms-repo    # For fxload, iksemel and spandsp
 	yum -y install epel-release # for php-pear-DB, soon to be removed as a prereq.
-	yum -y install bc vim
+	yum -y install bc vim sox
 	yum -y install libusb-devel 
 	yum -y install fxload
 	yum -y install iksemel iksemel-devel
-	yum -y install httpd php php-fpdf
+	yum -y install httpd php php-gd php-pear
 	yum -y install mysql-server
 	yum -y install curl
 	yum -y install mysql mysql-devel
@@ -61,6 +61,8 @@ function installpackages {
 	yum -y install libxml2-devel ncurses-devel libtiff-devel libogg-devel
 	yum -y install libvorbis vorbis-tools
 	yum -y install pacemaker
+	# Missing pacakges in CentOS 6:
+	# fxload, php-fpdf, php-pear-DB, iksemel, iksemel-devel
 }
 
 function disableall {
