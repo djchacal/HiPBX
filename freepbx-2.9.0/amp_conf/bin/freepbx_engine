@@ -175,7 +175,7 @@ chown_asterisk() {
 	chown -R $AMPASTERISKWEBUSER:$AMPASTERISKWEBGROUP $(readlink -f $AMPWEBROOT/recordings)
 	chmod -R g+w $(readlink -f $AMPWEBROOT/recordings)
 	chown -R $AMPASTERISKWEBUSER:$AAMPASTERISKWEBGROUP $(readlink -f $AMPWEBROOT/_asterisk)
-	chmod u+x,g+x $(readlink -f $AMPBIN)
+	chmod u+x,g+x $(readlink -f $AMPBIN)/*
 	chown -R $AMPASTERISKUSER:$AMPASTERISKGROUP $(readlink -f $AMPBIN)
 
 	if [ "$FPBXDBUGFILE" != "" -a -e "$FPBXDBUGFILE" ]; then
