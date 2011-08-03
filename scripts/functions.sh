@@ -47,7 +47,7 @@ function selinux {
 
 function installpackages {
 	yum -y groupinstall "Development tools"
-	yum -y install bc vim sox libusb-devel httpd php php-gd php-pear php-mysql mysql-server curl mysql mysql-devel php-process libxml2-devel ncurses-devel libtiff-devel libogg-devel libvorbis vorbis-tools pacemaker unixODBC
+	yum -y install bc vim sox libusb-devel httpd php php-gd php-pear php-mysql mysql-server curl mysql mysql-devel php-process libxml2-devel ncurses-devel libtiff-devel libogg-devel libvorbis vorbis-tools pacemaker unixODBC bluez-libs postgresql-libs
 	# Missing pacakges in CentOS 6:
 	# fxload, php-fpdf, php-pear-DB, iksemel, iksemel-devel
 	# Add: libresample
