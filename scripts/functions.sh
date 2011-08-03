@@ -930,6 +930,7 @@ function asterisk_install {
 	create_links /var/lib/asterisk /drbd/asterisk/lib no
 	create_links /usr/lib64/asterisk/modules /drbd/asterisk/modules no
 	chown -R apache /drbd/asterisk/*
+	chmod -R 755 /drbd/asterisk/*
 	
 	# Add HiPBX Asterisk RA
 	crm configure primitive asteriskd ocf:hipbx:asterisk meta target-role="Stopped"
@@ -971,7 +972,7 @@ function fix_dahdi_perms {
 
 function install_freepbx {
 	cd freepbx-2.9.0
-	mysql -hmysql -p$MYSQLPASS hipbx < SQL/newinstall.sql
-	mysql -hmysql -p$MYSQLPASS hipbx < SQL/cdr_mysql_table.sql
+	mysql -hmysql -uhipbx -p$MYSQLPASS hipbx < SQL/newinstall.sql
+	mysql -hmysql -uhipbx -p$MYSQLPASS hipbx < SQL/cdr_mysql_table.sql
 	./install_amp --dbhost=mysql --dbname=hipbx --username=hipbx --password=$MYSQLPASS --uid=apache --gid=apache --freepbxip=$httpd_IP --scripted
 }
