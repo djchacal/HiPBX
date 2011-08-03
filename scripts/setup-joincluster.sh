@@ -66,6 +66,7 @@ this_node_standby
 setup_drbd
 # Create Asterisk links
 create_links /etc/asterisk /drbd/asterisk/etc no
+fix_dahdi_perms
 # MySQL Configuration file
 rm -f /etc/my.cnf
 ln -s /var/lib/mysql/my.cnf /etc/my.cnf

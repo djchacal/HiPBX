@@ -964,3 +964,7 @@ function apache_install {
 	crm resource unmigrate fs_http >/dev/null 2>&1
 }
 	
+function fix_dahdi_perms {
+	sed -i s/OWNER="asterisk"/OWNER="apache"/ /etc/udev/rules.d/dahdi.rules
+	sed -i s/GROUP="asterisk"/GROUP="apache"/ /etc/udev/rules.d/dahdi.rules
+}
