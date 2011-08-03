@@ -47,7 +47,7 @@ function selinux {
 
 function installpackages {
 	yum -y groupinstall "Development tools"
-	yum -y install bc vim sox libusb-devel httpd php php-gd php-pear mysql-server curl mysql mysql-devel php-process libxml2-devel ncurses-devel libtiff-devel libogg-devel libvorbis vorbis-tools pacemaker unixODBC
+	yum -y install bc vim sox libusb-devel httpd php php-gd php-pear php-mysql mysql-server curl mysql mysql-devel php-process libxml2-devel ncurses-devel libtiff-devel libogg-devel libvorbis vorbis-tools pacemaker unixODBC
 	# Missing pacakges in CentOS 6:
 	# fxload, php-fpdf, php-pear-DB, iksemel, iksemel-devel
 	# Add: libresample
@@ -698,7 +698,7 @@ function setup_mysql {
 	else
 		echo "Failed."
 		echo -en "\tCreating HiPBX mysql users .. "
-		for host in localhost master slave cluster mysql $PEER_IP; do
+		for host in localhost master slave cluster mysql $PEER_IP %; do
 			echo -n "$host "
 			CREATE='CREATE USER "hipbx"@"'$host'" IDENTIFIED BY "'$MYSQLPASS'"'
 			mysql -p$MYSQLPASS -e"$CREATE"
@@ -952,6 +952,9 @@ function apache_install {
 	create_links /etc/php.d /drbd/http/php yes
 	mv -n /etc/php.ini /drbd/http/php.ini
 	ln -s /drbd/http/php.ini /etc/php.ini
+	# Fix timezone in php.ini..
+	. /etc/sysconfig/clock
+	sed -i "s_^;*date.timezone.*\$_date.timezone = '$ZONE'_" /drbd/http/php.ini
 	crm configure primitive httpd lsb:httpd meta target-role="Stopped"
 	echo group http fs_http ip_http httpd | crm configure load update - 
 	echo -e "\tStarting Clustered Apache service"
