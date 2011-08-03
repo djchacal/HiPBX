@@ -968,3 +968,10 @@ function fix_dahdi_perms {
 	sed -i s/OWNER="asterisk"/OWNER="apache"/ /etc/udev/rules.d/dahdi.rules
 	sed -i s/GROUP="asterisk"/GROUP="apache"/ /etc/udev/rules.d/dahdi.rules
 }
+
+function install_freepbx {
+	cd freepbx-2.9.0
+	mysql -hmysql -p$MYSQLPASS hipbx < SQL/newinstall.sql
+	mysql -hmysql -p$MYSQLPASS hipbx < SQL/cdr_mysql_table.sql
+	./install_amp --dbhost=mysql --dbname=hipbx --username=hipbx --password=$MYSQLPASS --uid=apache --gid=apache --freepbxip=$httpd_IP --scripted
+}
