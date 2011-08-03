@@ -60,7 +60,7 @@ cmdline_options="$OCF_RESKEY_cmdline_options"
 asterisk_status() {
 
 	# Is there a pidfile, and is it valid?
-	[ ! -f "$pidfile"] && return $OCF_NOT_RUNNING
+	[ ! -f "$pidfile" ] && return $OCF_NOT_RUNNING
 
 	pid=$(cat $pidfile)
 	
