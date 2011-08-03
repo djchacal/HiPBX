@@ -929,6 +929,7 @@ function asterisk_install {
 	create_links /var/spool/asterisk /drbd/asterisk/spool no
 	create_links /var/lib/asterisk /drbd/asterisk/lib no
 	create_links /usr/lib64/asterisk/modules /drbd/asterisk/modules no
+	chown -R apache /drbd/asterisk/*
 	
 	# Add HiPBX Asterisk RA
 	crm configure primitive asteriskd ocf:hipbx:asterisk meta target-role="Stopped"
@@ -950,8 +951,9 @@ function apache_install {
 	create_links /var/www /drbd/http/www yes
 	create_links /var/log/httpd /drbd/http/logs yes
 	create_links /etc/php.d /drbd/http/php yes
-	mv -n /etc/php.ini /drbd/http/php.ini
-	ln -s /drbd/http/php.ini /etc/php.ini
+	chown -R apache /drbd/http/*
+	[ ! -f /etc/php.ini ] && mv /etc/php.ini /drbd/http/php.ini
+	[ ! -h /etc/php.ini ] && ln -s /drbd/http/php.ini /etc/php.ini
 	# Fix timezone in php.ini..
 	. /etc/sysconfig/clock
 	sed -i "s_^;*date.timezone.*\$_date.timezone = '$ZONE'_" /drbd/http/php.ini
