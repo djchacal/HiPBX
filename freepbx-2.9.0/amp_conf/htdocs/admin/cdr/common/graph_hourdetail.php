@@ -194,7 +194,6 @@ print_r ($mycall_dur);
 echo count($mycall_minsec_start)."<br>";
 */
 
-if (isset($fluctuation) && is_array($fluctuation)) { //cant find if/where this is ever set... -MB
 	for ($k=0; $k<=count($mycall_minsec_start); $k++){
 
 		if (is_numeric($fluctuation[$mycall_minsec_start[$k][0]])){
@@ -210,9 +209,6 @@ if (isset($fluctuation) && is_array($fluctuation)) { //cant find if/where this i
 	}
 	ksort($fluctuation);
 	//print_r($fluctuation);
-} else {
-	$fluctuation = array();
-}
 
 $maxload=1;
 $load=0;

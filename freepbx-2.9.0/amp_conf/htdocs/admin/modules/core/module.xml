@@ -1,22 +1,45 @@
 <module>
 	<rawname>core</rawname>
+	<repo>standard</repo>
 	<type>setup</type>
 	<category>Basic</category>
 	<name>Core</name>
-	<version>2.8.1.0</version>
+	<version>2.9.0.1</version>
 	<publisher>FreePBX</publisher>
 	<license>GPLv2+</license>
 	<candisable>no</candisable>
 	<canuninstall>no</canuninstall>
 	<changelog>
-		*2.8.1.0* bump to 2.8.1 to match framework base
-		*2.8.0.8* #4749 (Avoid Asterisk Security Vulnerability)
-		*2.8.0.7* #4689, #4697, #4730
-		*2.8.0.6* #4634, #4453, #4563
-		*2.8.0.5* #4549, #4615 (Security Bug)
-		*2.8.0.4* #4574, #4572, #4575
-		*2.8.0.3* #4401, #4525, #4507, #4499
-		*2.8.0.2* #4443, #4444, #4460, #4414
+		*2.9.0.1* #5161
+		*2.9.0.0* #5117
+		*2.9.0rc1.6* #5095, #5109
+		*2.9.0rc1.5* #5055
+		*2.9.0rc1.4* #5065, #5057
+		*2.9.0rc1.3* #4871 again
+		*2.9.0rc1.2* #4871, misc
+		*2.9.0rc1.1* #5011, #5017, #5033
+		*2.9.0rc1.0* #4987, #4989, #5000, #4998, #4995
+		*2.9.0beta2.3* #4937, #4977, #4970
+		*2.9.0beta2.2* #4968, other cosmectic changes
+		*2.9.0beta2.1* #4936
+		*2.9.0beta2.0* #4804, #4908, #4933
+		*2.9.0beta1.9* #4001, #4914
+		*2.9.0beta1.8* #4902
+		*2.9.0beta1.7* #4137, #4620
+		*2.9.0beta1.6* #4890, #2110
+		*2.9.0beta1.5* #4888
+		*2.9.0beta1.4* #4880
+		*2.9.0beta1.3* #4656, #4821, #4798, #4872, #4401, #4619
+		*2.9.0beta1.2* #4224
+		*2.9.0beta1.1* #778, #4804, #4809, #4812, #4576, #4334, #4815, #3893
+		*2.9.0alpha1.7* #4608, #4790, #4788, #4800
+		*2.9.0alpha1.6* #4774, #4775, #4776, #3784, #4440
+		*2.9.0alpha1.5* #4733, #4469, #4740, #4962, #4744, #4749, #4752, #4753, #4758, #4760, #4299, #1565
+		*2.9.0alpha1.4* #4648,#4653,#4453,#4563,#4445,#4617,#4654,#4332,#4652,#4684,#4681,#4689,#4701,#4697,#4702,#4697,#4472,#4710,#4655,#4730,#4566,#4733
+		*2.9.0alpha1.3* #4580, #4599, #4600, #4615, #4633, #4634, #4645
+		*2.9.0alpha1.2* #4401, #4525, #4507, #4499, #4574, #4572, #4575, #4527, #4469
+		*2.9.0alpha1.1* #4443, #4444, #4460, #4414
+		*2.9.0alpha1.0* bump to 2.9
 		*2.8.0.1* #4426
 		*2.8.0.0* #4396
 		*2.8.0.0RC1.4* #4390
@@ -87,9 +110,10 @@
 		<routing>Outbound Routes</routing>
 		<trunks>Trunks</trunks>
 		<general>General Settings</general>
+		<advancedsettings category="Advanced Administration" type="tool" sort="-9">Advanced Settings</advancedsettings>
 		<ampusers sort="5">Administrators</ampusers>
 		<wiki type="tool" category="Support" sort="5" href="http://freepbx.org" target="_blank" access="all">FreePBX Support</wiki>
 	</menuitems>
-	<location>release/2.8/core-2.8.1.0.tgz</location>
-	<md5sum>a0eca5d19e5aacbede50ba4b88d6f47b</md5sum>
+	<location>release/2.9/core-2.9.0.1.tgz</location>
+	<md5sum>0efa2f5852eed78f0cce4b752a9a64cd</md5sum>
 </module>

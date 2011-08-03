@@ -1,11 +1,12 @@
 <module>
 	<rawname>customappsreg</rawname>
+	<repo>standard</repo>
 	<name>Custom Applications</name>
-	<version>2.8.0.1</version>
+	<version>2.9.0.1</version>
 	<publisher>FreePBX</publisher>
 	<license>GPLv2+</license>
 	<type>tool</type>
-	<category>System Administration</category>
+	<category>Advanced Administration</category>
 	<description>
 		Registry to add custom extensions and destinations that may be created and used so that the Extensions and Destinations Registry can include these.
 	</description>
@@ -14,7 +15,8 @@
 		<customdests>Custom Destinations</customdests>
 	</menuitems>
 	<changelog>
-		*2.8.0.1* #4618 XSS patch
+		*2.9.0.1* #4001
+		*2.9.0.0* #4618 XSS patch
 		*2.8.0.0* published 2.8 version
 		*2.7.0.0* localizations
 		*2.6.0.2* localizations
@@ -35,6 +37,6 @@
 	<depends>
 		<version>2.4.0</version>
 	</depends>
-	<location>release/2.8/customappsreg-2.8.0.1.tgz</location>
-	<md5sum>3ba3b0db0e334dd265a05f6d945c5ba0</md5sum>
+	<location>release/2.9/customappsreg-2.9.0.1.tgz</location>
+	<md5sum>337daeb1f9b1c9f2cbcef043f65c044e</md5sum>
 </module>

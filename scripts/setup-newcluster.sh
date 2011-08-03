@@ -69,6 +69,9 @@ setup_mysql
 # Do Asterisk
 asterisk_install
 
+# Apache
+apache_install
+
 exit
 
 

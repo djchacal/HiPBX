@@ -9,18 +9,6 @@ _("Check Recording");
 global $amp_conf;
 global $db;
 
-if (! function_exists("out")) {
-	function out($text) {
-		echo $text."<br />";
-	}
-}
-
-if (! function_exists("outn")) {
-	function outn($text) {
-		echo $text;
-	}
-}
-
 $recordings_astsnd_path = isset($amp_conf['ASTVARLIBDIR'])?$amp_conf['ASTVARLIBDIR']:'/var/lib/asterisk';
 $recordings_astsnd_path .= "/sounds/";
 $autoincrement = (($amp_conf["AMPDBENGINE"] == "sqlite") || ($amp_conf["AMPDBENGINE"] == "sqlite3")) ? "AUTOINCREMENT":"AUTO_INCREMENT";
@@ -74,13 +62,12 @@ if (!is_writable($recordings_directory)) {
 $sql = "SELECT * FROM recordings where displayname = '__invalid'";
 $results = $db->getRow($sql, DB_FETCHMODE_ASSOC);
 if (!isset($results['filename'])) {
-       sql("INSERT INTO recordings (displayname, filename, description) VALUES ( '__invalid', 'install done', '');" );
+  sql("INSERT INTO recordings (displayname, filename, description) VALUES ( '__invalid', 'install done', '');" );
 	$dh = opendir($recordings_directory);
 	while (false !== ($file = readdir($dh))) { // http://au3.php.net/readdir 
 		if ($file[0] != "." && $file != "CVS" && $file != "svn" && !is_dir("$recordings_directory/$file")) {
 			// Ignore the suffix..
-			$fname = ereg_replace('.wav', '', $file);
-			$fname = ereg_replace('.gsm', '', $fname);
+      $fname = str_replace(array('.wav','.gsm'), array('',''), $file);
 			if (recordings_get_id("custom/$fname") == null)
 				recordings_add($fname, "custom/$file");
 		}
@@ -133,4 +120,21 @@ if  (($amp_conf["AMPDBENGINE"] != "sqlite") && ($amp_conf["AMPDBENGINE"] != "sql
 	} else {
 		out(_("already exists"));
 	}
-?>
+
+$freepbx_conf =& freepbx_conf::create();
+
+  // AMPPLAYKEY
+  //
+  $set['value'] = '';
+  $set['defaultval'] =& $set['value'];
+  $set['readonly'] = 0;
+  $set['hidden'] = 0;
+  $set['level'] = 3;
+  $set['module'] = 'recordings';
+  $set['category'] = 'System Setup';
+  $set['emptyok'] = 1;
+  $set['name'] = 'Recordings Crypt Key';
+  $set['description'] = 'Crypt key used by this recordings module when accessing the recording files. Change from the default of "moufdsuu3nma0" if desired.';
+  $set['type'] = CONF_TYPE_TEXT;
+  $freepbx_conf->define_conf_setting('AMPPLAYKEY',$set,true);
+

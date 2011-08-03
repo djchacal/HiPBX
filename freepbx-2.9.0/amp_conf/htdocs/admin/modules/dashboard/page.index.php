@@ -335,7 +335,7 @@ function show_procinfo() {
 	}
 	
 	// asterisk proxy (optionally)
-	if (isset($amp_conf['ASTMANAGERPROXYPORT'])) {
+	if ($amp_conf['ASTMANAGERPROXYPORT']) {
 		if ($procinfo->check_port($amp_conf['ASTMANAGERPROXYPORT'])) {
 			$out .= draw_status_box(_("Manager Proxy"), "ok", _('Asterisk Manager Proxy is running'));
 		} else {
@@ -344,19 +344,19 @@ function show_procinfo() {
 	}
 	
 	// fop
-	if(!$amp_conf['FOPDISABLE'])  {
-		if ($procinfo->check_fop_server()) {
-			$out .= draw_status_box(_("Op Panel"), "ok", _('FOP Operator Panel Server is running'));
-		} else {
-			if ($amp_conf['FOPRUN']) {
-				// it should be running
-				$out .= draw_status_box(_("Op Panel"), "warn", _('FOP Operator Panel Server is not running, you will not be able to use the operator panel, but the system will run fine without it.'));
-			} else {
-				$out .= draw_status_box(_("Op Panel"), "disabled", _('FOP Operator Panel is disabled in amportal.conf'));
-			}
-		}
-	}
-	
+	$warn = draw_status_box(_("Op Panel"), "warn", _('FOP Operator Panel Server is not running, you will not be able to use the operator panel, but the system will run fine without it.'));
+	if($amp_conf['FOPDISABLE']) { // FOP is disabled, display that on the dashboard
+    $out .= draw_status_box(_("Op Panel"), "disabled", _('FOP Operator Panel is disabled in Advanced Settings'));
+  } else {
+    if (!$amp_conf['FOPRUN']) { 
+      $out .= $warn; // if FOPRUN is false, display warning on the dashboard
+    } elseif ($procinfo->check_fop_server()) { // if FOPRUN is true, then check the fop tcp port, if OK display that on dashboard
+      $out .= draw_status_box(_("Op Panel"), "ok", _('FOP Operator Panel Server is running'));
+    } else { // check_fop_server returned an error, display warning
+			$out .= $warn;
+    }
+  }
+
 	// mysql
 	if ($amp_conf['AMPDBENGINE'] == "mysql") {
 		/* this is silly- it's always running, if the web interface loads
@@ -502,7 +502,6 @@ define("IN_PHPSYSINFO", "1");
 define("APP_ROOT", dirname(__FILE__).'/phpsysinfo');
 include APP_ROOT."/common_functions.php";
 include APP_ROOT."/class.".PHP_OS.".inc.php";
-include_once "common/json.inc.php";
 include dirname(__FILE__)."/class.astinfo.php";
 include dirname(__FILE__)."/class.average_rate_calculator.php";
 include dirname(__FILE__)."/class.procinfo.php";
@@ -705,9 +704,8 @@ if (!$quietmode) {
 		break;
 		
 		case 'info':
-			$json = new Services_JSON();
 			header("Content-type: application/json"); 
-			echo $json->encode(
+			echo json_encode(
 				array(
 					'procinfo'=>show_procinfo(),
 					'sysinfo'=>show_sysinfo(),
@@ -717,9 +715,8 @@ if (!$quietmode) {
 			);
 		break;
 		case 'stats':
-			$json = new Services_JSON();
 			header("Content-type: application/json"); 
-			echo $json->encode(
+			echo json_encode(
 				array(
 					'sysstats'=>show_sysstats(),
 					'aststats'=>show_aststats(),
@@ -727,9 +724,8 @@ if (!$quietmode) {
 			);
 		break;
 		case 'all':
-			$json = new Services_JSON();
 			header("Content-type: application/json"); 
-			echo $json->encode(
+			echo json_encode(
 				array(
 					'sysstats'=>show_sysstats(),
 					'aststats'=>show_aststats(),

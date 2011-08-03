@@ -9,6 +9,8 @@ function framework_print_errors($src, $dst, $errors) {
 	}
 }
 
+// These are need to handle 2.8 to 2.9 upgrades
+//
 if (! function_exists('out')) {
 	function out($text) {
 		echo $text."<br>";
@@ -103,8 +105,22 @@ if (!function_exists('version_compare_freepbx')) {
 		framework_print_errors($agibin_source, $agibin_dest, $out);
 	}
 
+  /*TODO: (Requirment for #4733)
+   *
+   * 1. Update publish.pl to grab a copy of amportal and put it somehwere.
+   * 2. If we have access to do an md5sum on AMPSBIN/amportal do it and
+   *    compare to the local copy.
+   * 3. If the md5sum is different or we couldn't check, put amportal in AMPBIN
+   * 4. If we decided they need a new one, then write out a message that they
+   *    should run amportal to update it.
+   */
+
 	if (function_exists('upgrade_all')) {
 		upgrade_all(getversion());
+    // We run this each time so that we can add settings if need be
+    // without requiring a major version bump
+    //
+    freepbx_settings_init(true);
 	} else {
 		echo ("[ERROR] Function: 'upgrade_all' not present, libfreepbx.install.php seems not to be installed<br>");
 	}

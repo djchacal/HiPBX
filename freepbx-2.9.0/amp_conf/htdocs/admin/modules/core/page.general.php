@@ -1,4 +1,4 @@
-<?php /* $Id: page.general.php 9791 2010-05-31 16:37:25Z p_lindheimer $ */
+<?php /* $Id: page.general.php 11647 2011-03-03 04:00:37Z p_lindheimer $ */
 // This file is part of FreePBX.
 //
 //    FreePBX is free software: you can redistribute it and/or modify
@@ -102,7 +102,11 @@ foreach ($globals as $global) {
 }
 
 ?>
-
+<br />
+<a href="<?php echo $_SERVER['PHP_SELF'] ?>?display=advancedsettings">
+	<img src="images/cog.png" style="border: none">
+	<?php echo _('Advanced Settings') ?>
+</a>
 <form name="general" action="config.php" method="post" onsubmit="return general_onsubmit();">
 <input type="hidden" name="display" value="general"/>
 <input type="hidden" name="action" value="editglobals"/>
@@ -114,8 +118,10 @@ foreach ($globals as $global) {
 <?php echo _("t: Allow the called user to transfer the call by hitting #")?><br>
 <?php echo _("T: Allow the calling user to transfer the call by hitting #")?><br>
 <?php echo _("r: Generate a ringing tone for the calling party")?><br>
-<?php echo _("w: Allow the called user to start recording after pressing *1 (Asterisk v1.2)")?><br>
-<?php echo _("W: Allow the calling user to start recording after pressing *1 (Asterisk v1.2)")?><br>
+<?php echo _("x or w: Allow the called user to start recording using One-Touch Recording")?><br>
+<?php echo _("X or W: Allow the calling user to start recording using One-Touch Recording")?><br>
+<?php echo _("Choose automixmon (x/X) or automon (w/W) for One-Touch Recording in Advanced Settings")?><br>
+<?php echo _("See Asterisk documentation for other advanced options.")?><br>
 	</span></a>
 	</td><td align="right">
 	<input type="text" size="10" name="DIAL_OPTIONS" value="<?php  echo htmlspecialchars($DIAL_OPTIONS)?>" tabindex="<?php echo ++$tabindex;?>"/>
@@ -124,9 +130,11 @@ foreach ($globals as $global) {
 	<a href=# class="info"><?php echo _("Asterisk Outbound Dial command options:")?><span>
 <?php echo _("t: Allow the called user to transfer the call by hitting #")?><br>
 <?php echo _("T: Allow the calling user to transfer the call by hitting #")?><br>
-<?php echo _("w: Allow the called user to start recording after pressing *1 (Asterisk v1.2)")?><br>
-<?php echo _("W: Allow the calling user to start recording after pressing *1 (Asterisk v1.2)")?><br>
 <?php echo _("r: You SHOULD NOT use this option on outbound trunks")?><br>
+<?php echo _("x or w: Allow the called user to start recording using One-Touch Recording")?><br>
+<?php echo _("X or W: Allow the calling user to start recording using One-Touch Recording")?><br>
+<?php echo _("Choose automixmon (x/X) or automon (w/W) for One-Touch Recording in Advanced Settings")?><br>
+<?php echo _("See Asterisk documentation for other advanced options.")?><br>
 	</span></a>
 	</td><td align="right">
 	<input type="text" size="10" name="TRUNK_OPTIONS" value="<?php  echo htmlspecialchars($TRUNK_OPTIONS)?>" tabindex="<?php echo ++$tabindex;?>"/>
@@ -158,20 +166,6 @@ foreach ($globals as $global) {
   <option value="gsm"<?php if ($MIXMON_FORMAT == "gsm") echo " SELECTED"; ?>><?php echo _("gsm"); ?></option>
   <option value="g729"<?php if ($MIXMON_FORMAT == "g729") echo " SELECTED"; ?>><?php echo _("g729"); ?></option>
   </select>
-	</td></tr>
-	<tr><td>
-  <a href=# class="info"><?php echo _("Recording Location:")?><span>
-  <?php echo _("Override the default location where asterisk will store call recordings. Include the trailing /. Be sure to set proper permissions on the directory for the asterisk user.")?><br>
-  </span></a>
-	</td><td align="right">
-  <input type="text" size="30" name="MIXMON_DIR" value="<?php  echo htmlspecialchars($MIXMON_DIR)?>" tabindex="<?php echo ++$tabindex;?>"/>
-	</td></tr>
-	<tr><td>
-  <a href=# class="info"><?php echo _("Run after record:")?><span>
-  <?php echo _("An optional script to be run after the call is hungup. You can include channel and MixMon variables like \${CALLFILENAME}, \${MIXMON_FORMAT} and \${MIXMON_DIR}. To ensure that you variables are properly escaped, use the following notation: ^{MY_VAR}")?><br>
-  </span></a>
-	</td><td align="right">
-  <input type="text" size="30" name="MIXMON_POST" value="<?php  echo htmlspecialchars($MIXMON_POST)?>" tabindex="<?php echo ++$tabindex;?>"/>
 	</td></tr>
 </table>
 
@@ -225,32 +219,6 @@ foreach ($globals as $global) {
 
 <h5><?php echo _("Voicemail VmX Locator")?></h5>
 	<table>
-		<tr>
-			<td>
-			<a href=# class="info"><?php echo _("Default Context & Pri:")?><span>
-			<?php echo _("Default to use if only a number/extension are provided."); ?></span></a>
-			</td>
-			<td align="right"><input type="text" size="18" name="VMX_CONTEXT" value="<?php  echo htmlspecialchars($VMX_CONTEXT)?>" tabindex="<?php echo ++$tabindex;?>"/>&nbsp;<small><?php echo "context"?></small>&nbsp;</td>
-			<td colspan="2" align="right"><input type="text" size="2" name="VMX_PRI" value="<?php  echo htmlspecialchars($VMX_PRI)?>" tabindex="<?php echo ++$tabindex;?>"/></td><td><small><?php echo "pri"?></small></td>
-		</tr>
-		<tr>
-			<td>
-			<a href=# class="info"><?php echo _("Timeout/#-press default:")?><span>
-			<?php echo _("This is the default location that a caller will be sent if they don't press any key (timeout) or press # which is interpreted as a timeout. Set this to 'dovm' to go to voicemail (default)."); ?></span></a>
-			</td>
-			<td align="right"><input type="text" size="18" name="VMX_TIMEDEST_CONTEXT" value="<?php  echo htmlspecialchars($VMX_TIMEDEST_CONTEXT)?>" tabindex="<?php echo ++$tabindex;?>"/>&nbsp;<small><?php echo "context"?></small>&nbsp;</td>
-			<td align="right"><input type="text" size="4" name="VMX_TIMEDEST_EXT" value="<?php  echo htmlspecialchars($VMX_TIMEDEST_EXT)?>" tabindex="<?php echo ++$tabindex;?>"/>&nbsp;<small><?php echo "exten"?></small>&nbsp;</td>
-			<td align="right"><input type="text" size="2" name="VMX_TIMEDEST_PRI" value="<?php  echo htmlspecialchars($VMX_TIMEDEST_PRI)?>" tabindex="<?php echo ++$tabindex;?>"/></td><td><small><?php echo "pri"?></small></td>
-		</tr>
-		<tr>
-			<td>
-			<a href=# class="info"><?php echo _("Loop Exceed default:")?><span>
-			<?php echo _("This is the default location that a caller will be sent if they press an invalid options too man times, as defined by the Maximum Loops count. Set this to 'dovm' to go to voicemail (default)."); ?></span></a>
-			</td>
-			<td align="right"><input type="text" size="18" name="VMX_LOOPDEST_CONTEXT" value="<?php  echo htmlspecialchars($VMX_LOOPDEST_CONTEXT)?>" tabindex="<?php echo ++$tabindex;?>"/>&nbsp;<small><?php echo "context"?></small>&nbsp;</td>
-			<td align="right"><input type="text" size="4" name="VMX_LOOPDEST_EXT" value="<?php  echo htmlspecialchars($VMX_LOOPDEST_EXT)?>" tabindex="<?php echo ++$tabindex;?>"/>&nbsp;<small><?php echo "exten"?></small>&nbsp;</td>
-			<td align="right"><input type="text" size="2" name="VMX_LOOPDEST_PRI" value="<?php  echo htmlspecialchars($VMX_LOOPDEST_PRI)?>" tabindex="<?php echo ++$tabindex;?>"/></td><td><small><?php echo "pri"?></small></td>
-		</tr>
 		<tr>
 			<td>
 			<a href=# class="info"><?php echo _("Timeout VM Msg:")?><span>

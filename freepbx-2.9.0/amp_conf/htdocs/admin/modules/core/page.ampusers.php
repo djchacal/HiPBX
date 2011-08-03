@@ -1,4 +1,4 @@
-<?php /* $Id: page.ampusers.php 9786 2010-05-30 04:19:16Z p_lindheimer $ */
+<?php /* $Id: page.ampusers.php 11052 2011-01-21 20:26:14Z mickecarlsson $ */
 //This file is part of FreePBX.
 //
 //    FreePBX is free software: you can redistribute it and/or modify
@@ -179,7 +179,7 @@ foreach ($tresults as $tresult) {
 <?php if (($amp_conf["AUTHTYPE"] != "database") && ($amp_conf["AUTHTYPE"] != "webserver")) { ?>			
 			<tr>
 				<td colspan="2">
-	<?php echo '<b>'._("NOTE:").'</b>'._("AUTHTYPE is not set to 'database' in /etc/amportal.conf - note that this module is not currently providing access control, and changing passwords here or adding users will have no effect unless AUTHTYPE is set to 'database'.") ?><br /><br />
+	<?php echo '<b>'._("NOTE:").'</b>'._("Authorization Type is not set to 'database' in Advanced Setting - note that this module is not currently providing access control, and changing passwords here or adding users will have no effect unless Authorization Type is set to 'database'.") ?><br /><br />
 				</td>
 			</tr>
 <?php } ?>

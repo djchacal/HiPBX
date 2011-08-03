@@ -1,4 +1,4 @@
-<?php /* $Id: page.trunks.php 10612 2010-11-23 20:34:33Z p_lindheimer $ */
+<?php /* $Id: page.trunks.php 11956 2011-04-02 21:30:23Z mickecarlsson $ */
 //This file is part of FreePBX.
 //
 //    FreePBX is free software: you can redistribute it and/or modify
@@ -23,6 +23,11 @@ $extdisplay=isset($_REQUEST['extdisplay'])?$_REQUEST['extdisplay']:'';
 $trunknum = ltrim($extdisplay,'OUT_');
 
 $action = isset($_REQUEST['action'])?$_REQUEST['action']:'';
+// Now check if the Copy Trunks submit button was pressed, in which case we duplicate the trunk
+//
+if (isset($_REQUEST['copytrunk'])) {
+  $action = 'copytrunk';
+}
 
 $tech         = strtolower(isset($_REQUEST['tech'])?htmlentities($_REQUEST['tech']):'');
 $outcid       = isset($_REQUEST['outcid'])?$_REQUEST['outcid']:'';
@@ -41,13 +46,76 @@ $trunk_name   = isset($_REQUEST['trunk_name'])?$_REQUEST['trunk_name']:'';
 $failtrunk    = isset($_REQUEST['failtrunk'])?$_REQUEST['failtrunk']:'';
 $failtrunk_enable = ($failtrunk == "")?'':'CHECKED';
 
+// Check if they uploaded a CSV file for their route patterns
+//
+if (isset($_FILES['pattern_file']) && $_FILES['pattern_file']['tmp_name'] != '') {
+  $fh = fopen($_FILES['pattern_file']['tmp_name'], 'r');
+  if ($fh !== false) {
+    $csv_file = array();
+    $index = array();
+
+    // Check first row, ingoring empty rows and get indices setup
+    //
+    while (($row = fgetcsv($fh, 5000, ",", "\"")) !== false) {
+      if (count($row) == 1 && $row[0] == '') {
+        continue;
+      } else {
+        $count = count($row) > 3 ? 3 : count($row);
+        for ($i=0;$i<$count;$i++) {
+          switch (strtolower($row[$i])) {
+          case 'prepend':
+          case 'prefix':
+          case 'match pattern':
+            $index[strtolower($row[$i])] = $i;
+          break;
+          default:
+          break;
+          }
+        }
+        // If no headers then assume standard order
+        if (count($index) == 0) {
+          $index['prepend'] = 0;
+          $index['prefix'] = 1;
+          $index['match pattern'] = 2;
+          if ($count == 3) {
+            $csv_file[] = $row;
+          }
+        }
+        break;
+      }
+    }
+    $row_count = count($index);
+    while (($row = fgetcsv($fh, 5000, ",", "\"")) !== false) {
+      if (count($row) == $row_count) {
+        $csv_file[] = $row;
+      }
+    }
+  }
+}
+
 //
 // Use a hash of the value inserted to get rid of duplicates
 $dialpattern_insert = array();
 $p_idx = 0;
 $n_idx = 0;
 
-if (isset($_POST["prepend_digit"])) {
+// If we have a CSV file it replaces any existing patterns
+//
+if (!empty($csv_file)) {
+  foreach ($csv_file as $row) {
+    $this_prepend = isset($index['prepend']) ? htmlspecialchars(trim($row[$index['prepend']])) : '';
+    $this_prefix = isset($index['prefix']) ? htmlspecialchars(trim($row[$index['prefix']])) : '';
+    $this_match_pattern = isset($index['match pattern']) ? htmlspecialchars(trim($row[$index['match pattern']])) : '';
+
+    if ($this_prepend != '' || $this_prefix  != '' || $this_match_pattern != '') {
+      $dialpattern_insert[] = array(
+        'prepend_digits' => $this_prepend,
+        'match_pattern_prefix' => $this_prefix,
+        'match_pattern_pass' => $this_match_pattern,
+      );
+    }
+  }
+} else if (isset($_POST["prepend_digit"])) {
   $prepend_digit = $_POST["prepend_digit"];
   $pattern_prefix = $_POST["pattern_prefix"];
   $pattern_pass = $_POST["pattern_pass"];
@@ -65,8 +133,30 @@ if (isset($_POST["prepend_digit"])) {
 }
 
 
+// TODO: remember old name, if new one is different the don't rename
+//
 //if submitting form, update database
 switch ($action) {
+  case "copytrunk":
+
+    $sv_channelid    = isset($_REQUEST['sv_channelid'])?$_REQUEST['sv_channelid']:'';
+    $sv_trunk_name    = isset($_REQUEST['sv_trunk_name'])?$_REQUEST['sv_trunk_name']:'';
+    $sv_usercontext    = isset($_REQUEST['sv_usercontext'])?$_REQUEST['sv_usercontext']:'';
+
+    if ($trunk_name == $sv_trunk_name) {
+      $trunk_name .= ($trunk_name == '' ? '' : '_') . "copy_$trunknum";
+    }
+    if ($channelid == $sv_channelid) {
+      $channelid .= '_copy_' . $trunknum;
+    }
+    if ($usercontext != '' && $usercontext == $sv_usercontext) {
+      $usercontext .= '_copy_' . $trunknum;
+    }
+    $disabletrunk = 'on';
+    $trunknum = '';
+    $extdisplay='';
+  // Fallthrough to addtrunk now...
+  //
 	case "addtrunk":
 		$trunknum = core_trunks_add($tech, $channelid, $dialoutprefix, $maxchans, $outcid, $peerdetails, $usercontext, $userconfig, $register, $keepcid, trim($failtrunk), $disabletrunk, $trunk_name, $provider);
 		
@@ -270,10 +360,16 @@ if (!$tech && !$extdisplay) {
 	$baseURL   = $_SERVER['PHP_SELF'].'?display='.urlencode($display).'&';
   $trunks[] = array('url'=> $baseURL.'tech=SIP', 'tlabel' =>  _("Add SIP Trunk"));
   if (ast_with_dahdi()) {
-    $trunks[] = array('url'=> $baseURL.'tech=DAHDI', 'tlabel' =>  _("Add DAHDI Trunk"));
+    $trunks[] = array('url'=> $baseURL.'tech=DAHDI', 'tlabel' =>  _("Add DAHDi Trunk"));
   }
-  $trunks[] = array('url'=> $baseURL.'tech=ZAP', 'tlabel' =>  _("Add Zap Trunk").(ast_with_dahdi()?" ("._("DAHDI compatibility mode").")":"" ));
+  $trunks[] = array('url'=> $baseURL.'tech=ZAP', 'tlabel' =>  _("Add Zap Trunk").(ast_with_dahdi()?" ("._("DAHDi compatibility mode").")":"" ));
   $trunks[] = array('url'=> $baseURL.'tech=IAX2', 'tlabel' =>  _("Add IAX2 Trunk"));
+  //--------------------------------------------------------------------------------------
+  // Added to enable the unsupported misdn module
+  if (function_exists('misdn_ports_list_trunks') && count(misdn_ports_list_trunks())) {
+    $trunks[] = array('url'=> $baseURL.'tech=MISDN', 'tlabel' =>  _("Add mISDN Trunk"));
+  }
+  //--------------------------------------------------------------------------------------
   $trunks[] = array('url'=> $baseURL.'tech=ENUM', 'tlabel' =>  _("Add ENUM Trunk"));
   $trunks[] = array('url'=> $baseURL.'tech=DUNDI', 'tlabel' =>  _("Add DUNDi Trunk"));
   $trunks[] = array('url'=> $baseURL.'tech=CUSTOM', 'tlabel' =>  _("Add Custom Trunk"));
@@ -326,7 +422,7 @@ if (!$tech && !$extdisplay) {
     if (trim($trunk_name) == '') {
 		  $trunk_name = ($upper_tech == 'ZAP'|$upper_tech == 'DAHDI'?sprintf(_('%s Channel %s'),$upper_tech,$channelid):$channelid);
     }
-		echo "<h2>".sprintf(_("Edit %s Trunk"),$upper_tech).($upper_tech == 'ZAP' && ast_with_dahdi()?" ("._("DAHDI compatibility Mode").")":"")."</h2>";
+		echo "<h2>".sprintf(_("Edit %s Trunk"),$upper_tech).($upper_tech == 'ZAP' && ast_with_dahdi()?" ("._("DAHDi compatibility Mode").")":"")."</h2>";
 		$tlabel = sprintf(_("Delete Trunk %s"),substr($trunk_name,0,20));
 		$label = '<span><img width="16" height="16" border="0" title="'.$tlabel.'" alt="" src="images/core_delete.png"/>&nbsp;'.$tlabel.'</span>';
 ?>
@@ -378,7 +474,7 @@ if (!$tech && !$extdisplay) {
 		$areacode = "";
 	
 		$upper_tech = strtoupper($tech);
-		echo "<h2>".sprintf(_("Add %s Trunk"),$upper_tech).($upper_tech == 'ZAP' && ast_with_dahdi()?" ("._("DAHDI compatibility mode").")":"")."</h2>";
+		echo "<h2>".sprintf(_("Add %s Trunk"),$upper_tech).($upper_tech == 'ZAP' && ast_with_dahdi()?" ("._("DAHDi compatibility mode").")":"")."</h2>";
 	} 
   if (!isset($dialpattern_array)) {
     $dialpattern_array = array();
@@ -402,12 +498,15 @@ if ($helptext != '') {
 		
 ?>
 	
-		<form name="trunkEdit" action="config.php" method="post" onsubmit="return trunkEdit_onsubmit('<?php echo ($extdisplay ? "edittrunk" : "addtrunk") ?>');">
+		<form enctype="multipart/form-data" name="trunkEdit" action="config.php" method="post" onsubmit="return trunkEdit_onsubmit('<?php echo ($extdisplay ? "edittrunk" : "addtrunk") ?>');">
 			<input type="hidden" name="display" value="<?php echo $display?>"/>
 			<input type="hidden" name="extdisplay" value="<?php echo $extdisplay ?>"/>
 			<input type="hidden" name="action" value=""/>
 			<input type="hidden" name="tech" value="<?php echo $tech?>"/>
 			<input type="hidden" name="provider" value="<?php echo $provider?>"/>
+			<input type="hidden" name="sv_trunk_name" value="<?php echo $trunkname?>"/>
+			<input type="hidden" name="sv_usercontext" value="<?php echo $usercontext?>"/>
+			<input type="hidden" name="sv_channelid" value="<?php echo $channelid?>"/>
 			<input id="npanxx" name="npanxx" type="hidden" />
 			<table>
 			<tr>
@@ -424,7 +523,7 @@ if ($helptext != '') {
 			</tr>
 			<tr>
 				<td>
-					<a href=# class="info"><?php echo _("Outbound Caller ID")?><span><?php echo _("Caller ID for calls placed out on this trunk<br><br>Format: <b>&lt;#######&gt;</b>. You can also use the format: \"hidden\" <b>&lt;#######&gt;</b> to hide the CallerID sent out over Digital lines if supported (E1/T1/J1/BRI/SIP/IAX).")?></span></a>: 
+					<a href=# class="info"><?php echo _("Outbound CallerID")?><span><?php echo _("CallerID for calls placed out on this trunk<br><br>Format: <b>&lt;#######&gt;</b>. You can also use the format: \"hidden\" <b>&lt;#######&gt;</b> to hide the CallerID sent out over Digital lines if supported (E1/T1/J1/BRI/SIP/IAX).")?></span></a>: 
 				</td><td>
 					<input type="text" size="30" name="outcid" value="<?php echo $outcid;?>" tabindex="<?php echo ++$tabindex;?>"/>
 				</td>
@@ -528,7 +627,8 @@ END;
         <input title="$mp_tit" type="text" size="16" id="pattern_pass_$idx" name="pattern_pass[$idx]" class="dp-match $dpt_class" value="{$pattern['match_pattern_pass']}" tabindex="$tabindex">
 END;
 ?>
-        <img src="images/trash.png" style="cursor:pointer; float:none; margin-left:0px; margin-bottom:-3px;" alt="<?php echo _("remove")?>" title="<?php echo _('Click here to remove this pattern')?>" onclick="patternsRemove(<?php echo _("$idx") ?>)">
+        <img src="images/core_add.png" style="cursor:pointer; float:none; margin-left:0px; margin-bottom:-3px;" alt="<?php echo _("insert")?>" title="<?php echo _('Click here to insert a new pattern')?>" onclick="addCustomField('','','',$('#prepend_digit_<?php echo $idx?>').parent().parent())">
+        <img src="images/trash.png" style="cursor:pointer; float:none; margin-left:0px; margin-bottom:-3px;" alt="<?php echo _("remove")?>" title="<?php echo _('Click here to remove this pattern')?>" onclick="patternsRemove(<?php echo "$idx" ?>)">
       </td>
     </tr>
 <?php
@@ -540,7 +640,8 @@ END;
         (<input title="<?php echo $pp_tit?>" type="text" size="10" id="prepend_digit_<?php echo $next_idx?>" name="prepend_digit[<?php echo $next_idx?>]" class="dp-prepend dial-pattern dpt-title dpt-display" value="" tabindex="<?php echo ++$tabindex;?>">) +
         <input title="<?php echo $pf_tit?>" type="text" size="6" id="pattern_prefix_<?php echo $next_idx?>" name="pattern_prefix[<?php echo $next_idx?>]" class="dp-prefix dpt-title dpt-display" value="" tabindex="<?php echo ++$tabindex;?>"> |
         <input title="<?php echo $mp_tit?>" type="text" size="16" id="pattern_pass_<?php echo $next_idx?>" name="pattern_pass[<?php echo $next_idx?>]" class="dp-match dpt-title dpt-display" value="" tabindex="<?php echo ++$tabindex;?>">
-        <img src="images/trash.png" style="cursor:pointer; float:none; margin-left:0px; margin-bottom:-3px;" alt="<?php echo _("remove")?>" title="<?php echo _("Click here to remove this pattern")?>" onclick="patternsRemove(<?php echo _("$next_idx") ?>)">
+        <img src="images/core_add.png" style="cursor:pointer; float:none; margin-left:0px; margin-bottom:-3px;" alt="<?php echo _("insert")?>" title="<?php echo _('Click here to insert a new pattern')?>" onclick="addCustomField('','','',$('#prepend_digit_<?php echo $idx?>').parent().parent())">
+        <img src="images/trash.png" style="cursor:pointer; float:none; margin-left:0px; margin-bottom:-3px;" alt="<?php echo _("remove")?>" title="<?php echo _("Click here to remove this pattern")?>" onclick="patternsRemove(<?php echo "$next_idx" ?>)">
 
       </td>
     </tr>
@@ -557,9 +658,10 @@ END;
 				<td>
 					<a href=# class="info"><?php echo _("Dial Rules Wizards")?><span>
 					<strong><?php echo _("Always dial with prefix")?></strong> <?php echo _("is useful for VoIP trunks, where if a number is dialed as \"5551234\", it can be converted to \"16135551234\".")?><br>
-					<strong><?php echo _("Remove prefix from local numbers")?></strong> <?php echo _("is useful for ZAP and DAHDI trunks, where if a local number is dialed as \"6135551234\", it can be converted to \"555-1234\".")?><br>
+					<strong><?php echo _("Remove prefix from local numbers")?></strong> <?php echo _("is useful for ZAP and DAHDi trunks, where if a local number is dialed as \"6135551234\", it can be converted to \"555-1234\".")?><br>
 					<strong><?php echo _("Setup directory assistance")?></strong> <?php echo _("is useful to translate a call to directory assistance")?><br>
 					<strong><?php echo _("Lookup numbers for local trunk")?></strong> <?php echo _("This looks up your local number on www.localcallingguide.com (NA-only), and sets up so you can dial either 7 or 10 digits (regardless of what your PSTN is) on a local trunk (where you have to dial 1+area code for long distance, but only 5551234 (7-digit dialing) or 6135551234 (10-digit dialing) for local calls")?><br>
+					<strong><?php echo _("Upload from CSV")?></strong> <?php echo sprintf(_("Upload patterns from a CSV file replacing existing entries. If there are no headers then the file must have 3 columns of patterns in the same order as in the GUI. You can also supply headers: %s, %s and %s in the first row. If there are less then 3 recognized headers then the remaining columns will be blank"),'<strong>prepend</strong>','<strong>prefix</strong>','<strong>match pattern</strong>')?><br>
 					</span></a>:
 				</td><td valign="top"><select id="autopop"  tabindex="<?php echo ++$tabindex;?>" name="autopop" onChange="changeAutoPop(); ">
 						<option value="" SELECTED><?php echo _("(pick one)")?></option>
@@ -568,7 +670,9 @@ END;
 						<option value="directory"><?php echo _("Setup directory assistance")?></option>
 						<option value="lookup7"><?php echo _("Lookup numbers for local trunk (7-digit dialing)")?></option>
 						<option value="lookup10"><?php echo _("Lookup numbers for local trunk (10-digit dialing)")?></option>
+            <option value="csv"><?php echo _("Upload from CSV")?></option>
 					</select>
+          <input type="file" name="pattern_file" id="pattern_file" tabindex="<?php echo ++$tabindex;?>"/>
 				</td>
 			</tr>
 			<script language="javascript">
@@ -633,7 +737,7 @@ END;
 					if (localprefix == null) return;
 				} while (!localprefix.match('^[0-9#*]+$') && <?php echo '!alert("'._("Invalid prefix. Only dialable characters (0-9, #, and *) are allowed.").'")'?>);
 
-        return addCustomField(localprefix,'',localpattern);
+        return addCustomField(localprefix,'',localpattern,$("#last_row"));
 			}
 			
 			function populateRemove() {
@@ -647,7 +751,7 @@ END;
 					if (localpattern == null) return;
 				} while (!localpattern.match('^[0-9#*ZXN\.]+$') && <?php echo '!alert("'._("Invalid pattern. Only 0-9, #, *, Z, N, X and . are allowed.").'")'?>);
 				
-        return addCustomField('',localprefix,localpattern);
+        return addCustomField('',localprefix,localpattern,$("#last_row"));
 			}
 
 			function populatedirectory() {
@@ -661,11 +765,15 @@ END;
 					if (localprepend == null) return;
 				} while (!localprepend.match('^[0-9#*]+$') && <?php echo '!alert("'._('Invalid number. Only 0-9, #,  and * are allowed.').'")'?>);
 				
-        return addCustomField(localprepend,localprefix,'');
+        return addCustomField(localprepend,localprefix,'',$("#last_row"));
 			}
 			
 			function changeAutoPop() {
         var idx = false;
+        // hide the file box if nothing was set
+        if ($('#pattern_file').val() == '') {
+          $('#pattern_file').hide();
+        }
 				switch(document.getElementById('autopop').value) {
 					case "always":
 						idx = populateAlwaysAdd();
@@ -691,6 +799,10 @@ END;
 					case "lookup10":
 						populateLookup(10);
 					break;
+					case 'csv':
+            $('#pattern_file').show().click();
+            return true;
+					break;
 				}
 				document.getElementById('autopop').value = '';
 			}
@@ -700,7 +812,7 @@ END;
 				<td>
 					<a href=# class="info"><?php echo _("Outbound Dial Prefix")?><span><?php echo _("The outbound dialing prefix is used to prefix a dialing string to all outbound calls placed on this trunk. For example, if this trunk is behind another PBX or is a Centrex line, then you would put 9 here to access an outbound line. Another common use is to prefix calls with 'w' on a POTS line that need time to obtain dial tone to avoid eating digits.<br><br>Most users should leave this option blank.")?></span></a>: 
 				</td><td>
-					<input type="text" size="8" name="dialoutprefix" value="<?php echo htmlspecialchars($dialoutprefix) ?>" tabindex="<?php echo ++$tabindex;?>"/>
+					<input type="text" size="8" name="dialoutprefix" id="dialoutprefix" value="<?php echo htmlspecialchars($dialoutprefix) ?>" tabindex="<?php echo ++$tabindex;?>"/>
 				</td>
 			</tr>
 			<?php if ($tech != "enum") { ?>
@@ -729,7 +841,7 @@ END;
 	?>
 				<tr>
 					<td>
-						<a href=# class="info"><?php echo _("DAHDI Identifier")?><span><?php echo _("DAHDI channels are referenced either by a group number or channel number (which is defined in chan_dahdi.conf).  <br><br>The default setting is <b>g0</b> (group zero).")?></span></a>: 
+						<a href=# class="info"><?php echo _("DAHDi Identifier")?><span><?php echo _("DAHDi channels are referenced either by a group number or channel number (which is defined in chan_dahdi.conf).  <br><br>The default setting is <b>g0</b> (group zero).")?></span></a>: 
 					</td><td>
 						<input type="text" size="8" name="channelid" value="<?php echo htmlspecialchars($channelid) ?>" tabindex="<?php echo ++$tabindex;?>"/>
 						<input type="hidden" size="14" name="usercontext" value="notneeded"/>
@@ -739,6 +851,34 @@ END;
 		break;
 		case "enum":
 		break;
+    //--------------------------------------------------------------------------------------
+    // Added to enable the unsupported misdn module
+		case "misdn":
+      if (function_exists('misdn_groups_ports')) {
+  ?> 
+        <tr> 
+          <td> 
+            <a href=# class="info"><?php echo _("mISDN Group/Port")?><span><br><?php echo _("mISDN channels are referenced either by a group name or channel number (use <i>mISDN Port Groups</i> to configure).")?><br><br></span></a>:  
+          </td> 
+          <td> 
+            <select name="channelid"> 
+  <?php 
+        $gps = misdn_groups_ports(); 
+        foreach($gps as $gp) { 
+          echo "<option value='$gp'"; 
+          if ($gp == $channelid) 
+            echo ' selected="1"'; 
+            echo ">$gp</option>\n"; 
+          }
+  ?> 
+            </select> 
+            <input type="hidden" size="14" name="usercontext" value="notneeded"/> 
+          </td> 
+        </tr> 
+  <?php  
+      }
+    break; 
+    //--------------------------------------------------------------------------------------
 		case "custom":
 	?>
 				<tr>
@@ -829,7 +969,11 @@ END;
   ?>
 			<tr>
 				<td colspan="2">
-					<h6><input name="Submit" type="submit" value="<?php echo _("Submit Changes")?>" tabindex="<?php echo ++$tabindex;?>"></h6>
+          <h6>
+            <input name="Submit" type="submit" value="<?php echo _("Submit Changes")?>" tabindex="<?php echo ++$tabindex;?>">
+            <input name="copytrunk" type="submit" value="<?php echo _("Duplicate Trunk");?>"/>
+            <!--input type="button" id="page_reload" value="<?php echo _("Refresh Page");?>"/-->
+          </h6>
 				</td>
 			</tr>
 			</table>
@@ -840,8 +984,9 @@ END;
 $(document).ready(function(){
   /* Add a Custom Var / Val textbox */
   $("#dial-pattern-add").click(function(){
-    addCustomField('','','','');
+    addCustomField('','','',$("#last_row"));
   });
+  $('#pattern_file').hide();
   $("#dial-pattern-clear").click(function(){
     clearAllPatterns();
   });
@@ -863,7 +1008,7 @@ function patternsRemove(idx) {
   $("#prepend_digit_"+idx).parent().parent().remove();
 }
 
-function addCustomField(prepend_digit, pattern_prefix, pattern_pass) {
+function addCustomField(prepend_digit, pattern_prefix, pattern_pass, start_loc) {
   var idx = $(".dial-pattern").size();
   var idxp = idx - 1;
   var tabindex = parseInt($("#pattern_pass_"+idxp).attr('tabindex')) + 1;
@@ -874,12 +1019,13 @@ function addCustomField(prepend_digit, pattern_prefix, pattern_pass) {
   var dpt_pattern_prefix = pattern_prefix == '' ? dpt_title : 'dpt-value';
   var dpt_pattern_pass = pattern_pass == '' ? dpt_title : 'dpt-value';
 
-  var new_insert = $("#last_row").before('\
+  var new_insert = start_loc.before('\
   <tr>\
     <td colspan="2">\
     (<input title="<?php echo $pp_tit?>" type="text" size="10" id="prepend_digit_'+idx+'" name="prepend_digit['+idx+']" class="dp-prepend dial-pattern '+dpt_prepend_digit+'" value="'+prepend_digit+'" tabindex="'+tabindex+'">) +\
     <input title="<?php echo $pf_tit?>" type="text" size="6" id="pattern_prefix_'+idx+'" name="pattern_prefix['+idx+']" class="dp-prefix '+dpt_pattern_prefix+'" value="'+pattern_prefix+'" tabindex="'+tabindex1+'"> |\
     <input title="<?php echo $mp_tit?>" type="text" size="16" id="pattern_pass_'+idx+'" name="pattern_pass['+idx+']" class="dp-match '+dpt_pattern_pass+'" value="'+pattern_pass+'" tabindex="'+tabindex2+'">\
+      <img src="images/core_add.png" style="cursor:pointer; float:none; margin-left:0px; margin-bottom:-3px;" alt="<?php echo _("insert")?>" title="<?php echo _("Click here to insert a new pattern")?>" onclick="addCustomField(\'\',\'\',\'\',$(\'#prepend_digit_'+idx+'\').parent().parent())">\
       <img src="images/trash.png" style="cursor:pointer; float:none; margin-left:0px; margin-bottom:-3px;" alt="<?php echo _("remove")?>" title="<?php echo _("Click here to remove this pattern")?>" onclick="patternsRemove('+idx+')">\
     </td>\
   </tr>\
@@ -986,16 +1132,16 @@ document.trunkEdit.trunk_name.focus();
 function trunkEdit_onsubmit(act) {
   var theForm = document.trunkEdit;
 
-	var msgInvalidOutboundCID = "<?php echo _('Invalid Outbound Caller ID'); ?>";
+	var msgInvalidOutboundCID = "<?php echo _('Invalid Outbound CallerID'); ?>";
 	var msgInvalidMaxChans = "<?php echo _('Invalid Maximum Channels'); ?>";
 	var msgInvalidDialRules = "<?php echo _('Invalid Dial Rules'); ?>";
-	var msgInvalidOutboundDialPrefix = "<?php echo _('Invalid Outbound Dial Prefix'); ?>";
+	var msgInvalidOutboundDialPrefix = "<?php echo _('The Outbound Dial Prefix contains non-standard characters. If these are intentional the press OK to continue.'); ?>";
 	var msgInvalidTrunkName = "<?php echo _('Invalid Trunk Name entered'); ?>";
 	var msgInvalidChannelName = "<?php echo _('Invalid Custom Dial String entered'); ?>"; 
 	var msgInvalidTrunkAndUserSame = "<?php echo _('Trunk Name and User Context cannot be set to the same value'); ?>";
 	var msgConfirmBlankContext = "<?php echo _('User Context was left blank and User Details will not be saved!'); ?>";
-	var msgCIDValueRequired = "<?php echo _('You must define an Outbound Caller ID when Choosing this CID Options value'); ?>";
-	var msgCIDValueEmpty = "<?php echo _('It is highly recommended that you define an Outbound Caller ID on all trunks, undefined behavior can result when nothing is specified. The CID Options can control when this CID is used. Do you still want to continue?'); ?>";
+	var msgCIDValueRequired = "<?php echo _('You must define an Outbound CallerID when Choosing this CID Options value'); ?>";
+	var msgCIDValueEmpty = "<?php echo _('It is highly recommended that you define an Outbound CallerID on all trunks, undefined behavior can result when nothing is specified. The CID Options can control when this CID is used. Do you still want to continue?'); ?>";
 
 	defaultEmptyOK = true;
 
@@ -1015,8 +1161,12 @@ function trunkEdit_onsubmit(act) {
 	if (!isInteger(theForm.maxchans.value))
 		return warnInvalid(theForm.maxchans, msgInvalidMaxChans);
 	
-	if (!isDialIdentifierSpecial(theForm.dialoutprefix.value))
-		return warnInvalid(theForm.dialoutprefix, msgInvalidOutboundDialPrefix);
+	if (!isDialIdentifierSpecial(theForm.dialoutprefix.value)) {
+    if (confirm(msgInvalidOutboundDialPrefix) == false) {
+      $('#dialoutprefix').focus();
+      return false;
+    }
+  }
 	
 	<?php if ($tech != "enum" && $tech != "custom" && $tech != "dundi") { ?>
 	defaultEmptyOK = true;

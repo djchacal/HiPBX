@@ -1,0 +1,22 @@
+<module>
+	<rawname>languagestatus</rawname>
+	<repo>unsupported</repo>
+	<name>Language Status</name>
+	<version>2.9.0.0</version>
+	<publisher>Mikael Carlsson</publisher>
+	<license>GPLv2+</license>
+	<description>Show the number of translated strings for a given language</description>
+	<type>tool</type>
+	<category>System Administration</category>
+	<menuitems>
+		<languagestatus>Language Status</languagestatus>
+	</menuitems>
+  <depends>
+   <version>ge2.9</version>
+  </depends>
+	<changelog>
+		*2.9.0.0* First release
+	</changelog>
+<md5sum>d5ce35e06da146fbdb90f6345409667e></md5sum>
+<location>release/2.9></location>
+</module>

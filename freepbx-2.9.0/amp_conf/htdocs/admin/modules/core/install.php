@@ -32,18 +32,6 @@ _("In-Call Asterisk Toggle Call Recording");
 _("In-Call Asterisk Disconnect Code");
 }
 
-if (! function_exists("out")) {
-	function out($text) {
-		echo $text."<br />";
-	}
-}
-
-if (! function_exists("outn")) {
-	function outn($text) {
-		echo $text;
-	}
-}
-
 function did_migrate($incoming){
 	global $db;
 
@@ -68,6 +56,8 @@ function did_migrate($incoming){
 	}
 }
 
+$freepbx_conf =& freepbx_conf::create();
+
 $fcc = new featurecode('core', 'userlogon');
 $fcc->setDescription('User Logon');
 $fcc->setDefault('*11');
@@ -83,18 +73,21 @@ unset($fcc);
 $fcc = new featurecode('core', 'zapbarge');
 $fcc->setDescription('ZapBarge');
 $fcc->setDefault('888');
+$fcc->setProvideDest();
 $fcc->update();
 unset($fcc);
 
 $fcc = new featurecode('core', 'chanspy');
 $fcc->setDescription('ChanSpy');
 $fcc->setDefault('555');
+$fcc->setProvideDest();
 $fcc->update();
 unset($fcc);
 
 $fcc = new featurecode('core', 'simu_pstn');
 $fcc->setDescription('Simulate Incoming Call');
 $fcc->setDefault('7777');
+$fcc->setProvideDest();
 $fcc->update();
 unset($fcc);
 
@@ -127,6 +120,22 @@ $fcc->setDescription('In-Call Asterisk Toggle Call Recording');
 $fcc->setDefault('*1');
 $fcc->update();
 unset($fcc);
+
+// AUTOMIXMON
+//
+$set['value'] = false;
+$set['defaultval'] =& $set['value'];
+$set['options'] = '';
+$set['readonly'] = 0;
+$set['hidden'] = 0;
+$set['level'] = 0;
+$set['module'] = '';
+$set['category'] = 'Dialplan and Operational';
+$set['emptyok'] = 0;
+$set['name'] = 'Use Automixmon for One-Touch Recording';
+$set['description'] = "Starting with Asterisk 1.6, one-touch-recording can be toggled on and off during a call if the dial options had 'x' and/or 'X' options set. When this is set to true, the 'In-Call Asterisk Toggle Call Recording' will use the asterisk 'automixmon' option instead of the 'automon' option to set this. Only one or the other can be set from the GUI. You need to set the proper options of 'x' and/or 'X' when using this, or 'w' and/or 'W' if using the older 'automon' version. Setting this to true will have no effect on systems running Asterisk 1.4 or earlier.";
+$set['type'] = CONF_TYPE_BOOL;
+$freepbx_conf->define_conf_setting('AUTOMIXMON',$set);
 
 $fcc = new featurecode('core', 'disconnect');
 $fcc->setDescription('In-Call Asterisk Disconnect Code');
@@ -274,8 +283,8 @@ if (!$nrows) {
 //Sort trunks for sqlite
 function __sort_trunks($a,$b)  {
         global $unique_trunks;
-        ereg("OUT_([0-9]+)",$unique_trunks[$a][0],$trunk_num1);
-        ereg("OUT_([0-9]+)",$unique_trunks[$b][0],$trunk_num2);
+        preg_match("/OUT_([0-9]+)/",$unique_trunks[$a][0],$trunk_num1);
+        preg_match("/OUT_([0-9]+)/",$unique_trunks[$b][0],$trunk_num2);
         return ($trunk_num1[1] >= $trunk_num2[1]? 1:-1);
 }
 
@@ -488,4 +497,285 @@ if(DB::IsError($check)){
 }else{
 	out(_("already exists"));
 }
-?>
+
+// This has already been done in the framework upgrades but is repeated
+// here until confirmed there is no path where that code may not have been
+// executed.
+//
+$new_cols = array('noanswer_cid','busy_cid','chanunavail_cid');
+foreach ($new_cols as $col) {
+  outn(sprintf(_("Checking for %s field.."),$col));
+  $sql = "SELECT $col FROM `users`";
+  $check = $db->getRow($sql, DB_FETCHMODE_ASSOC);
+  if(DB::IsError($check)) {
+    // add new field
+    $sql = "ALTER TABLE `users` ADD `$col` VARCHAR( 20 ) DEFAULT '';";
+    $result = $db->query($sql);
+    if(DB::IsError($result)) { die_freepbx($result->getDebugInfo()); }
+    out(_("added"));
+  } else {
+    out(_("already exists"));
+  }
+}
+
+$new_cols = array('noanswer_dest','busy_dest','chanunavail_dest');
+foreach ($new_cols as $col) {
+  outn(sprintf(_("Checking for %s field.."),$col));
+  $sql = "SELECT $col FROM `users`";
+  $check = $db->getRow($sql, DB_FETCHMODE_ASSOC);
+  if(DB::IsError($check)) {
+    // add new field
+    $sql = "ALTER TABLE `users` ADD `$col` VARCHAR( 255 ) DEFAULT '';";
+    $result = $db->query($sql);
+    if(DB::IsError($result)) { die_freepbx($result->getDebugInfo()); }
+    out(_("added"));
+  } else {
+    out(_("already exists"));
+  }
+}
+
+// The following are from General Settings that may need to be migrated.
+// We will first create them all, the define_conf_settings() method will
+// not change the value if already set. We will update the settings
+// to the currently configured values from the globals table afer defining
+// them here and then remove them from the globals table.
+
+$globals_convert['VMX_CONTEXT'] = 'from-internal';
+$globals_convert['VMX_PRI'] = '1';
+$globals_convert['VMX_TIMEDEST_CONTEXT'] = '';
+$globals_convert['VMX_TIMEDEST_EXT'] = 'dovm';
+$globals_convert['VMX_TIMEDEST_PRI'] = '1';
+$globals_convert['VMX_LOOPDEST_CONTEXT'] = '';
+$globals_convert['VMX_LOOPDEST_EXT'] = 'dovm';
+$globals_convert['VMX_LOOPDEST_PRI'] = '1';
+$globals_convert['MIXMON_DIR'] = '';
+$globals_convert['MIXMON_POST'] = '';
+
+// VMX_CONTEXT
+//
+$set['value'] = $globals_convert['VMX_CONTEXT'];
+$set['defaultval'] =& $set['value'];
+$set['options'] = '';
+$set['readonly'] = 1;
+$set['hidden'] = 0;
+$set['level'] = 9;
+$set['module'] = '';
+$set['category'] = 'VmX Locater';
+$set['emptyok'] = 0;
+$set['name'] = 'VMX Default Context';
+$set['description'] = 'Used to do extremely advanced and customized changes to the macro-vm VmX locater. Check the dialplan for a thorough understanding of how to use this.';
+$set['type'] = CONF_TYPE_TEXT;
+$freepbx_conf->define_conf_setting('VMX_CONTEXT',$set);
+
+// VMX_PRI
+//
+$set['value'] = $globals_convert['VMX_PRI'];
+$set['defaultval'] =& $set['value'];
+$set['options'] = array(1,1000);
+$set['readonly'] = 1;
+$set['hidden'] = 0;
+$set['level'] = 9;
+$set['module'] = '';
+$set['category'] = 'VmX Locater';
+$set['emptyok'] = 0;
+$set['name'] = 'VMX Default Priority';
+$set['description'] = 'Used to do extremely advanced and customized changes to the macro-vm VmX locater. Check the dialplan for a thorough understanding of how to use this.';
+$set['type'] = CONF_TYPE_INT;
+$freepbx_conf->define_conf_setting('VMX_PRI',$set);
+
+// VMX_TIMEDEST_CONTEXT
+//
+$set['value'] = $globals_convert['VMX_TIMEDEST_CONTEXT'];
+$set['defaultval'] =& $set['value'];
+$set['options'] = '';
+$set['readonly'] = 1;
+$set['hidden'] = 0;
+$set['level'] = 9;
+$set['module'] = '';
+$set['category'] = 'VmX Locater';
+$set['emptyok'] = 1;
+$set['name'] = 'VMX Default Timeout Context';
+$set['description'] = "Used to do extremely advanced and customized changes to the macro-vm VmX locater. Check the dialplan for a thorough understanding of how to use this. The default location that a caller will be sent if they don't press any key (timeout) or press # which is interpreted as a timeout. Set this to 'dovm' to go to voicemail (default).";
+$set['type'] = CONF_TYPE_TEXT;
+$freepbx_conf->define_conf_setting('VMX_TIMEDEST_CONTEXT',$set);
+
+// VMX_TIMEDEST_EXT
+//
+$set['value'] = $globals_convert['VMX_TIMEDEST_EXT'];
+$set['defaultval'] =& $set['value'];
+$set['options'] = '';
+$set['readonly'] = 1;
+$set['hidden'] = 0;
+$set['level'] = 9;
+$set['module'] = '';
+$set['category'] = 'VmX Locater';
+$set['emptyok'] = 0;
+$set['name'] = 'VMX Default Timeout Extension';
+$set['description'] = "Used to do extremely advanced and customized changes to the macro-vm VmX locater. Check the dialplan for a thorough understanding of how to use this. The default location that a caller will be sent if they don't press any key (timeout) or press # which is interpreted as a timeout. Set this to 'dovm' to go to voicemail (default).";
+$set['type'] = CONF_TYPE_TEXT;
+$freepbx_conf->define_conf_setting('VMX_TIMEDEST_EXT',$set);
+
+// VMX_TIMEDEST_PRI
+//
+$set['value'] = $globals_convert['VMX_TIMEDEST_PRI'];
+$set['defaultval'] =& $set['value'];
+$set['options'] = array(1,1000);
+$set['readonly'] = 1;
+$set['hidden'] = 0;
+$set['level'] = 9;
+$set['module'] = '';
+$set['category'] = 'VmX Locater';
+$set['emptyok'] = 0;
+$set['name'] = 'VMX Default Timeout Priority';
+$set['description'] = "Used to do extremely advanced and customized changes to the macro-vm VmX locater. Check the dialplan for a thorough understanding of how to use this. The default location that a caller will be sent if they don't press any key (timeout) or press # which is interpreted as a timeout. Set this to 'dovm' to go to voicemail (default).";
+$set['type'] = CONF_TYPE_INT;
+$freepbx_conf->define_conf_setting('VMX_TIMEDEST_PRI',$set);
+
+// VMX_LOOPDEST_CONTEXT
+//
+$set['value'] = $globals_convert['VMX_LOOPDEST_CONTEXT'];
+$set['defaultval'] =& $set['value'];
+$set['options'] = '';
+$set['readonly'] = 1;
+$set['hidden'] = 0;
+$set['level'] = 9;
+$set['module'] = '';
+$set['category'] = 'VmX Locater';
+$set['emptyok'] = 1;
+$set['name'] = 'VMX Default Loop Exceed Context';
+$set['description'] = "Used to do extremely advanced and customized changes to the macro-vm VmX locater. Check the dialplan for a thorough understanding of how to use this. The default location that a caller will be sent if they press an invalid options too many times, as defined by the Maximum Loops count.";
+$set['type'] = CONF_TYPE_TEXT;
+$freepbx_conf->define_conf_setting('VMX_LOOPDEST_CONTEXT',$set);
+
+// VMX_LOOPDEST_EXT
+//
+$set['value'] = $globals_convert['VMX_LOOPDEST_EXT'];
+$set['defaultval'] =& $set['value'];
+$set['options'] = '';
+$set['readonly'] = 1;
+$set['hidden'] = 0;
+$set['level'] = 9;
+$set['module'] = '';
+$set['category'] = 'VmX Locater';
+$set['emptyok'] = 0;
+$set['name'] = 'VMX Default Loop Exceed Extension';
+$set['description'] = "Used to do extremely advanced and customized changes to the macro-vm VmX locater. Check the dialplan for a thorough understanding of how to use this. The default location that a caller will be sent if they press an invalid options too many times, as defined by the Maximum Loops count.";
+$set['type'] = CONF_TYPE_TEXT;
+$freepbx_conf->define_conf_setting('VMX_LOOPDEST_EXT',$set);
+
+// VMX_LOOPDEST_PRI
+//
+$set['value'] = $globals_convert['VMX_LOOPDEST_PRI'];
+$set['defaultval'] =& $set['value'];
+$set['options'] = array(1,1000);
+$set['readonly'] = 1;
+$set['hidden'] = 0;
+$set['level'] = 9;
+$set['module'] = '';
+$set['category'] = 'VmX Locater';
+$set['emptyok'] = 0;
+$set['name'] = 'VMX Default Loop Exceed Priority';
+$set['description'] = "Used to do extremely advanced and customized changes to the macro-vm VmX locater. Check the dialplan for a thorough understanding of how to use this. The default location that a caller will be sent if they press an invalid options too many times, as defined by the Maximum Loops count.";
+$set['type'] = CONF_TYPE_INT;
+$freepbx_conf->define_conf_setting('VMX_LOOPDEST_PRI',$set);
+
+// MIXMON_DIR
+//
+$set['value'] = $globals_convert['MIXMON_DIR'];
+$set['defaultval'] =& $set['value'];
+$set['options'] = '';
+$set['readonly'] = 1;
+$set['hidden'] = 0;
+$set['level'] = 9;
+$set['module'] = '';
+$set['category'] = 'Directory Layout';
+$set['emptyok'] = 1;
+$set['name'] = 'Override Call Recording Location';
+$set['description'] = "Override the default location where asterisk will store call recordings. Be sure to set proper permissions on the directory for the asterisk user.";
+$set['type'] = CONF_TYPE_DIR;
+$freepbx_conf->define_conf_setting('MIXMON_DIR',$set);
+
+// MIXMON_POST
+//
+$set['value'] = $globals_convert['MIXMON_POST'];
+$set['defaultval'] =& $set['value'];
+$set['options'] = '';
+$set['readonly'] = 1;
+$set['hidden'] = 0;
+$set['level'] = 9;
+$set['module'] = '';
+$set['category'] = 'Developer and Customization';
+$set['emptyok'] = 1;
+$set['name'] = 'Post Call Recording Script';
+$set['description'] = "An optional script to be run after the call is hangup. You can include channel and MixMon variables like \${CALLFILENAME}, \${MIXMON_FORMAT} and \${MIXMON_DIR}. To ensure that you variables are properly escaped, use the following notation: ^{MY_VAR}";
+$set['type'] = CONF_TYPE_TEXT;
+$freepbx_conf->define_conf_setting('MIXMON_POST',$set);
+
+
+// Get all the globals that need to be migrated, then prepare the
+// update array to set the current settings in freepbx_conf before
+// deleting them.
+// 
+$sql = "SELECT `variable`, `value`";
+$sql_where = " FROM globals WHERE `variable` IN ('".implode("','",array_keys($globals_convert))."')";
+$sql .= $sql_where;
+$globals = $db->getAll($sql,DB_FETCHMODE_ASSOC);
+if(DB::IsError($globals)) {
+  die_freepbx($globals->getMessage());
+}
+outn(_("Checking for General Setting migrations.."));
+if (count($globals)) {
+  out(_("preparing"));
+  foreach ($globals as $global) {
+    $update_arr[trim($global['variable'])] = $global['value'];	
+    out(sprintf(_("%s prepared"),$global['variable']));
+  }
+  // Now set the values differently from the defaults, and commit
+  $freepbx_conf->set_conf_values($update_arr,true);
+} else {
+  out(_("not needed"));
+  // commit the previous defines if we didn't upate anything
+  $freepbx_conf->commit_conf_settings();
+}
+
+// Now Delete The Globals
+//
+if (count($globals)) {
+	out(_("General Settings migrated"));
+	outn(_("Deleting migrated settings.."));
+  $sql = "DELETE".$sql_where;
+  $globals = $db->query($sql);
+  if(DB::IsError($globals)) {
+	  out(_("Fatal DB error trying to delete globals, trying to carry on"));
+  } else {
+	  out(_("done"));
+  }
+}
+
+// It's possible that SQL, LOG_SQL values could still bein in AMPSYSLOGLEVEL if amportal.conf
+// remained writable. Once changed, this will set it properly next time core is upgraded since
+// Framework upgrade scripts only run based on current version.
+//
+$log_level = strtoupper($amp_conf['AMPSYSLOGLEVEL']);
+if ($log_level == 'SQL' || $log_level == 'LOG_SQL') {
+  outn(sprintf(_("Discontinued logging type %s changing to %s.."),$log_level,'FILE'));
+  $freepbx_conf->set_conf_values(array('AMPSYSLOGLEVEL' => 'FILE'));
+  out(_("ok"));
+}
+// AMPSYSLOGLEVEL
+unset($set);
+$set['value'] = 'FILE';
+$set['options'] = 'FILE, LOG_EMERG, LOG_ALERT, LOG_CRIT, LOG_ERR, LOG_WARNING, LOG_NOTICE, LOG_INFO, LOG_DEBUG';
+$freepbx_conf->define_conf_setting('AMPSYSLOGLEVEL',$set,true);
+
+// Convert IAX notransfer to transfer (since 1.4)
+//
+outn(_("Converting IAX notransfer to transfer if needed.."));
+$affected_rows = 0;
+sql("UPDATE iax SET keyword = 'transfer', data = 'yes' WHERE keyword = 'notransfer' AND LOWER(data) = 'no'");
+$affected_rows .= $db->affectedRows();
+sql("UPDATE iax SET keyword = 'transfer', data = 'no' WHERE keyword = 'notransfer' AND LOWER(data) = 'yes'");
+$affected_rows .= $db->affectedRows();
+sql("UPDATE iax SET keyword = 'transfer' WHERE keyword = 'notransfer' AND LOWER(data) = 'mediaonly'");
+$affected_rows .= $db->affectedRows();
+$affected_rows ? out(sprintf(_("updated %s records"),$affected_rows)) : out(_("not needed"));

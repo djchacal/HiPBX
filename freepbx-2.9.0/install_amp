@@ -412,14 +412,18 @@ function install_modules() {
 
 			  // special case framework, it should not be installed just enabled.
 			  //
-			  if ($up_module != 'framework') {
+        switch ($up_module) {
+        case 'framework':
+        case 'fw_ari':
+        case 'fw_fop':
+				  system($amp_conf['AMPBIN']."/module_admin --no-warnings -f enable $up_module");
+				  out("enabled");
+        break;
+        default:
 				  system($amp_conf['AMPBIN']."/module_admin --no-warnings -f install $up_module");
 				  system($amp_conf['AMPBIN']."/module_admin --no-warnings -f enable $up_module");
 				  out("installed");
-			  } else {
-				  system($amp_conf['AMPBIN']."/module_admin --no-warnings -f enable $up_module");
-				  out("enabled");
-			  }
+        }
         unset($included_modules[$id]);
 		  } else {
 			  out("Dry Run Not Installed");

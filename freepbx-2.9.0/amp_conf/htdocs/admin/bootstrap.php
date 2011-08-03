@@ -24,6 +24,15 @@
  * $bootstrap_settings['function_modules_included'] = true/false true if one or more were included, false if all were skipped;
  */
 
+// we should never re-run this file, something is wrong if we do.
+//
+if (isset($bootstrap_settings['bootstrapped'])) {
+  freepbx_log(FPBX_LOG_ERROR,"Bootstrap has already been called once, bad code somewhere");
+  return;
+} else {
+  $bootstrap_settings['bootstrapped'] = true;
+}
+
 if (!isset($bootstrap_settings['skip_astman'])) {
   $bootstrap_settings['skip_astman'] = isset($skip_astman) ? $skip_astman : false;
 }
@@ -127,17 +136,18 @@ if (!$bootstrap_settings['freepbx_auth'] || (php_sapi_name() == 'cli')) {
 }
 if (!defined('FREEPBX_IS_AUTH')) { die('No direct script access allowed'); }//we should never need this, just another line of defence
 
+$restrict_mods_local = $restrict_mods;
 // I'm pretty sure if this is == true then there is no need to even pull all the module info as we are going down a path
 // such as an ajax path that this is just overhead. (We'll know soon enough if this is too restrcitive).
 //
-if ($restrict_mods !== true) {
+if ($restrict_mods_local !== true) {
   $active_modules = module_getinfo(false, MODULE_STATUS_ENABLED);
 
   if(is_array($active_modules)){
 
 	  foreach($active_modules as $key => $module) {
 		  //include module functions if there not dissabled
-      if ((!$restrict_mods || (is_array($restrict_mods) && isset($restrict_mods[$key]))) && is_file($amp_conf['AMPWEBROOT']."/admin/modules/{$key}/functions.inc.php")) {
+      if ((!$restrict_mods_local || (is_array($restrict_mods_local) && isset($restrict_mods_local[$key]))) && is_file($amp_conf['AMPWEBROOT']."/admin/modules/{$key}/functions.inc.php")) {
         require_once($amp_conf['AMPWEBROOT']."/admin/modules/{$key}/functions.inc.php");
       } 
 		  //create an array of module sections to display

@@ -1,6 +1,6 @@
 <?php	
 
-/* $Id: sql.php 8468 2010-01-04 22:41:21Z p_lindheimer $ */
+/* $Id: sql.php 11662 2011-03-04 00:28:02Z p_lindheimer $ */
 
 // SQL Abstraction Layer for AGI Applications
 // Original Release by Rob Thomas (xrobau@gmail.com)
@@ -195,6 +195,7 @@ class AGIDB {
 		} elseif (!function_exists('sqlite3_open')) {
 			$this->debug('Loading sqlite3.so', 4);
 			// It's not loaded. Load it.
+      // dl() is gone in php5, but since this will crash it anyhow, will just leave it as is
 			dl('sqlite3.so');
 			// That would have crashed PHP if it couldn't load it, so we know it's loaded if
 			// it got to here.

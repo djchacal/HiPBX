@@ -1,4 +1,4 @@
-<?php /* $Id: page.did.php 10030 2010-07-05 00:02:22Z p_lindheimer $ */
+<?php /* $Id: page.did.php 11890 2011-03-21 06:41:28Z mickecarlsson $ */
 // This file is part of FreePBX.
 //
 //    FreePBX is free software: you can redistribute it and/or modify
@@ -214,7 +214,7 @@ if (isset($inroutes)) {
 			<td><input type="text" name="extension" value="<?php echo isset($extension)?$extension:''; ?>" tabindex="<?php echo ++$tabindex;?>"></td>
 		</tr>
 		<tr>
-			<td><a href="#" class="info"><?php echo _("Caller ID Number")?><span><?php echo _('Define the Caller ID Number to be matched on incoming calls.<br><br>Leave this field blank to match any or no CID info. In addition to standard dial sequences, you can also put Private, Blocked, Unknown, Restricted, Anonymous and Unavailable in order to catch these special cases if the Telco transmits them.')?></span></a>:</td>
+			<td><a href="#" class="info"><?php echo _("CallerID Number")?><span><?php echo _('Define the CallerID Number to be matched on incoming calls.<br><br>Leave this field blank to match any or no CID info. In addition to standard dial sequences, you can also put Private, Blocked, Unknown, Restricted, Anonymous and Unavailable in order to catch these special cases if the Telco transmits them.')?></span></a>:</td>
 			<td><input type="text" name="cidnum" value="<?php echo isset($cidnum)?$cidnum:'' ?>" tabindex="<?php echo ++$tabindex;?>"></td>
 		</tr>
 
@@ -229,7 +229,7 @@ if (isset($inroutes)) {
 			<td><input type="text" name="alertinfo" size="10" value="<?php echo $alertinfo ?>" tabindex="<?php echo ++$tabindex;?>"></td>
 		</tr>
 		<tr>
-			<td><a href="#" class="info"><?php echo _("CID name prefix")?><span><?php echo _('You can optionally prefix the Caller ID name. ie: If you prefix with "Sales:", a call from John Doe would display as "Sales:John Doe" on the extensions that ring.')?></span></a>:</td>
+			<td><a href="#" class="info"><?php echo _("CID name prefix")?><span><?php echo _('You can optionally prefix the CallerID name. ie: If you prefix with "Sales:", a call from John Doe would display as "Sales:John Doe" on the extensions that ring.')?></span></a>:</td>
 			<td><input type="text" name="grppre" size="10" value="<?php echo $grppre ?>" tabindex="<?php echo ++$tabindex;?>"></td>
 		</tr>
 <?php   if (function_exists('music_list')) { ?>
@@ -265,7 +265,7 @@ if (isset($inroutes)) {
 		<tr><td colspan="2"><h5><?php echo _("Privacy")?><hr></h5></td></tr>
 
 		<tr>
-			<td><a href="#" class="info"><?php echo _("Privacy Manager")?><span><?php echo _('If no Caller ID has been received, Privacy Manager will ask the caller to enter their phone number. If an user/extension has Call Screening enabled, the incoming caller will be be prompted to say their name when the call reaches the user/extension.')?></span></a>:</td>
+			<td><a href="#" class="info"><?php echo _("Privacy Manager")?><span><?php echo _('If no CallerID has been received, Privacy Manager will ask the caller to enter their phone number. If an user/extension has Call Screening enabled, the incoming caller will be be prompted to say their name when the call reaches the user/extension.')?></span></a>:</td>
 			<td>
 				<select name="privacyman" tabindex="<?php echo ++$tabindex;?>">
 					<option value="0" <?php  echo ($privacyman == '0' ? 'SELECTED' : '')?>><?php echo _("No")?>
@@ -274,7 +274,7 @@ if (isset($inroutes)) {
 			</td>
 		</tr>
 		<tr class="pm_opts" <?php echo $privacyman == '0' ? 'style="display:none"':''?>>
-			<td><a href="#" class="info"><?php echo _("Max attempts")?><span><?php echo _('Number of attempts the caller has to enter a valid callerID')?></span></a>:</td>
+			<td><a href="#" class="info"><?php echo _("Max attempts")?><span><?php echo _('Number of attempts the caller has to enter a valid CallerID')?></span></a>:</td>
 			<td>
 				<select name="pmmaxretries" tabindex="<?php echo ++$tabindex;?>">
 					<?php
@@ -287,7 +287,7 @@ if (isset($inroutes)) {
 			</td>
 		</tr>	
 		<tr class="pm_opts" <?php echo $privacyman == '0' ? 'style="display:none"':''?>>
-			<td><a href="#" class="info"><?php echo _("Min Length")?><span><?php echo _('Minimum amount of digits callerID needs to contain in order to be considered valid')?></span></a>:</td>
+			<td><a href="#" class="info"><?php echo _("Min Length")?><span><?php echo _('Minimum amount of digits CallerID needs to contain in order to be considered valid')?></span></a>:</td>
 			<td>
 				<select name="pmminlength" tabindex="<?php echo ++$tabindex;?>">
 					<?php
@@ -326,14 +326,14 @@ theForm.extension.focus();
 
 function editGRP_onsubmit() {
 	var msgInvalidDIDNumb = "<?php echo _('Please enter a valid DID Number'); ?>";
-	var msgInvalidCIDNum = "<?php echo _('Please enter a valid Caller ID Number'); ?>";
+	var msgInvalidCIDNum = "<?php echo _('Please enter a valid CallerID Number'); ?>";
 	var msgInvalidFaxEmail = "<?php echo _('Please enter a valid Fax Email or leave it empty to use the default'); ?>";
 	var msgInvalidPause = "<?php echo _('Please enter a valid number for Pause after answer'); ?>";
 	var msgInvalidPauseBefore = "<?php echo _('Please enter a valid number for Pause Before Answer field'); ?>";
-	var msgConfirmDIDCIDBlank = "<?php echo _('Leaving the DID Number AND the Caller ID Number empty will match all incoming calls received not routed using any other defined Incoming Route.\n\nAre you sure?'); ?>";
+	var msgConfirmDIDCIDBlank = "<?php echo _('Leaving the DID Number AND the CallerID Number empty will match all incoming calls received not routed using any other defined Incoming Route.\n\nAre you sure?'); ?>";
 	var msgConfirmDIDNonStd = "<?php echo _('DID information is normally just an incoming telephone number or for advanced users, a valid Asterisk Dial Pattern\n\nYou have entered a non standard DID pattern.\n\nAre you sure this is correct?'); ?>";
 	var msgConfirmDIDNoSlash = "<?php echo _('A Slash (\'/\') is never a valid DID. Please remove it and try again'); ?>";
-	var msgInvalidGrpPrefix = "<?php echo _('Invalid Caller ID prefix.'); ?>";
+	var msgInvalidGrpPrefix = "<?php echo _('Invalid CallerID prefix.'); ?>";
 	
 	setDestinations(theForm,1);
 	

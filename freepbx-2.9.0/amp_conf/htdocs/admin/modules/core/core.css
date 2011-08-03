@@ -14,4 +14,8 @@ div.dialpatterns {
 	overflow: auto; 
 	border: 1px solid #CCCCCC;
 }
-
+#pattern_file {
+	display: none;
+}
+.save, .adv_set_default{border-style: none;}
+.savetd, .save{display:none;}

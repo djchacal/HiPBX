@@ -1,4 +1,4 @@
-<?php /* $Id: page.music.php 10456 2010-11-01 19:39:25Z p_lindheimer $ */
+<?php /* $Id: page.music.php 11052 2011-01-21 20:26:14Z mickecarlsson $ */
 //Copyright (C) 2004 Coalescent Systems Inc. (info@coalescentsystems.ca)
 //
 //This program is free software; you can redistribute it and/or
@@ -479,7 +479,7 @@ function editstream_onsubmit() {
 			<option value=".25"><?php echo _("Volume 25%")?></option>
 			<option value=".1"><?php echo _("Volume 10%")?></option>
 		</select>
-		<a href="#" class="info"><?php echo "&nbsp;"._("Volume Adjustment")?><span> <?php echo _("The volume adjustment is a linear value. Since loudness is logarithmic, the linear level will be less of an adjustment. You should test out the installed music to assure it is at the correct volume. This feature will convert MP3 files to WAV files. If you do not have mpg123 installed, you can set the parameter: <strong>AMPMPG123=false</strong> in your amportal.conf file") ?></span></a>
+		<a href="#" class="info"><?php echo "&nbsp;"._("Volume Adjustment")?><span> <?php echo _("The volume adjustment is a linear value. Since loudness is logarithmic, the linear level will be less of an adjustment. You should test out the installed music to assure it is at the correct volume. This feature will convert MP3 files to WAV files. If you do not have mpg123 installed, you can set the parameter: <strong>Convert Music Files to WAV</strong> to false in Advanced Settings") ?></span></a>
 <?php
 	} else { // AMPMPG123
 ?>

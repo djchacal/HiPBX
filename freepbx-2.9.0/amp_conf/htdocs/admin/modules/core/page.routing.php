@@ -1,4 +1,4 @@
-<?php /* $Id: page.routing.php 10612 2010-11-23 20:34:33Z p_lindheimer $ */
+<?php /* $Id: page.routing.php 11890 2011-03-21 06:41:28Z mickecarlsson $ */
 // This file is part of FreePBX.
 //
 //    FreePBX is free software: you can redistribute it and/or modify
@@ -21,6 +21,11 @@
 $display='routing'; 
 $extdisplay=isset($_REQUEST['extdisplay'])?$_REQUEST['extdisplay']:'';
 $action = isset($_REQUEST['action'])?$_REQUEST['action']:'';
+// Now check if the Copy Route submit button was pressed, in which case we duplicate the route
+//
+if (isset($_REQUEST['copyroute'])) {
+  $action = 'copyroute';
+}
 
 $tabindex = 0;
 
@@ -29,13 +34,80 @@ $repotrunkdirection = isset($_REQUEST['repotrunkdirection'])?$_REQUEST['repotrun
 //this was effectively the sequence, now it becomes the route_id and the value past will have to change
 $repotrunkkey = isset($_REQUEST['repotrunkkey'])?$_REQUEST['repotrunkkey']:'';
 
+// Check if they uploaded a CSV file for their route patterns
+//
+if (isset($_FILES['pattern_file']) && $_FILES['pattern_file']['tmp_name'] != '') {
+  $fh = fopen($_FILES['pattern_file']['tmp_name'], 'r');
+  if ($fh !== false) {
+    $csv_file = array();
+    $index = array();
+
+    // Check first row, ingoring empty rows and get indices setup
+    //
+    while (($row = fgetcsv($fh, 5000, ",", "\"")) !== false) {
+      if (count($row) == 1 && $row[0] == '') {
+        continue;
+      } else {
+        $count = count($row) > 4 ? 4 : count($row);
+        for ($i=0;$i<$count;$i++) {
+          switch (strtolower($row[$i])) {
+          case 'prepend':
+          case 'prefix':
+          case 'match pattern':
+          case 'callerid':
+            $index[strtolower($row[$i])] = $i;
+          break;
+          default:
+          break;
+          }
+        }
+        // If no headers then assume standard order
+        if (count($index) == 0) {
+          $index['prepend'] = 0;
+          $index['prefix'] = 1;
+          $index['match pattern'] = 2;
+          $index['callerid'] = 3;
+          if ($count == 4) {
+            $csv_file[] = $row;
+          }
+        }
+        break;
+      }
+    }
+    $row_count = count($index);
+    while (($row = fgetcsv($fh, 5000, ",", "\"")) !== false) {
+      if (count($row) == $row_count) {
+        $csv_file[] = $row;
+      }
+    }
+  }
+}
+
 //
 // Use a hash of the value inserted to get rid of duplicates
 $dialpattern_insert = array();
 $p_idx = 0;
 $n_idx = 0;
 
-if (isset($_POST["prepend_digit"])) {
+// If we have a CSV file it replaces any existing patterns
+//
+if (!empty($csv_file)) {
+  foreach ($csv_file as $row) {
+    $this_prepend = isset($index['prepend']) ? htmlspecialchars(trim($row[$index['prepend']])) : '';
+    $this_prefix = isset($index['prefix']) ? htmlspecialchars(trim($row[$index['prefix']])) : '';
+    $this_match_pattern = isset($index['match pattern']) ? htmlspecialchars(trim($row[$index['match pattern']])) : '';
+    $this_callerid = isset($index['callerid']) ? htmlspecialchars(trim($row[$index['callerid']])) : '';
+
+    if ($this_prepend != '' || $this_prefix  != '' || $this_match_pattern != '' || $this_callerid != '') {
+      $dialpattern_insert[] = array(
+        'prepend_digits' => $this_prepend,
+        'match_pattern_prefix' => $this_prefix,
+        'match_pattern_pass' => $this_match_pattern,
+        'match_cid' => $this_callerid,
+      );
+    }
+  }
+} else if (isset($_POST["prepend_digit"])) {
   $prepend_digit = $_POST["prepend_digit"];
   $pattern_prefix = $_POST["pattern_prefix"];
   $pattern_pass = $_POST["pattern_pass"];
@@ -125,6 +197,12 @@ switch ($action) {
 		exit;
 
 	break;
+  case "copyroute":
+    $routename .= "_copy_$extdisplay";
+    $extdisplay='';
+    $route_seq++;
+  // Fallthrough to addtrunk now...
+  //
 	case "addroute":
     $extdisplay = core_routing_addbyid($routename, $outcid, $outcid_mode, $routepass, $emergency, $intracompany, $mohsilence, $time_group_id, $dialpattern_insert, $trunkpriority, $route_seq);
     $_REQUEST['extdisplay'] = $extdisplay; //have not idea if this is needed or useful
@@ -335,7 +413,7 @@ if ($extdisplay) { // editing
 <?php  
 } 
 ?>
-	<form autocomplete="off" id="routeEdit" name="routeEdit" action="config.php" method="POST" onsubmit="return routeEdit_onsubmit('<?php echo ($extdisplay != '' ? "editroute" : "addroute") ?>');">
+	<form enctype="multipart/form-data" autocomplete="off" id="routeEdit" name="routeEdit" action="config.php" method="POST" onsubmit="return routeEdit_onsubmit('<?php echo ($extdisplay != '' ? "editroute" : "addroute") ?>');">
 		<input type="hidden" name="display" value="<?php echo $display?>"/>
 		<input type="hidden" name="extdisplay" value="<?php echo $extdisplay ?>"/>
 		<input type="hidden" id="action" name="action" value=""/>
@@ -372,7 +450,7 @@ if ($extdisplay) { // editing
 		</tr>
 
 		<tr>
-      <td><a href=# class="info"><?php echo _("Route Type")?>:<span><?php echo _("Optional: Selecting Emergency will enforce the use of a device's Emergency CID setting (if set).  Select this option if this route is used for emergency dialing (ie: 911).").'<br />'._("Optional: Selecting Intra-Company will treat this route as an intra-company connection, preserving the internal Caller ID information instead of the outbound CID of either the extension or trunk.")?></span></a></td>
+      <td><a href=# class="info"><?php echo _("Route Type")?>:<span><?php echo _("Optional: Selecting Emergency will enforce the use of a device's Emergency CID setting (if set).  Select this option if this route is used for emergency dialing (ie: 911).").'<br />'._("Optional: Selecting Intra-Company will treat this route as an intra-company connection, preserving the internal CallerID information instead of the outbound CID of either the extension or trunk.")?></span></a></td>
       <td>
         <input type="checkbox" name="emergency" value="YES" <?php echo ($emergency ? "CHECKED" : "") ?>  tabindex="<?php echo ++$tabindex;?>"/><small><?php echo _("Emergency") ?></small>
         <input type="checkbox" name="intracompany" value="YES" <?php echo ($intracompany ? "CHECKED" : "") ?>  tabindex="<?php echo ++$tabindex;?>"/><small><?php echo _("Intra-Company") ?></small>
@@ -465,7 +543,7 @@ if ($extdisplay) { // editing
   $pp_tit = _("prepend");
   $pf_tit = _("prefix");
   $mp_tit = _("match pattern");
-  $ci_tit = _("CallerId");
+  $ci_tit = _("CallerID");
 
   $dpt_title_class = 'dpt-title dpt-display';
   foreach ($dialpattern_array as $idx => $pattern) {
@@ -525,6 +603,7 @@ END;
 			<a href=# class="info"><?php echo _("Dial patterns wizards")?><span>
 					<?php echo _("These options provide a quick way to add outbound dialing rules. Follow the prompts for each.")?><br>
 					<strong><?php echo _("Lookup local prefixes")?></strong> <?php echo _("This looks up your local number on www.localcallingguide.com (NA-only), and sets up so you can dial either 7, 10 or 11 digits (5551234, 6135551234, 16135551234) to access this route.")?><br>
+					<strong><?php echo _("Upload from CSV")?></strong> <?php echo sprintf(_("Upload patterns from a CSV file replacing existing entries. If there are no headers then the file must have 4 columns of patterns in the same order as in the GUI. You can also supply headers: %s, %s, %s and %s in the first row. If there are less then 4 recognized headers then the remaining columns will be blank"),'<strong>prepend</strong>','<strong>prefix</strong>','<strong>match pattern</strong>','<strong>callerid</strong>')?><br>
 					</span></a>:
 			<input id="npanxx" name="npanxx" type="hidden" />
 			<script language="javascript">
@@ -553,6 +632,10 @@ END;
 			}
 
 			function insertCode() {
+        // hide the file box if nothing was set
+        if ($('#pattern_file').val() == '') {
+          $('#pattern_file').hide();
+        }
 				code = document.getElementById('inscode').value;
 				insert = '';
 				switch(code) {
@@ -581,6 +664,10 @@ END;
 						populateLookup();
 						insert = '';
 					break;
+					case 'csv':
+            $('#pattern_file').show().click();
+            return true;
+					break;
 				}
 
         patterns = insert.split(',')
@@ -604,7 +691,9 @@ END;
 			<option value="info"><?php echo _("Information")?></option>
 			<option value="emerg"><?php echo _("Emergency")?></option>
 			<option value="lookup"><?php echo _("Lookup local prefixes")?></option>
+			<option value="csv"><?php echo _("Upload from CSV")?></option>
 				</select>
+        <input type="file" name="pattern_file" id="pattern_file" tabindex="<?php echo ++$tabindex;?>"/>
 			</td>
 		</tr>
 
@@ -689,7 +778,9 @@ for ($i=0; $i < $num_new_boxes; $i++) {
 
 		<tr>
 			<td colspan="2">
-				<h6><input name="Submit" type="submit" value="<?php echo _("Submit Changes")?>">
+        <h6>
+          <input name="Submit" type="submit" value="<?php echo _("Submit Changes")?>">
+          <input name="copyroute" type="submit" value="<?php echo _("Duplicate Route");?>"/>
 				</h6>
 			</td>
 		</tr>
@@ -703,6 +794,7 @@ $(document).ready(function(){
   $("#dial-pattern-add").click(function(){
     addCustomField('','','','');
   });
+  $('#pattern_file').hide();
   $(".dpt-display").toggleVal({
     populateFrom: "title",
     changedClass: "text-normal",
@@ -783,7 +875,7 @@ function routeEdit_onsubmit(act) {
 	var msgInvalidRouteName = "<?php echo _('Route name is invalid, please try again'); ?>";
 	var msgInvalidRoutePwd = "<?php echo _('Route password must be numeric or leave blank to disable'); ?>";
 	var msgInvalidTrunkSelection = "<?php echo _('At least one trunk must be picked'); ?>";
-	var msgInvalidOutboundCID = "<?php echo _('Invalid Outbound Caller ID'); ?>";
+	var msgInvalidOutboundCID = "<?php echo _('Invalid Outbound CallerID'); ?>";
 	
 	var rname = theForm.routename.value;
 	if (!rname.match('^[a-zA-Z0-9][a-zA-Z0-9_\-]+$'))
@@ -839,6 +931,9 @@ function validatePatterns() {
   });
 
   if (culprit == undefined && !one_good) {
+    if ($('#inscode').val() == 'csv') {
+      return true;
+    }
     culprit = $('.toggleval:visible').get(0);
 	  msgInvalidDialPattern = "<?php echo _('No dial pattern, there must be at least one'); ?>";
   } else {

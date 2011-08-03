@@ -102,13 +102,13 @@ function configure_lvm {
 	# Default storage percentages.  Minimum sizes (with 50GB lvm space used) in brackets
 	# MySQL = 30 (15G)
 	# Asterisk = 30 (15G)
-	# httpd = 20 (10G)
-	# dhcpd = 10 (5G)
+	# http = 20 (10G)
+	# dhcp = 10 (5G)
 	# spare = 10 (5G)
 	# Don't try to use decimals here. Integers only.
 	# Note that changing these AFTER the cluster has been built won't work. Create
 	# a new cluster. Remember how I said set aside LOTS OF SPACE? I wasn't kidding.
-	[ "$SERVICES" = "" ] && SERVICES=( mysql=30 asterisk=30 httpd=20 dhcpd=10 spare=10 )
+	[ "$SERVICES" = "" ] && SERVICES=( mysql=30 asterisk=30 http=20 dhcp=10 spare=10 )
 
 	# Parse the SERVICES variable into arrays
 	NBRSVCS=$((${#SERVICES[@]} - 1))
@@ -937,3 +937,25 @@ function asterisk_install {
 	crm resource start asterisk
 	crm resource unmigrate fs_asterisk >/dev/null 2>&1
 }
+
+function apache_install {
+	echo "Starting Apache configuration.."
+	crm resource start ms_drbd_http
+	crm resource start fs_http
+	# Make sure that I am the machine managing the resource
+	echo "Migrating resource to this server..."
+	crm resource migrate fs_http $(hostname) >/dev/null 2>&1
+	# Wait for the partition to be mounted...
+	find_mount 2 > /dev/null
+	create_links /var/www /drbd/http/www yes
+	create_links /var/log/httpd /drbd/http/logs yes
+	create_links /etc/php.d /drbd/http/php yes
+	mv -n /etc/php.ini /drbd/http/php.ini
+	ln -s /drbd/http/php.ini /etc/php.ini
+	crm configure primitive httpd lsb:httpd meta target-role="Stopped"
+	echo group http fs_http ip_http httpd | crm configure load update - 
+	echo -e "\tStarting Clustered Apache service"
+	crm resource start http
+	crm resource unmigrate fs_http >/dev/null 2>&1
+}
+	
