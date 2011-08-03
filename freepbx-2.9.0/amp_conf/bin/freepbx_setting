@@ -48,7 +48,7 @@ $user = trim(`whoami`);
 $sudo_command = trim(getenv('SUDO_COMMAND'));
 $web_user = $freepbx_conf->get_conf_setting('AMPASTERISKWEBUSER');
 exec("id $web_user 2>&1", $null, $retvar);
-if ($retvar == 0 && $user == 'root' && $sudo_command == '') {
+if ($web_user != "" && $retvar == 0 && $user == 'root' && $sudo_command == '') {
   out(sprintf(_("trying to run as user %s:"),$web_user));
   out('');
   system("sudo -u $web_user " . $argv[0] . ' ' . $argv[1] . ' ' . $argv[2], $retval);
