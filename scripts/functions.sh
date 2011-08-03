@@ -255,6 +255,7 @@ function configure_lvm {
 				lvsize=$(echo ${BASESIZE}*.${SERVICEPCNT[${LVMAKE[$x]}]} - .5 | bc)
 				lvsize=$(printf %0.f $lvsize)
 			fi
+			[ "$lvsize" -lt 1 ] && lvsize=1
 			echo "(${lvsize}G) "
 			if $(lvcreate -L${lvsize}g $VGNAME -n drbd_${SERVICENAME[${LVMAKE[$x]}]} > /dev/null); then
 				cfg "drbd_${SERVICENAME[${LVMAKE[$x]}]}" "${lvsize}"
@@ -314,10 +315,10 @@ function add_ssh {
 		echo "Done"
 	else
 		# It exists. Check to see if our key is in there
-		if grep "$SSH_KEY" $HOME/.ssh/authorized_keys > /dev/null; then
-			echo "HiPBX SSH Key already exists in authorized_keys"
+		if grep "\"$SSH_KEY\"" $HOME/.ssh/authorized_keys > /dev/null; then
+			echo -e "\tHiPBX SSH Key already exists in authorized_keys"
 		else
-			echo -n "Adding HiPBX SSH Key to authorized_keys..."
+			echo -en "\tAdding HiPBX SSH Key to authorized_keys..."
 			cat /etc/hipbx.d/ssh_key_master.pub >> $HOME/.ssh/authorized_keys
 			echo "Done"
 		fi
@@ -981,20 +982,34 @@ function apache_install {
 	create_links /var/log/httpd /drbd/http/logs yes
 	create_links /etc/php.d /drbd/http/php yes
 	chown -R apache /drbd/http/*
-	if [ -f /etc/php.ini ] ; then 
+	# Is php.ini already a symlink?
+	if [ -h /etc/php.ini ] ; then
+		# Does it point to a file that exists?
+		if [ -f $(readlink /etc/php.ini) ] ; then
+			echo -e "\tphp.ini correct";
+		else
+			# Destination doesn't exist. Can we recover it?
+			if [ -f /etc/php.ini.bak ] ; then
+				echo "**** WARNING **** PHP.ini went missing. Restoring from /etc/php.ini.bak"
+				cp /etc/php.ini.bak /drbd/http/php.ini
+				rm -f /etc/php.ini
+				ln -s /drbd/http/php.ini /etc/php.ini
+			else
+				echo "**** ERROR ****. I can't find a php.ini file. Apache will be sad. Please fix."
+				exit
+			fi
+		fi
+	elif [ -f /etc/php.ini ] ; then 
+		# Original file is still there.
 		if [ -f /drbd/http/php.ini ] ; then
+			# And there's already a php.ini in drbd. Keep the drbd one.
 			rm -f /etc/php.ini
 			ln -s /drbd/http/php.ini /etc/php.ini
 		else
+			# There's no php.ini in drbd. Back it up, create it, and link it.
+			[ ! -f /etc/php.ini.bak ] && cp /etc/php.ini /etc/php.ini.bak
 			mv /etc/php.ini /drbd/http/php.ini
 			ln -s /drbd/http/php.ini /etc/php.ini
-		fi
-	else 
-		if [ -f /drbd/http/php.ini ] ; then
-			ln -s /drbd/http/php.ini /etc/php.ini
-		else
-			echo "**** ERROR ****. I can't find a php.ini file. Apache will be sad. Please fix."
-			exit
 		fi
 	fi
 	# Fix timezone in php.ini..
