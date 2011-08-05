@@ -41,6 +41,9 @@ default_group="apache"
 default_stop_timeout=30
 default_pidfile="/var/run/asterisk/asterisk.pid"
 
+# Ensure everything is started in /tmp
+cd /tmp
+
 for var in directory logfile user group stop_timeout pidfile
 	do
 	ocfvar="OCF_RESKEY_$var"
