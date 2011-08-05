@@ -982,36 +982,7 @@ function apache_install {
 	create_links /var/log/httpd /drbd/http/logs yes
 	create_links /etc/php.d /drbd/http/php yes
 	chown -R apache /drbd/http/*
-	# Is php.ini already a symlink?
-	if [ -h /etc/php.ini ] ; then
-		# Does it point to a file that exists?
-		if [ -f $(readlink /etc/php.ini) ] ; then
-			echo -e "\tphp.ini correct";
-		else
-			# Destination doesn't exist. Can we recover it?
-			if [ -f /etc/php.ini.bak ] ; then
-				echo "**** WARNING **** PHP.ini went missing. Restoring from /etc/php.ini.bak"
-				cp /etc/php.ini.bak /drbd/http/php.ini
-				rm -f /etc/php.ini
-				ln -s /drbd/http/php.ini /etc/php.ini
-			else
-				echo "**** ERROR ****. I can't find a php.ini file. Apache will be sad. Please fix."
-				exit
-			fi
-		fi
-	elif [ -f /etc/php.ini ] ; then 
-		# Original file is still there.
-		if [ -f /drbd/http/php.ini ] ; then
-			# And there's already a php.ini in drbd. Keep the drbd one.
-			rm -f /etc/php.ini
-			ln -s /drbd/http/php.ini /etc/php.ini
-		else
-			# There's no php.ini in drbd. Back it up, create it, and link it.
-			[ ! -f /etc/php.ini.bak ] && cp /etc/php.ini /etc/php.ini.bak
-			mv /etc/php.ini /drbd/http/php.ini
-			ln -s /drbd/http/php.ini /etc/php.ini
-		fi
-	fi
+	safe_create_symlink /etc/php.ini /drbd/http/php.ini
 	# Fix timezone in php.ini..
 	. /etc/sysconfig/clock
 	sed -i "s_^;*date.timezone.*\$_date.timezone = '$ZONE'_" /drbd/http/php.ini
@@ -1032,3 +1003,42 @@ function freepbx_install {
 	mysql -hmysql -uhipbx -p$MYSQLPASS asteriskcdrdb < SQL/cdr_mysql_table.sql
 	./install_amp --dbhost=mysql --dbname=hipbx --username=hipbx --password=$MYSQLPASS --uid=apache --gid=apache --freepbxip=$http_IP --scripted
 }
+
+function safe_create_symlink {
+	src=$1
+	dst=$2
+	if [ -h $src ] ; then
+		# Does it point to a file that exists?
+		if [ -f $(readlink $src) ] ; then
+			echo -e "\t$src correct";
+		else
+			# Destination doesn't exist. Can we recover it?
+			if [ -f ${src}.bak ] ; then
+				echo "**** WARNING **** $src went missing. Restoring from ${src}.bak"
+				cp ${src}.bak $dst
+				rm -f $src
+				ln -s $dst $src
+			else
+				echo "**** ERROR ****. I can't find a $src file.Cluster will be sad. Please fix."
+				exit
+			fi
+		fi
+	elif [ -f $src ] ; then 
+		# Original file is still there.
+		if [ -f $dst ] ; then
+			# And there's already a destination. Keep it.
+			rm -f $src
+			ln -s $dst $src
+		else
+			# There's nothing in drbd. Back it up, create it, and link it.
+			[ ! -f ${src}.bak ] && cp $src ${src}.bak
+			mv $src $dst
+			ln -s $dst $src
+		fi
+	fi
+}
+
+function freepbx_create_symlinks {
+	safe_create_symlink /etc/freepbx.conf /drbd/asterisk/freepbx.conf
+}
+

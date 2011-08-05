@@ -70,3 +70,9 @@ fix_dahdi_perms
 # MySQL Configuration file
 rm -f /etc/my.cnf
 ln -s /var/lib/mysql/my.cnf /etc/my.cnf
+# Create www links on slave..
+create_links /var/www /drbd/http/www yes
+create_links /var/log/httpd /drbd/http/logs yes
+create_links /etc/php.d /drbd/http/php yes
+ln -sf /drbd/http/php.ini /etc/php.ini
+ln -sf /drbd/http/freepbx.conf /etc/freepbx.conf

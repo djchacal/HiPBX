@@ -72,8 +72,8 @@ asterisk_install
 
 # Apache
 apache_install
-
 freepbx_install
+freepbx_create_symlinks
 
 exit
 
