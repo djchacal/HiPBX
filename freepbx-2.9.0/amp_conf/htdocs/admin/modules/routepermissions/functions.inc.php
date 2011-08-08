@@ -22,28 +22,27 @@
 
 // This MUST be "TheNameOfTheModule_configpageinit" as it's loaded automatically
 function routepermissions_configpageinit($pagename) {
-        global $currentcomponent;
+	global $currentcomponent;
 
-        $action = isset($_REQUEST['action'])?$_REQUEST['action']:null;
-        $extdisplay = isset($_REQUEST['extdisplay'])?$_REQUEST['extdisplay']:null;
-        $extension = isset($_REQUEST['extension'])?$_REQUEST['extension']:null;
-        $tech_hardware = isset($_REQUEST['tech_hardware'])?$_REQUEST['tech_hardware']:null;
-
-        // We only want to hook 'users' or 'extensions' pages.
-        if ($pagename != 'users' && $pagename != 'extensions')
-                return true;
-        // On a 'new' user, 'tech_hardware' is set, and there's no extension. Hook into the page.
-        if ($tech_hardware != null || $pagename == 'users') {
-                rp_applyhooks();
-                $currentcomponent->addprocessfunc('rp_configprocess', 5);
-        } elseif ($action=="add") {
-                // We don't need to display anything on an 'add', but we do need to handle returned data.
-                $currentcomponent->addprocessfunc('rp_configprocess', 5);
-        } elseif ($extdisplay != '') {
-                // We're now viewing an extension, so we need to display _and_ process.
-                rp_applyhooks();
-                $currentcomponent->addprocessfunc('rp_configprocess', 5);
-        }
+	$action = isset($_REQUEST['action'])?$_REQUEST['action']:null;
+	$extdisplay = isset($_REQUEST['extdisplay'])?$_REQUEST['extdisplay']:null;
+	$extension = isset($_REQUEST['extension'])?$_REQUEST['extension']:null;
+	$tech_hardware = isset($_REQUEST['tech_hardware'])?$_REQUEST['tech_hardware']:null;
+// We only want to hook 'users' or 'extensions' pages.
+	if ($pagename != 'users' && $pagename != 'extensions')
+		return true;
+	// On a 'new' user, 'tech_hardware' is set, and there's no extension. Hook into the page.
+	if ($tech_hardware != null || $pagename == 'users') {
+		rp_applyhooks();
+		$currentcomponent->addprocessfunc('rp_configprocess', 5);
+	} elseif ($action=="add") {
+		// We don't need to display anything on an 'add', but we do need to handle returned data.
+		$currentcomponent->addprocessfunc('rp_configprocess', 5);
+	} elseif ($extdisplay != '') {
+		// We're now viewing an extension, so we need to display _and_ process.
+		rp_applyhooks();
+		$currentcomponent->addprocessfunc('rp_configprocess', 5);
+	}
 }
 
 // This MUST be "TheNameOfTheModule_hookGet_config" to be called when a reload (yellow bar) is clicked.
@@ -56,7 +55,7 @@ function routepermissions_hookGet_config($engine) {
 			$ext->splice($context, 's', 1 ,new ext_agi('checkperms.agi'));
 			$ext->add($context, 'barred', '', new ext_noop('Route administratively banned for this user.'));
 			$ext->add($context, 'reroute', '', new ext_goto('1','${ARG2}','from-internal'));
-			
+
 			$context="macro-dialout-dundi";
 			$ext->splice($context, 's', 1 ,new ext_agi('checkperms.agi'));
 			$ext->add($context, 'barred', '', new ext_noop('Route administratively banned for this user.'));
@@ -69,16 +68,13 @@ function routepermissions_hookGet_config($engine) {
 
 			// Insert the ROUTENAME into each route
 			//
-			$names = core_routing_getroutenames();
+			$names = core_routing_list();
 			foreach($names as $name) {
-				$context = 'outrt-'.$name[0];
-				$routename = substr($context,10);
-				$routes = core_routing_getroutepatterns($name[0]);
+				$context = 'outrt-'.$name['route_id'];
+				$routename = $name['name'];
+				$routes = core_routing_getroutepatternsbyid($name['route_id']);
 				foreach ($routes as $rt) {
-					//strip the pipe out as that's what we use for the dialplan extension
-					//
-					$extension = str_replace('|','',$rt);
-
+					$extension = $rt['match_pattern_prefix'].$rt['match_pattern_pass'];
 					// If there are any wildcards in there, add a _ to the start
 					//
 					if (preg_match("/\.|z|x|\[|\]/i", $extension)) { 
@@ -86,33 +82,33 @@ function routepermissions_hookGet_config($engine) {
 					}
 					$ext->splice($context, $extension, 1, new ext_setvar('__ROUTENAME',$routename));
 				}
-			}						
+			}
       break;
 	}
 }
 
 function rp_applyhooks() {
-        global $currentcomponent;
+	global $currentcomponent;
 
-        // Add Allow/Deny options
-        $currentcomponent->addoptlistitem('rpyn', 'YES', _('yes'));
-        $currentcomponent->addoptlistitem('rpyn', 'NO', _('no'));
-        $currentcomponent->setoptlistopts('rpyn', 'sort', false);
+	// Add Allow/Deny options
+	$currentcomponent->addoptlistitem('rpyn', 'YES', _('yes'));
+	$currentcomponent->addoptlistitem('rpyn', 'NO', _('no'));
+	$currentcomponent->setoptlistopts('rpyn', 'sort', false);
 
-        // Add the 'process' function
-        $currentcomponent->addguifunc('rp_configpageload');
+	// Add the 'process' function
+	$currentcomponent->addguifunc('rp_configpageload');
 }
 
 function rp_configpageload() {
-        global $currentcomponent;
+	global $currentcomponent;
 
-        // Init vars from $_REQUEST[]
-        $action = isset($_REQUEST['action'])?$_REQUEST['action']:null;
-        $extdisplay = isset($_REQUEST['extdisplay'])?$_REQUEST['extdisplay']:null;
+	// Init vars from $_REQUEST[]
+	$action = isset($_REQUEST['action'])?$_REQUEST['action']:null;
+	$extdisplay = isset($_REQUEST['extdisplay'])?$_REQUEST['extdisplay']:null;
 
-        // Don't display if this is a 'This xtn has been deleted' page.
-        if ($action != 'del') {
-                $section = _('Outbound Route Permssions');
+	// Don't display if this is a 'This xtn has been deleted' page.
+	if ($action != 'del') {
+		$section = _('Outbound Route Permssions');
 		$routes = rp_get_routes();
 		foreach ($routes as $route) {
 			$currentcomponent->addguielem($section, new gui_radio("rp_$route", $currentcomponent->getoptlist('rpyn'), rp_get_perm($extdisplay,$route), $route, "" , null));
@@ -123,8 +119,11 @@ function rp_configpageload() {
 
 function rp_configprocess() {
 	// Extract any variables from $REQUEST that start with rp_
-        $action = isset($_REQUEST['action'])?$_REQUEST['action']:null;
-        $extdisplay = isset($_REQUEST['extdisplay'])?$_REQUEST['extdisplay']:null;
+	$action = isset($_REQUEST['action'])?$_REQUEST['action']:null;
+	$extdisplay = isset($_REQUEST['extdisplay'])?$_REQUEST['extdisplay']:null;
+	if(isset($_REQUEST['extension']) ){
+		$extdisplay=$_REQUEST['extension'];
+	}
 	$rps = array();
 	$redir = array();
 
@@ -136,18 +135,18 @@ function rp_configprocess() {
 			$redir[substr($r, 9)]=$val;
 		}
 	}
-        //if submitting form, update database
-        switch ($action) {
-                case "add":
-                case "edit":
+	//if submitting form, update database
+	switch ($action) {
+		case "add":
+		case "edit":
 		rp_purge_ext($extdisplay);
 		rp_set_perm($extdisplay, $rps);
 		rp_set_redir($extdisplay, $redir);
-                break;
-                case "del":
+		break;
+		case "del":
 		rp_purge_ext($extdisplay);
-                break;
-        }
+		break;
+	}
 }
 
 
@@ -210,20 +209,16 @@ function rp_purge_ext($ext) {
 	$sql = "DELETE FROM routepermissions WHERE exten='$Sext'";
 	sql($sql);
 }
-	
-	
-
-// When outbound routes is rewritten to no longer use the 'extensions' database, the following function will need to be changed
 
 function rp_get_routes() {
 	global $db;
-	$sql = "SELECT DISTINCT context FROM extensions WHERE context LIKE 'outrt%';";
+	$sql = "SELECT DISTINCT a.name FROM `outbound_routes` a JOIN `outbound_route_sequence` b ON a.route_id = b.route_id ORDER BY `seq`;";
 	$res = $db->getAll($sql);
 	foreach ($res as $r) {
-		// $r[0] = 'outrt-NNN-routename-goes-here'
-		$arr[] = substr($r[0], 10);
+		$arr[] = $r[0];
 	} 
 	return $arr;
 }
-	
+
 ?>
+

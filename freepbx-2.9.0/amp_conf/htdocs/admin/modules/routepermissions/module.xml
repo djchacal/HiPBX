@@ -3,7 +3,7 @@
 	<name>Outbound Route Permissions</name>
 	<category>Third Party Addon</category>
 	<version>0.4</version>
-	<publisher>Rob Thomas xrobau@gmail.com</publisher>
+	<publisher>HiPBX.org</publisher>
 	<license>AGPLv3</license>
 	<candisable>yes</candisable>
 	<canuninstall>yes</canuninstall>
