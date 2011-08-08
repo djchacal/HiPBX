@@ -1041,5 +1041,6 @@ function safe_create_symlink {
 function freepbx_create_symlinks {
 	safe_create_symlink /etc/freepbx.conf /drbd/asterisk/freepbx.conf
 	safe_create_symlink /etc/amportal.conf /drbd/asterisk/amportal.conf
+	create_links /usr/share/asterisk /drbd/asterisk/share no
 }
 
