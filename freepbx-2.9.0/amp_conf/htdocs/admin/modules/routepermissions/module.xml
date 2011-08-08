@@ -1,0 +1,33 @@
+<module>
+	<rawname>routepermissions</rawname>
+	<name>Outbound Route Permissions</name>
+	<category>Third Party Addon</category>
+	<version>0.4</version>
+	<publisher>Rob Thomas xrobau@gmail.com</publisher>
+	<license>AGPLv3</license>
+	<candisable>yes</candisable>
+	<canuninstall>yes</canuninstall>
+	<changelog>
+		*0.4* Released for Version 2.9
+		*0.3.2.5* add version dependency
+		*0.3.2.4* Changed category to Third Party Addon, that name to be used by all modules in the Extended Repo (until they are brought into the main repo)
+		*0.3.2.3* Changed font size and color on empty redirect field error message to make it more obvious
+		*0.3.2.2* If redirect selected make sure redirect field is not empty or whitespace only
+		*0.3.2.1* Minor changes to instructions on main page
+		*0.3.2.0* Bug fixes in Ticket #3655 and Ticket #3669
+		*0.3.1.0* Inserts ROUTENAME into routes so core does not have to
+		*0.3.0.0* Added ability to redirect back with a prefix, added 'fail' destination.
+		*0.2.0.0* Fixed bug with routenames not being displayed properly if they contained a hyphen
+		*0.1.0.0* Original Release
+	</changelog>
+	<description>
+		Allows you to block access to various routes, on a per-extension basis. Note that this module requires a database to be available AT ALL TIMES.
+	</description>
+	<info>http://www.freepbx.org/support/documentation/module-documentation/third-party-unsupported-modules/outbound-route-permission</info>
+	<menuitems>
+		<routepermissions>Outbound Permissions</routepermissions>
+	</menuitems>
+	<type>setup</type>
+	<location>xxx</location>
+	<md5sum>xxx</md5sum>
+</module>

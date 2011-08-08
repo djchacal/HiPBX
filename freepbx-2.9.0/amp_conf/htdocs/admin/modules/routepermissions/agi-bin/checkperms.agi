@@ -1,0 +1,114 @@
+#!/usr/bin/php -q
+<?php
+// Original Release 2009 by Rob Thomas (xrobau@gmail.com)
+/*
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as
+    published by the Free Software Foundation, either version 3 of the
+    License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+
+
+require_once "phpagi.php";
+require_once "phpagi-asmanager.php";
+
+global $amp_conf;
+$quietmode=1;
+
+// Startup - Get config and connect to Database
+parse_amportal_conf("/etc/amportal.conf");
+require_once($amp_conf['AMPWEBROOT']."/admin/common/db_connect.php");
+
+// I'm an AGI. Huzzah.
+$AGI = new AGI();
+debug("Starting checkperms.agi", 1);
+$cidnum = $AGI->request['agi_callerid'];
+if (!isset($cidnum) || !is_numeric($cidnum)) {
+	debug("CallerID not Parseable - received $cidnum - exiting with DENY",1);
+	$AGI->exec_goto("macro-trunk-dial", "barred", "1");
+	exit;
+}
+$routename = get_var($AGI, "ROUTENAME");
+if (!isset($routename)) {
+	debug("Unable to find ROUTENAME - exiting with ALLOW", 1);
+	exit;
+}
+
+$res = sql("SELECT allowed,faildest FROM routepermissions WHERE exten='$cidnum' and routename='$routename'", "getRow");
+if ($res[0] === "NO") {
+	if ($res[1] != "") {
+		$arg2 = $res[1].get_var($AGI, "ARG2");
+		$AGI->set_variable('ARG2',$arg2);
+		$AGI->exec_goto(gotofix("reroute,1"));
+		exit;
+	} else {
+		$res = sql("SELECT faildest FROM routepermissions WHERE exten='-1'", "getRow");
+		if ($res[0] != "" ) {
+			$arg2 = $res[0].get_var($AGI, "ARG2");
+			$AGI->set_variable('ARG2',$arg2);
+			$AGI->exec_goto(gotofix("reroute,1"));
+			exit;
+		} else {
+			$AGI->exec_goto("invalid-dest-set-default-fail", "barred", "1");
+			exit;
+		}
+	}
+}
+
+debug("Access to route granted", 2);
+exit;
+
+
+// All the useful tools here..
+function parse_amportal_conf($filename="/etc/amportal.conf") {
+	global $amp_conf;
+
+	$file = file($filename);
+	if (is_array($file)) {
+		foreach ($file as $line) {
+			if (preg_match("/^\s*([a-zA-Z0-9_]+)=([a-zA-Z0-9 .&-@=_<>\"\']+)\s*$/",$line,$matches)) {
+				$amp_conf[ $matches[1] ] = $matches[2];
+			}
+		}
+	} 
+}
+
+function get_var( $agi, $value) {
+        $r = $agi->get_variable( $value );
+
+        if ($r['result'] == 1) {
+                $result = $r['data'];
+                return $result;
+        }
+        return '';
+}
+
+function debug($string, $level=3) {
+        global $AGI;
+        $AGI->verbose($string, $level);
+}
+
+function sql($sql,$type="query",$fetchmode=null) {
+        global $db;
+	debug("SQL Debug: $sql", 4);
+        $results = $db->$type($sql,$fetchmode);
+        if(DB::IsError($results)) {
+                die_freepbx($results->getDebugInfo() . "SQL - <br> $sql" );
+        }
+        return $results;
+}
+
+function gotofix($goto) {
+	return strtr($goto, ",", "|");
+}
+
+?>
