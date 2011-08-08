@@ -75,5 +75,5 @@ create_links /var/www /drbd/http/www yes
 create_links /var/log/httpd /drbd/http/logs yes
 create_links /etc/php.d /drbd/http/php yes
 ln -sf /drbd/http/php.ini /etc/php.ini
-ln -sf /drbd/http/freepbx.conf /etc/freepbx.conf
-ln -sf /drbd/http/amportal.conf /etc/amportal.conf
+ln -sf /drbd/asterisk/freepbx.conf /etc/freepbx.conf
+ln -sf /drbd/asterisk/amportal.conf /etc/amportal.conf
