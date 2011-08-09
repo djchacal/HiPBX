@@ -80,7 +80,8 @@ if(!file_exists(PHONE_MODULES_PATH."temp/")) {
 
 function ep_table_exists ($table) {
     global $db;
-    $sql = "SHOW TABLES FROM asterisk";
+    global $amp_conf;
+    $sql = "SHOW TABLES FROM ".$amp_conf['AMPDBNAME'];
     $result = $db->getAll($sql);
 
     foreach($result as $row) {
