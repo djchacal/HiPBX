@@ -229,6 +229,7 @@ function collect_settings($filename, $dbhost = '', $dbuser = '', $dbpass = '', $
 	global $asterisk_pass;
 	global $scripted;
 	global $freepbxip;
+	global $asteriskip;
 	global $runas_uid;
 	global $runas_gid;
 
@@ -246,6 +247,7 @@ function collect_settings($filename, $dbhost = '', $dbuser = '', $dbpass = '', $
 		$amp_conf["AMPWEBROOT"] = $webroot;
 		$amp_conf["FOPWEBROOT"] = ($fopwebroot ? $fopwebroot : $webroot."/panel");
 		$amp_conf["AMPWEBADDRESS"] = $freepbxip;
+		$amp_conf["ASTMANAGERHOST"] = $asteriskip
 		$amp_conf["FOPPASSWORD"] = "passw0rd";
 		$amp_conf["AMPEXTENSIONS"] = "extensions";
 		$amp_conf["AMPBIN"] = $ampbin_dir;
@@ -575,7 +577,7 @@ out("OK");
 
 // **** Parse out command-line options
 $shortopts = "h?u:p:";
-$longopts = array("help","debug","dry-run","username=","password=","force-version=","dbhost=","no-files","force-overwrite","dbname=","my-svn-is-correct","engine=","webroot=","install-moh","install-fop=","make-links-devel","dev-links","skip-module-install","uid=","gid=","scripted","freepbxip=");
+$longopts = array("help","debug","dry-run","username=","password=","force-version=","dbhost=","no-files","force-overwrite","dbname=","my-svn-is-correct","engine=","webroot=","install-moh","install-fop=","make-links-devel","dev-links","skip-module-install","uid=","gid=","scripted","freepbxip=","asteriskip=");
 
 $args = Console_Getopt::getopt(Console_Getopt::readPHPArgv(), $shortopts, $longopts);
 if (is_object($args)) {
@@ -604,6 +606,7 @@ $new_password = null;
 $runas_uid = "asterisk";
 $runas_gid = "asterisk";
 $freepbxip = "192.168.1.1";
+$asteriskip = "localhost";
 
 foreach ($args[0] as $arg) {
 	switch ($arg[0]) {
@@ -718,6 +721,11 @@ foreach ($args[0] as $arg) {
 			$freepbxip = $arg[1]; 
 			out("Setting IP address of web interface to $freepbxip");
 		break;
+		case "--asteriskip":
+			$asteriskip = $arg[1]; 
+			out("Setting IP address of asterisk to $asteriskip");
+		break;
+
 
 	}
 }
@@ -1092,6 +1100,7 @@ exec($amp_conf["AMPBIN"]."/freepbx_setting AMPASTERISKGROUP $runas_gid");
 exec($amp_conf["AMPBIN"]."/freepbx_setting AMPASTERISKUSER $runas_uid");
 exec($amp_conf["AMPBIN"]."/freepbx_setting AMPDEVGROUP $runas_gid");
 exec($amp_conf["AMPBIN"]."/freepbx_setting AMPDEVUSER $runas_uid");
+exec($amp_conf["AMPBIN"]."/freepbx_setting ASTMANAGERHOST $asteriskip");
 if (!$dryrun) {
   $asteriskuser = isset($amp_conf['AMPASTERISKUSER']) && $amp_conf['AMPASTERISKUSER'] ? $amp_conf['AMPASTERISKUSER'] : 'asterisk';
 
