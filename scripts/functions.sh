@@ -46,11 +46,38 @@ function selinux {
 }
 
 function installpackages {
-	yum -y groupinstall "Development tools"
+	echo "Required Packages:"
+	exit
+	# You need to check to see if these are installed to start with.
 	yum -y install bc vim sox libusb-devel httpd php php-gd php-pear php-mysql mysql-server curl mysql mysql-devel php-process libxml2-devel ncurses-devel libtiff-devel libogg-devel libvorbis vorbis-tools pacemaker unixODBC bluez-libs postgresql-libs festival
-	# Missing pacakges in CentOS 6:
-	# fxload, php-fpdf, php-pear-DB, iksemel, iksemel-devel
-	# Add: libresample
+	INSTALL=""
+	echo "RPMs:"
+	echo -en "\tGenerating list of all RPMs installed on this machine..."
+	rm -f /tmp/rpms.$$
+	ALLRPMS=$(rpm -qa > /tmp/rpms.$$)
+	echo "Done"
+	echo -en "\tEnumerating HiPBX RPMs..."
+	DIRS="rpms/asterisk rpms/asterisk-sounds rpms/dahdi rpms/drbd rpms/other"
+	# What kernel version am I?
+	kv=$(uname -r | sed 's/\(.*\).el6.*/\1/')
+	DIRS="$DIRS rpms/$kv"
+	HIPBXRPMS=$(find $DIRS -maxdepth 1 -name *rpm -print)
+	echo "Done"
+	echo -en "\tLocating uninstalled RPMs..."
+	for x in $HIPBXRPMS ; do
+		rpm=$(basename $x)
+		rpm=$(echo $rpm | sed 's/.rpm//')
+		if ! (echo $ALLRPMS | grep $rpm > /dev/null) ; then 
+			printf "\b. "
+			INSTALL="$INSTALL $x"
+		fi
+		spinner
+	done
+	printf "\bDone\n"
+	echo -en "\tInstalling RPMs..."
+	rpm -i $INSTALL
+	echo "Done"
+}
 }
 
 function disableall {
@@ -1049,33 +1076,3 @@ function freepbx_create_symlinks {
 }
 
 
-function install_rpms {
-	# Firstly, find all the RPMs on the system. This will take a while.
-	INSTALL=""
-	echo "RPMs:"
-	echo -en "\tGenerating list of all RPMs installed on this machine..."
-	rm -f /tmp/rpms.$$
-	ALLRPMS=$(rpm -qa > /tmp/rpms.$$)
-	echo "Done"
-	echo -en "\tEnumerating HiPBX RPMs..."
-	DIRS="rpms/asterisk rpms/asterisk-sounds rpms/dahdi rpms/drbd rpms/other"
-	# What kernel version am I?
-	kv=$(uname -r | sed 's/\(.*\).el6.*/\1/')
-	DIRS="$DIRS rpms/$kv"
-	HIPBXRPMS=$(find $DIRS -maxdepth 1 -name *rpm -print)
-	echo "Done"
-	echo -en "\tLocating uninstalled RPMs..."
-	for x in $HIPBXRPMS ; do
-		rpm=$(basename $x)
-		rpm=$(echo $rpm | sed 's/.rpm//')
-		if ! (echo $ALLRPMS | grep $rpm > /dev/null) ; then 
-			printf "\b. "
-			INSTALL="$INSTALL $x"
-		fi
-		spinner
-	done
-	printf "\bDone\n"
-	echo -en "\tInstalling RPMs..."
-	rpm -i $INSTALL
-	echo "Done"
-}
