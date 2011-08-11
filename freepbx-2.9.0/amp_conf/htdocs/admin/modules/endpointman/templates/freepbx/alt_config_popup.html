@@ -1,7 +1,7 @@
 {if condition="isset($show_error_box)"}
     {include="message_box"}
 {/if}
-<center><h4><?=_("File Configuration Editor")?></h4>
+<center><h4><?php echo _("File Configuration Editor")?></h4>
     <font color="red">Warning! You can really mess up your phone by messing with these settings. Potentially causing it to not boot!</font><br/>
     {if condition="isset($location)"}
     <strong>You are editing a global file. This will effect any & all phones that reference this hard file
@@ -17,7 +17,7 @@
       </label>
       <br><div style="font-size: 15px">
       <label>
-        <input type="submit" name="button_save" value="<?=_('Save')?>"><input type=button value="Close Window" onClick="javascript:window.close();">
+        <input type="submit" name="button_save" value="<?php echo _('Save')?>"><input type=button value="Close Window" onClick="javascript:window.close();">
       </label>
   </tr>
 </table>
