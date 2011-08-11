@@ -959,6 +959,10 @@ function asterisk_install {
 	create_links /usr/lib64/asterisk/modules /drbd/asterisk/modules no
 	chown -R apache /drbd/asterisk/*
 	chmod -R 755 /drbd/asterisk/*
+	# Remove a couple of files that conflict with FreePBX
+	rm -f /etc/asterisk/chan_dahdi.conf
+	rm -f /etc/asterisk/ccss.conf
+	rm -f /etc/asterisk/sip_notify.conf
 	
 	# Add HiPBX Asterisk RA
 	crm configure primitive asteriskd ocf:hipbx:asterisk meta target-role="Stopped"
