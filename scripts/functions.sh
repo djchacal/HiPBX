@@ -1048,3 +1048,34 @@ function freepbx_create_symlinks {
 	create_links /usr/share/asterisk /drbd/asterisk/share no
 }
 
+
+function install_rpms {
+	# Firstly, find all the RPMs on the system. This will take a while.
+	INSTALL=""
+	echo "RPMs:"
+	echo -en "\tGenerating list of all RPMs installed on this machine..."
+	rm -f /tmp/rpms.$$
+	ALLRPMS=$(rpm -qa > /tmp/rpms.$$)
+	echo "Done"
+	echo -en "\tEnumerating HiPBX RPMs..."
+	DIRS="rpms/asterisk rpms/asterisk-sounds rpms/dahdi rpms/drbd rpms/other"
+	# What kernel version am I?
+	kv=$(uname -r | sed 's/\(.*\).el6.*/\1/')
+	DIRS="$DIRS rpms/$kv"
+	HIPBXRPMS=$(find $DIRS -maxdepth 1 -name *rpm -print)
+	echo "Done"
+	echo -en "\tLocating uninstalled RPMs..."
+	for x in $HIPBXRPMS ; do
+		rpm=$(basename $x)
+		rpm=$(echo $rpm | sed 's/.rpm//')
+		if ! (echo $ALLRPMS | grep $rpm > /dev/null) ; then 
+			printf "\b. "
+			INSTALL="$INSTALL $x"
+		fi
+		spinner
+	done
+	printf "\bDone\n"
+	echo -en "\tInstalling RPMs..."
+	rpm -i $INSTALL
+	echo "Done"
+}
