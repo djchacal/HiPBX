@@ -47,16 +47,25 @@ function selinux {
 
 function installpackages {
 	echo "Required Packages:"
-	exit
-	# You need to check to see if these are installed to start with.
-	yum -y install bc vim sox libusb-devel httpd php php-gd php-pear php-mysql mysql-server curl mysql mysql-devel php-process libxml2-devel ncurses-devel libtiff-devel libogg-devel libvorbis vorbis-tools pacemaker unixODBC bluez-libs postgresql-libs festival
-	INSTALL=""
-	echo "RPMs:"
 	echo -en "\tGenerating list of all RPMs installed on this machine..."
-	rm -f /tmp/rpms.$$
-	ALLRPMS=$(rpm -qa > /tmp/rpms.$$)
+	$(rpm -qa > /tmp/rpms.$$)
 	echo "Done"
+	INSTALL=""
+	# CentOS 6 RPMs from yum.
+	YUMPACKS="bc vim-enhanced sox libusb-devel httpd php php-gd php-pear php-mysql mysql-server curl mysql mysql-devel php-process libxml2-devel ncurses-devel libtiff-devel libogg-devel libvorbis vorbis-tools pacemaker unixODBC bluez-libs postgresql-libs festival"
+	for x in $YUMPACKS ; do 
+		if ! (grep "^${x}-[0-9]" /tmp/rpms.$$ > /dev/null) ; then 
+			INSTALL="$INSTALL $x"
+		fi
+	done
+	if [ "$INSTALL" != "" ] ; then
+		echo -e "\tInstalling missing CentOS yum packages."
+		yum -y install $INSTALL
+	else
+		echo -e "\tNo yum packages required"
+	fi
 	echo -en "\tEnumerating HiPBX RPMs..."
+	INSTALL=""
 	DIRS="rpms/asterisk rpms/asterisk-sounds rpms/dahdi rpms/drbd rpms/other"
 	# What kernel version am I?
 	kv=$(uname -r | sed 's/\(.*\).el6.*/\1/')
@@ -67,17 +76,20 @@ function installpackages {
 	for x in $HIPBXRPMS ; do
 		rpm=$(basename $x)
 		rpm=$(echo $rpm | sed 's/.rpm//')
-		if ! (echo $ALLRPMS | grep $rpm > /dev/null) ; then 
+		if ! (grep $rpm /tmp/rpms.$$> /dev/null) ; then 
 			printf "\b. "
 			INSTALL="$INSTALL $x"
 		fi
 		spinner
 	done
 	printf "\bDone\n"
-	echo -en "\tInstalling RPMs..."
-	rpm -i $INSTALL
-	echo "Done"
-}
+	if [ "$INSTALL" != "" ] ; then
+		echo -e "\tInstalling missing rpm packages"
+		rpm -i $INSTALL
+	else
+		echo -e "\tNo rpm packages required"
+	fi
+	echo -e "\tPackages done"
 }
 
 function disableall {
