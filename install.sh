@@ -42,7 +42,10 @@ selinux
 # just uncomment when required.
 #installpackages
 
-# Sanity check for required packages
+# Install packages.
+installpackages
+# Sanity check for required packages. This will encourage people to
+# fix internet/yum errors. 
 packages_validate
 
 # Ensure that mysqld, httpd, iptables and drbd are off, and won't 
