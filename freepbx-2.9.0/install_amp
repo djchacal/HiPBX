@@ -247,7 +247,7 @@ function collect_settings($filename, $dbhost = '', $dbuser = '', $dbpass = '', $
 		$amp_conf["AMPWEBROOT"] = $webroot;
 		$amp_conf["FOPWEBROOT"] = ($fopwebroot ? $fopwebroot : $webroot."/panel");
 		$amp_conf["AMPWEBADDRESS"] = $freepbxip;
-		$amp_conf["ASTMANAGERHOST"] = $asteriskip
+		$amp_conf["ASTMANAGERHOST"] = $asteriskip;
 		$amp_conf["FOPPASSWORD"] = "passw0rd";
 		$amp_conf["AMPEXTENSIONS"] = "extensions";
 		$amp_conf["AMPBIN"] = $ampbin_dir;
