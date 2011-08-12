@@ -60,7 +60,7 @@ function installpackages {
 	done
 	if [ "$INSTALL" != "" ] ; then
 		echo -e "\tInstalling missing CentOS yum packages."
-	#	yum -y install $INSTALL
+		yum -y install $INSTALL
 	else
 		echo -e "\tNo yum packages required"
 	fi
@@ -96,14 +96,20 @@ function installpackages {
 		fi
 	done
 	printf "\bDone\n"
-	return
 	if [ "$INSTALL" != "" ] ; then
 		echo -e "\tInstalling missing rpm packages"
 		rpm -i $INSTALL
 	else
 		echo -e "\tNo rpm packages required"
 	fi
+	if [ "$UPGRADE" != "" ] ; then
+		echo -e "\tUpgrading rpm packages"
+		rpm -i $INSTALL
+	else
+		echo -e "\tNo upgrades required"
+	fi
 	echo -e "\tPackages done"
+	rpm -U $UPGRADE
 }
 
 function disableall {
