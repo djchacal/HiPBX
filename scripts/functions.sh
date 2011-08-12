@@ -48,24 +48,25 @@ function selinux {
 function installpackages {
 	echo "Required Packages:"
 	echo -en "\tGenerating list of all RPMs installed on this machine..."
-	$(rpm -qa > /tmp/rpms.$$)
+	rpm -qa --queryformat '%{NAME}\n' > /tmp/rpms.$$
 	echo "Done"
 	INSTALL=""
 	# CentOS 6 RPMs from yum.
 	YUMPACKS="bc vim-enhanced sox libusb-devel httpd php php-gd php-pear php-mysql mysql-server curl mysql mysql-devel php-process libxml2-devel ncurses-devel libtiff-devel libogg-devel libvorbis vorbis-tools pacemaker unixODBC bluez-libs postgresql-libs festival"
 	for x in $YUMPACKS ; do 
-		if ! (grep "^${x}-[0-9]" /tmp/rpms.$$ > /dev/null) ; then 
+		if ! (grep "^${x}$" /tmp/rpms.$$ > /dev/null) ; then 
 			INSTALL="$INSTALL $x"
 		fi
 	done
 	if [ "$INSTALL" != "" ] ; then
 		echo -e "\tInstalling missing CentOS yum packages."
-		yum -y install $INSTALL
+	#	yum -y install $INSTALL
 	else
 		echo -e "\tNo yum packages required"
 	fi
 	echo -en "\tEnumerating HiPBX RPMs..."
 	INSTALL=""
+	UPGRADE=""
 	DIRS="rpms/asterisk rpms/asterisk-sounds rpms/dahdi rpms/drbd rpms/other"
 	# What kernel version am I?
 	kv=$(uname -r | sed 's/\(.*\).el6.*/\1/')
@@ -74,15 +75,28 @@ function installpackages {
 	echo "Done"
 	echo -en "\tLocating uninstalled RPMs..."
 	for x in $HIPBXRPMS ; do
-		rpm=$(basename $x)
-		rpm=$(echo $rpm | sed 's/.rpm//')
-		if ! (grep $rpm /tmp/rpms.$$> /dev/null) ; then 
-			printf "\b. "
-			INSTALL="$INSTALL $x"
-		fi
 		spinner
+		rpmname=$(rpm -qp $x --queryformat '%{NAME}' 2>/dev/null)
+		rpmvers=$(rpm -qp $x --queryformat '%{VERSION}' 2>/dev/null)
+		if ! (grep "^$rpmname\$" /tmp/rpms.$$> /dev/null) ; then 
+			# Doesn't exist. Install it.
+			INSTALL="$INSTALL $x"
+			echo -ne "\b. "
+		else
+			# drbd kernel module is subtly broken.
+			if [[ $rpmname == drbd-km* ]] ; then
+				rpmname=$( basename $x | sed "s/.rpm//" )
+			fi
+			# It exists, but does it need an upgrade?
+			existingvers=$( rpm -q $rpmname --queryformat '%{VERSION}')
+			if [ "$existingvers" != "$rpmvers" ] ; then
+				UPGRADE="$UPGRADE $x"
+				echo -ne "\bu "
+			fi
+		fi
 	done
 	printf "\bDone\n"
+	return
 	if [ "$INSTALL" != "" ] ; then
 		echo -e "\tInstalling missing rpm packages"
 		rpm -i $INSTALL
