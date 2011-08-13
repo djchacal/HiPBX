@@ -1080,7 +1080,7 @@ if ($install_files)
 	mkdir($amp_conf['AMPWEBROOT'].'/recordings/theme/js',0755, true);
   }
   if (file_exists($libfreepbx) && !file_exists($dest_libfreepbx)) {
-    outn(_("linking $libfreepbx to $dest_libfreepbx"));
+    outn(_("linking libfreepbx.javascripts.js to theme/js.."));
     if (link($libfreepbx, $dest_libfreepbx)) {
       out(_("ok"));
     } else {
