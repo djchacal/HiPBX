@@ -39,9 +39,10 @@ function selinux {
 	# Check if SELinux is enabled. If it is, disable it and warn that it's been
 	# done.
 	if selinuxenabled; then
-		echo "SELinux is enabled. I've turned it off for you. Be aware."
+		echo "SELinux is enabled. I've turned it off for you."
 		sed -i s/SELINUX=enforcing/SELINUX=disabled/ /etc/selinux/config
-		setenforce 0
+		echo "You MUST now reboot. Sorry, there's no way to get around this."
+		exit;
 	fi
 }
 
