@@ -1093,19 +1093,7 @@ if (file_exists(dirname(__FILE__)."/apply_conf.sh")) {
 	debug("Running ".dirname(__FILE__)."/apply_conf.sh");
 }
 
-// Ensure executables are executable
-chmod($amp_conf["AMPBIN"]."/freepbx_setting", 0755);
 outn("Configuring install for your environment..");
-// Note - freepbx_engine must be run to ensure that freepbx.conf exists.
-exec($amp_conf["AMPBIN"]."/freepbx_engine error > /dev/null");
-// Ensure UIDs are set correctly before any chowns happen
-exec($amp_conf["AMPBIN"]."/freepbx_setting AMPASTERISKWEBGROUP $runas_gid");
-exec($amp_conf["AMPBIN"]."/freepbx_setting AMPASTERISKWEBUSER $runas_uid");
-exec($amp_conf["AMPBIN"]."/freepbx_setting AMPASTERISKGROUP $runas_gid");
-exec($amp_conf["AMPBIN"]."/freepbx_setting AMPASTERISKUSER $runas_uid");
-exec($amp_conf["AMPBIN"]."/freepbx_setting AMPDEVGROUP $runas_gid");
-exec($amp_conf["AMPBIN"]."/freepbx_setting AMPDEVUSER $runas_uid");
-exec($amp_conf["AMPBIN"]."/freepbx_setting ASTMANAGERHOST $asteriskip");
 if (!$dryrun) {
   $asteriskuser = isset($amp_conf['AMPASTERISKUSER']) && $amp_conf['AMPASTERISKUSER'] ? $amp_conf['AMPASTERISKUSER'] : 'asterisk';
 
@@ -1128,6 +1116,16 @@ if (!$dryrun) {
 		outn("no freepbx_engine..");
 	}
 	out("done");
+	// Note - freepbx_engine must be run to ensure that freepbx.conf exists.
+	exec($amp_conf["AMPBIN"]."/freepbx_engine error > /dev/null");
+	// Ensure UIDs are set correctly before any chowns happen
+	exec($amp_conf["AMPBIN"]."/freepbx_setting AMPASTERISKWEBGROUP $runas_gid");
+	exec($amp_conf["AMPBIN"]."/freepbx_setting AMPASTERISKWEBUSER $runas_uid");
+	exec($amp_conf["AMPBIN"]."/freepbx_setting AMPASTERISKGROUP $runas_gid");
+	exec($amp_conf["AMPBIN"]."/freepbx_setting AMPASTERISKUSER $runas_uid");
+	exec($amp_conf["AMPBIN"]."/freepbx_setting AMPDEVGROUP $runas_gid");
+	exec($amp_conf["AMPBIN"]."/freepbx_setting AMPDEVUSER $runas_uid");
+	exec($amp_conf["AMPBIN"]."/freepbx_setting ASTMANAGERHOST $asteriskip");
 	// edit conf file passwords and then
 	// reload manager in asterisk if it is running:
 	//
