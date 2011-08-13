@@ -1076,8 +1076,11 @@ if ($install_files)
   // link the packed js library for ARI, if there the error will indicate that
   $libfreepbx = $amp_conf['AMPWEBROOT'].'/admin/common/libfreepbx.javascripts.js';
   $dest_libfreepbx = $amp_conf['AMPWEBROOT'].'/recordings/theme/js/libfreepbx.javascripts.js'; 
+  if (!file_exists($amp_conf['AMPWEBROOT'].'/recordings/theme/js')) {
+	mkdir($amp_conf['AMPWEBROOT'].'/recordings/theme/js',0755, true);
+  }
   if (file_exists($libfreepbx) && !file_exists($dest_libfreepbx)) {
-    outn(_("linking libfreepbx.javascripts.js to theme/js.."));
+    outn(_("linking $libfreepbx to $dest_libfreepbx"));
     if (link($libfreepbx, $dest_libfreepbx)) {
       out(_("ok"));
     } else {
