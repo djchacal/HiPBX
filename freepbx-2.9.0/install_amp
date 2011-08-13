@@ -1096,13 +1096,16 @@ if (file_exists(dirname(__FILE__)."/apply_conf.sh")) {
 // Ensure executables are executable
 chmod($amp_conf["AMPBIN"]."/freepbx_setting", 0755);
 outn("Configuring install for your environment..");
-#exec($amp_conf["AMPBIN"]."/freepbx_setting AMPASTERISKWEBGROUP $runas_gid");
-#exec($amp_conf["AMPBIN"]."/freepbx_setting AMPASTERISKWEBUSER $runas_uid");
-#exec($amp_conf["AMPBIN"]."/freepbx_setting AMPASTERISKGROUP $runas_gid");
-#exec($amp_conf["AMPBIN"]."/freepbx_setting AMPASTERISKUSER $runas_uid");
-#exec($amp_conf["AMPBIN"]."/freepbx_setting AMPDEVGROUP $runas_gid");
-#exec($amp_conf["AMPBIN"]."/freepbx_setting AMPDEVUSER $runas_uid");
-#exec($amp_conf["AMPBIN"]."/freepbx_setting ASTMANAGERHOST $asteriskip");
+// Note - freepbx_engine must be run to ensure that freepbx.conf exists.
+exec($amp_conf["AMPBIN"]."/freepbx_engine error > /dev/null");
+// Ensure UIDs are set correctly before any chowns happen
+exec($amp_conf["AMPBIN"]."/freepbx_setting AMPASTERISKWEBGROUP $runas_gid");
+exec($amp_conf["AMPBIN"]."/freepbx_setting AMPASTERISKWEBUSER $runas_uid");
+exec($amp_conf["AMPBIN"]."/freepbx_setting AMPASTERISKGROUP $runas_gid");
+exec($amp_conf["AMPBIN"]."/freepbx_setting AMPASTERISKUSER $runas_uid");
+exec($amp_conf["AMPBIN"]."/freepbx_setting AMPDEVGROUP $runas_gid");
+exec($amp_conf["AMPBIN"]."/freepbx_setting AMPDEVUSER $runas_uid");
+exec($amp_conf["AMPBIN"]."/freepbx_setting ASTMANAGERHOST $asteriskip");
 if (!$dryrun) {
   $asteriskuser = isset($amp_conf['AMPASTERISKUSER']) && $amp_conf['AMPASTERISKUSER'] ? $amp_conf['AMPASTERISKUSER'] : 'asterisk';
 
