@@ -203,7 +203,7 @@ function generate_configs() {
 	global $amp_conf;
 	global $dryrun;
 	global $debug;
-	global $asterisk_user;
+	global $runas_uid;
 	
 	out("Generating Configurations.conf, (if Asterisk is not running, you will get an error");
 	out("In case of error, start Asterisk and hit the red bar in the GUI to generate the Configurations.conf files");
@@ -213,7 +213,7 @@ function generate_configs() {
 		//
 		// TODO: Should check if Asterisk is running and/or try to start it.
 		//
-		passthru("sudo -u $asterisk_user ".trim($amp_conf["AMPBIN"])."/retrieve_conf --run-install ".($debug ? ' --debug' : ''));
+		passthru("sudo -u $runas_uid ".trim($amp_conf["AMPBIN"])."/retrieve_conf --run-install ".($debug ? ' --debug' : ''));
 }
 
 
