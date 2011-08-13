@@ -211,10 +211,8 @@ function generate_configs() {
 
 		//
 		// TODO: Should check if Asterisk is running and/or try to start it.
-    // TODO: test this
 		//
-    $asteriskuser = isset($amp_conf['AMPASTERISKUSER']) && $amp_conf['AMPASTERISKUSER'] ? $amp_conf['AMPASTERISKUSER'] : 'asterisk';
-		passthru("sudo -u $asteriskuser  ".trim($amp_conf["AMPBIN"])."/retrieve_conf --run-install ".($debug ? ' --debug' : ''));
+		passthru("sudo -u $asterisk_user ".trim($amp_conf["AMPBIN"])."/retrieve_conf --run-install ".($debug ? ' --debug' : ''));
 }
 
 
