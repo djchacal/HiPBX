@@ -1098,25 +1098,25 @@ if (!$dryrun) {
   $asteriskuser = isset($amp_conf['AMPASTERISKUSER']) && $amp_conf['AMPASTERISKUSER'] ? $amp_conf['AMPASTERISKUSER'] : 'asterisk';
 
 	if (file_exists($amp_conf["AMPSBIN"]."/amportal")) {
-		exec("chmod u+x ".$amp_conf["AMPSBIN"]."/amportal");
+		exec("chmod 755 ".$amp_conf["AMPSBIN"]."/amportal");
 		outn("amportal..");
 	} else {
 		outn("no amportal..");
 	}
 	if (file_exists($amp_conf["AMPSBIN"]."/fpbx")) {
-		exec("chmod u+x ".$amp_conf["AMPSBIN"]."/fpbx");
+		exec("chmod 755 ".$amp_conf["AMPSBIN"]."/fpbx");
 		outn("fpbx..");
 	} else {
 		outn("no fpbx..");
 	}
 	if (file_exists($amp_conf["AMPBIN"]."/freepbx_engine")) {
-		exec("chmod u+x ".$amp_conf["AMPBIN"]."/freepbx_engine");
+		exec("chmod 755 ".$amp_conf["AMPBIN"]."/freepbx_engine");
 		outn("freepbx_engine..");
 	} else {
 		outn("no freepbx_engine..");
 	}
 	if (file_exists($amp_conf["AMPBIN"]."/freepbx_setting")) {
-		exec("chmod u+x ".$amp_conf["AMPBIN"]."/freepbx_setting");
+		exec("chmod 755 ".$amp_conf["AMPBIN"]."/freepbx_setting");
 		outn("freepbx_setting..");
 	} else {
 		outn("no freepbx_setting..");
