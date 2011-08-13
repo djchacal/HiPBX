@@ -55,7 +55,7 @@ CREATE TABLE `admin` (
 /*!40000 ALTER TABLE `admin` DISABLE KEYS */;
 -- LOCK TABLES `admin` WRITE;
 INSERT INTO `admin` VALUES ('need_reload','true');
-INSERT INTO `admin` VALUES ('version','2.2.0beta3');
+INSERT INTO `admin` VALUES ('version','2.9.0');
 -- UNLOCK TABLES;
 /*!40000 ALTER TABLE `admin` ENABLE KEYS */;
 
@@ -70,7 +70,7 @@ CREATE TABLE `ampusers` (
   `extension_low` varchar(20) NOT NULL default '',
   `extension_high` varchar(20) NOT NULL default '',
   `deptname` varchar(20) NOT NULL default '',
-  `sections` varchar(255) NOT NULL default '',
+  `sections` BLOB NOT NULL default '',
   PRIMARY KEY  (`username`)
 );
 
@@ -517,3 +517,114 @@ CREATE TABLE IF NOT EXISTS `cronmanager` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
+CREATE TABLE IF NOT EXISTS `notifications` (
+  `module`        varchar(24) NOT NULL default '',
+	`id`            varchar(24) NOT NULL default '',
+	`level`       int(11) NOT NULL default '0',
+	`display_text`  varchar(255) NOT NULL default '',
+	`extended_text` blob NOT NULL,
+	`link          varchar(255) NOT NULL default '',
+	`reset`       tinyint(4) NOT NULL default '0',
+	`candelete`     tinyint(4) NOT NULL default '0',
+	`timestamp`   int(11) NOT NULL default '0',
+	PRIMARY KEY  (module,id)
+);
+
+CREATE TABLE IF NOT EXISTS `cronmanager` (
+	`module` varchar(24) NOT NULL default '',
+	`id` varchar(24) NOT NULL default '',
+	`time` varchar(5) default NULL,
+	`freq` int(11) NOT NULL default '0',
+	`lasttime` int(11) NOT NULL default '0',
+	`command` varchar(255) NOT NULL default '',
+	PRIMARY KEY  (`module`,`id`)
+);
+
+
+CREATE TABLE IF NOT EXISTS `zapchandids` (
+	`channel` int(11) NOT NULL default '0',
+	`description` varchar(40) NOT NULL default '',
+	`did` varchar(60) NOT NULL default '',
+	PRIMARY KEY  (channel)
+);
+
+CREATE TABLE IF NOT EXISTS `trunks`
+(
+	`trunkid` INTEGER,
+	`name` VARCHAR( 50 ) NOT NULL DEFAULT '',
+	`tech` VARCHAR( 20 ) NOT NULL ,
+	`outcid` VARCHAR( 40 ) NOT NULL DEFAULT '',
+	`keepcid` VARCHAR( 4 ) DEFAULT 'off',
+	`maxchans` VARCHAR( 6 ) DEFAULT '',
+	`failscript` VARCHAR( 255 ) NOT NULL DEFAULT '',
+	`dialoutprefix` VARCHAR( 255 ) NOT NULL DEFAULT '',
+	`channelid` VARCHAR( 255 ) NOT NULL DEFAULT '',
+	`usercontext` VARCHAR( 255 ) NULL,
+	`provider` VARCHAR( 40 ) NULL,
+	`disabled` VARCHAR( 4 ) DEFAULT 'off',
+	PRIMARY KEY  (`trunkid`, `tech`, `channelid`)
+);
+
+CREATE TABLE IF NOT EXISTS `outbound_routes` (
+	`route_id` INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT,
+	`name` VARCHAR( 40 ),
+	`outcid` VARCHAR( 40 ),
+	`outcid_mode` VARCHAR( 20 ),
+	`password` VARCHAR( 30 ),
+	`emergency_route` VARCHAR( 4 ),
+	`intracompany_route` VARCHAR( 4 ),
+	`mohclass` VARCHAR( 80 ),
+	`time_group_id` INTEGER DEFAULT NULL
+);
+
+
+CREATE TABLE IF NOT EXISTS `outbound_route_patterns` (
+	`route_id` INTEGER NOT NULL,
+	`match_pattern_prefix` VARCHAR( 60 ),
+	`match_pattern_pass` VARCHAR( 60 ),
+	`match_cid` VARCHAR( 60 ),
+	`prepend_digits` VARCHAR( 100 ),
+  PRIMARY KEY (`route_id`, `match_pattern_prefix`, `match_pattern_pass`,`match_cid`,`prepend_digits`)
+);
+
+CREATE TABLE IF NOT EXISTS `outbound_route_trunks` (
+	`route_id` INTEGER NOT NULL,
+	`trunk_id` INTEGER NOT NULL,
+	`seq` INTEGER NOT NULL,
+  PRIMARY KEY  (`route_id`, `trunk_id`, `seq`)
+);
+
+CREATE TABLE IF NOT EXISTS `dahdi` (
+	`id` varchar(20) NOT NULL default '-1',
+	`keyword` varchar(30) NOT NULL default '',
+	`data` varchar(255) NOT NULL default '',
+	`flags` int(1) NOT NULL default '0',
+	PRIMARY KEY  (`id`,`keyword`)
+);
+
+CREATE TABLE IF NOT EXISTS `trunk_dialpatterns`
+(
+	`trunkid` INTEGER,
+	`match_pattern_prefix` VARCHAR(50) NULL,
+	`match_pattern_pass` VARCHAR(50) NULL,
+	`prepend_digits` VARCHAR(50) NULL,
+	`seq` INTEGER,
+	PRIMARY KEY  (`trunkid`, `match_pattern_prefix`, `match_pattern_pass`, `prepend_digits`, `seq`) 
+);
+
+CREATE TABLE IF NOT EXISTS `freepbx_settings` (
+	`keyword` varchar(50) default NULL,
+	`value` varchar(255) default NULL,
+	`name` varchar(80) default NULL,
+	`level` tinyint(1) default 0,
+	`description` text default NULL,
+	`type` varchar(25) default NULL,
+	`options` text default NULL,
+	`defaultval` varchar(255) default NULL,
+	`readonly` tinyint(1) default 0,
+	`hidden` tinyint(1) default 0,
+	`category` varchar(50) default NULL,
+	`module` varchar(25) default NULL,
+	`emptyok` tinyint(1) default 1,
+	PRIMARY KEY  (`keyword`)
+);
