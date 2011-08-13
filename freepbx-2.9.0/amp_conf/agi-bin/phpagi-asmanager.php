@@ -338,7 +338,7 @@
       $res = $this->send_request('login', array('Username'=>$this->username, 'Secret'=>$this->secret, 'Events'=>$this->events), false);
       if($res['Response'] != 'Success')
       {
-        $this->log("Failed to login.");
+        $this->log("Fucking manager. Failed to login.");
         $this->disconnect(TRUE);
         return false;
       }
