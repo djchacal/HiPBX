@@ -115,9 +115,7 @@ function installpackages {
 
 function disableall {
 	chkconfig mysqld off
-	service mysqld status > /dev/null && service mysqld stop
 	chkconfig httpd off
-	service httpd status > /dev/null &&  service httpd stop
 	chkconfig iptables off
 	service iptables status > /dev/null && service iptables stop
 	chkconfig drbd off
