@@ -174,7 +174,7 @@ function configure_lvm {
 	NBRSVCS=$((${#SERVICES[@]} - 1))
 	SANITYSIZE=0
 	SERVSTRING="( "
-	for element in $(seq 0 $NBRSVCS); do
+	for elemnt in $(seq 0 $NBRSVCS); do
 		SERVSTRING="$SERVSTRING ${SERVICES[$element]} "
 		SERVICENAME[$element]=$(echo ${SERVICES[$element]} | awk -F= ' { print $1 } ')
 		SERVICEPCNT[$element]=$(echo ${SERVICES[$element]} | awk -F= ' { print $2 } ')
@@ -865,10 +865,22 @@ function packages_validate {
 }
 
 function find_mount {
-	resourcenum=$1
-	find_mount=$(grep /dev/drbd$resourcenum /proc/mounts | cut -d\  -f2)
+	name=$1
+	drbdno="unknown"
+	NBRSVCS=$((${#SERVICES[@]} - 1))
+        for element in $(seq 0 $NBRSVCS); do
+		if [ "${SERVICES[$element]}" = $name ] ; then
+			drbdno=$element
+		fi
+	done
+	if [ "$drbdno" = "unknown" ] ; then
+		echo "Programmer error. Someone called 'find_mount' with the parameter of $name," 1>&2
+		echo "but I can't find that resource. Please fix." 1>&2
+		exit;
+	fi
+	mountstat=$(grep /dev/drbd$resourcenum /proc/mounts | cut -d\  -f2)
 	mount_count=0
-	while [ "$find_mount" = "" ]; do
+	while [ "$mountstat" = "" ]; do
 		if [ $mount_count -gt 5 ]; then
 			echo -e "Error.\nI've waited 30 seconds for the drbd disk to be ready. Please fix the disk" 1>&2
 			echo "and run this script again." 1>&2
@@ -876,7 +888,7 @@ function find_mount {
 			exit
 		fi
 		sleep 1
-		find_mount=$(grep drbd$resourcenum /proc/mounts | cut -d\  -f2)
+		mountstat=$(grep drbd$resourcenum /proc/mounts | cut -d\  -f2)
 		mount_count=$(( $mount_count + 1 ))
 	done
 	echo $find_mount
@@ -969,7 +981,7 @@ function mysql_install {
 	echo -e "\tMigrating mysqld resource to this server..."
 	crm resource migrate fs_mysql $(hostname) >/dev/null 2>&1
 	# Check to see where the DRBD mysql resource is mounted, when it turns up.
-	if [ $(find_mount 0) = "/drbd/mysql" ]; then
+	if [ $(find_mount mysql) = "/drbd/mysql" ]; then
 		# This is a new install
 		# Check to see if MySQL has stuff in /var/lib/mysql, and migrate it if it does.
 		if [ -d /var/lib/mysql/mysql ]; then
@@ -1009,7 +1021,7 @@ function asterisk_install {
 	echo "Migrating resource to this server..."
 	crm resource migrate fs_asterisk $(hostname) >/dev/null 2>&1
 	# Wait for the partition to be mounted...
-	find_mount 1 > /dev/null
+	find_mount asterisk > /dev/null
 	# Create the symbolic links and move any files if they exist
 	create_links /etc/asterisk /drbd/asterisk/etc yes
 	create_links /etc/dahdi /drbd/asterisk/dahdi yes
@@ -1041,7 +1053,7 @@ function apache_install {
 	echo "Migrating resource to this server..."
 	crm resource migrate fs_http $(hostname) >/dev/null 2>&1
 	# Wait for the partition to be mounted...
-	find_mount 2 > /dev/null
+	find_mount apache > /dev/null
 	create_links /var/www /drbd/http/www yes
 	create_links /var/log/httpd /drbd/http/logs yes
 	create_links /etc/php.d /drbd/http/php yes
