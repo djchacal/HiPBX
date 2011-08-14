@@ -1046,7 +1046,7 @@ function apache_install {
 	echo "Migrating resource to this server..."
 	crm resource migrate fs_http $(hostname) >/dev/null 2>&1
 	# Wait for the partition to be mounted...
-	find_mount apache > /dev/null
+	find_mount http > /dev/null
 	create_links /var/www /drbd/http/www yes
 	create_links /var/log/httpd /drbd/http/logs yes
 	create_links /etc/php.d /drbd/http/php yes
