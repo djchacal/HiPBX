@@ -866,32 +866,27 @@ function packages_validate {
 
 function find_mount {
 	name=$1
-	drbdno="unknown"
-	NBRSVCS=$((${#SERVICES[@]} - 1))
-        for element in $(seq 0 $NBRSVCS); do
-		if [ "${SERVICES[$element]}" = $name ] ; then
-			drbdno=$element
-		fi
-	done
-	if [ "$drbdno" = "unknown" ] ; then
+	drbdvar="${name}_DISK"
+	drbddev=${!drbdvar}
+	if [ "$drbddev" = "" ] ; then
 		echo "Programmer error. Someone called 'find_mount' with the parameter of $name," 1>&2
 		echo "but I can't find that resource. Please fix." 1>&2
-		exit;
+		exit
 	fi
-	mountstat=$(grep /dev/drbd$resourcenum /proc/mounts | cut -d\  -f2)
+	mountstat=$(grep $drbddev /proc/mounts | cut -d\  -f2)
 	mount_count=0
 	while [ "$mountstat" = "" ]; do
 		if [ $mount_count -gt 5 ]; then
 			echo -e "Error.\nI've waited 30 seconds for the drbd disk to be ready. Please fix the disk" 1>&2
 			echo "and run this script again." 1>&2
-			echo "Timeout waiting for Pacemaker to mount /dev/drbd$resourcenum somewhere." 1>&2
+			echo "Timeout waiting for Pacemaker to mount $drbddev somewhere." 1>&2
 			exit
 		fi
 		sleep 1
-		mountstat=$(grep drbd$resourcenum /proc/mounts | cut -d\  -f2)
+		mountstat=$(grep $drbddev /proc/mounts | cut -d\  -f2)
 		mount_count=$(( $mount_count + 1 ))
 	done
-	echo $find_mount
+	echo $mountstat
 }
 
 function dir_contains_files {
@@ -981,7 +976,7 @@ function mysql_install {
 	echo -e "\tMigrating mysqld resource to this server..."
 	crm resource migrate fs_mysql $(hostname) >/dev/null 2>&1
 	# Check to see where the DRBD mysql resource is mounted, when it turns up.
-	if [ $(find_mount mysql) = "/drbd/mysql" ]; then
+	if [ "$(find_mount mysql)" = "/drbd/mysql" ]; then
 		# This is a new install
 		# Check to see if MySQL has stuff in /var/lib/mysql, and migrate it if it does.
 		if [ -d /var/lib/mysql/mysql ]; then
