@@ -174,7 +174,7 @@ function configure_lvm {
 	NBRSVCS=$((${#SERVICES[@]} - 1))
 	SANITYSIZE=0
 	SERVSTRING="( "
-	for elemnt in $(seq 0 $NBRSVCS); do
+	for element in $(seq 0 $NBRSVCS); do
 		SERVSTRING="$SERVSTRING ${SERVICES[$element]} "
 		SERVICENAME[$element]=$(echo ${SERVICES[$element]} | awk -F= ' { print $1 } ')
 		SERVICEPCNT[$element]=$(echo ${SERVICES[$element]} | awk -F= ' { print $2 } ')
