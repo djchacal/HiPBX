@@ -168,7 +168,7 @@ function configure_lvm {
 	# Don't try to use decimals here. Integers only.
 	# Note that changing these AFTER the cluster has been built won't work. Create
 	# a new cluster. Remember how I said set aside LOTS OF SPACE? I wasn't kidding.
-	[ "$SERVICES" = "" ] && SERVICES=( mysql=30 asterisk=30 http=20 dhcp=10 spare=10 )
+	[ "$SERVICES" = "" ] && SERVICES=( asterisk=30 http=20 mysql=30 dhcp=10 ldap=10 )
 
 	# Parse the SERVICES variable into arrays
 	NBRSVCS=$((${#SERVICES[@]} - 1))
