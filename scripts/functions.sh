@@ -1028,7 +1028,7 @@ function asterisk_install {
 	rm -f /etc/asterisk/chan_dahdi.conf /etc/asterisk/ccss.conf /etc/asterisk/sip_notify.conf
 	rm -f /etc/asterisk/extensions.conf /etc/asterisk/iax.conf /etc/asterisk/features.conf
 	rm -f /etc/asterisk/sip.conf /etc/asterisk/logger.conf
-	
+
 	# Add HiPBX Asterisk RA
 	crm configure primitive asteriskd ocf:hipbx:asterisk meta target-role="Stopped"
 	crm configure primitive dahdi lsb:dahdi meta target-role="Stopped"
@@ -1054,6 +1054,8 @@ function apache_install {
 	safe_create_symlink /etc/php.ini /drbd/http/php.ini
 	# Fix timezone in php.ini..
 	. /etc/sysconfig/clock
+	# Let apache view cluster status
+	useradd -G haclient apache 2>/dev/null
 	sed -i "s_^;*date.timezone.*\$_date.timezone = '$ZONE'_" /drbd/http/php.ini
 	crm configure primitive httpd lsb:httpd meta target-role="Stopped"
 	echo group http fs_http ip_http httpd | crm configure load update - 
