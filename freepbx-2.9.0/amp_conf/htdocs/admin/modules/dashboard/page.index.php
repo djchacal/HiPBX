@@ -507,6 +507,8 @@ include dirname(__FILE__)."/class.average_rate_calculator.php";
 include dirname(__FILE__)."/class.procinfo.php";
 include dirname(__FILE__)."/class.error.inc.php";
 
+include dirname(__FILE__)."/cluster.inc.php";
+
 $error = new Error;
 
 
@@ -650,10 +652,12 @@ if (!$quietmode) {
 	echo show_aststats();
 	echo '</div>';
 	
+	// If there is no cluster, don't draw the box. 
+	echo show_cluster();
+
 	echo '<div id="sysinfo" class="infobox">';
 	echo show_sysinfo();
 	echo '</div>';
-	
 	
 	echo '</div><div id="sysinfo-right">';
 	
