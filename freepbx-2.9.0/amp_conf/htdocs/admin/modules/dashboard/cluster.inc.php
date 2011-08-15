@@ -29,6 +29,11 @@ function show_cluster() {
 		} else {
 			$r1 = "<td>down</td>";
 		}
+		if (isset($cluster['ms'][$key]['status'])) {
+			$out .= "<tr><td align='right'>$disp (".$cluster['ms'][$key]['status']."):</td>";
+		} else {
+			$out .= "<tr><td align='right'>$disp (Unknown):</td>";
+		}
 		$out .= "<tr><td align='right'>$disp:</td>";
 		$out .= "$r0\n";
 		$out .= "$r1\n";
@@ -84,16 +89,41 @@ function cluster_info() {
 		// Master/Slave sets
 		if (preg_match('/^ Master\/Slave Set: (.+)/', $val, $matches)) {
 			print "Found a set at $rowno\n";
+			$mymaster="unknown";
+			$myslave="unknown";
 			// This is always two lines. 
 			$startat = $rowno;
 			for ( $startat ; $rowno < $startat + 3; $rowno++) {
 				if (preg_match('/Masters: \[ (.+) \]/', $output[$rowno], $myline)) {
 					$result['ms'][$matches[1]]['master'][]=$myline[1];
+					$mymaster=$myline[1];
 				} 
 				if (preg_match('/Slaves: \[ (.+) \]/', $output[$rowno], $myline)) {
 					$result['ms'][$matches[1]]['slave'][]=$myline[1];
+					$myslave=$myline[1];
 				} 
 			}
+			// Now, ['master'] is going to be the one that is 'Primary' in /proc/drbd
+			$msname=preg_match('/\//', $val[1]);
+			exec("drbdadmin role $msname[1]", $adminout, $retvar);
+			// Check for weirdisms.
+			if ($retvar == 3) { // Name not defined
+				$result['ms'][$matches[1]]['master'][]="Error: Unconf";
+				$result['ms'][$matches[1]]['slave'][]="Error: Unconf";
+			} elseif ($retvar == 10 ) { // drbd not started for that volume
+				$result['ms'][$matches[1]]['master'][]="Error: Not Started";
+				$result['ms'][$matches[1]]['slave'][]="Error: Not Started";
+			} elseif ($retvar != 0 )  { // Something else odd happened.
+				$result['ms'][$matches[1]]['master'][]="Error: Unknown $retvar";
+				$result['ms'][$matches[1]]['slave'][]="Error: Unknown $retvar";
+			} else {
+				// We have results!
+				exec("drbdadmin cstate $msname[1]", $state);
+				$result['ms'][$matches[1]]['status'][]=$state[0];
+				if (preg_match('/(.+)\/Primary$/', $adminout[1], $whoami)) { // Master is second col
+				}
+			}
+				
 		}
 			
 	}
@@ -104,13 +134,16 @@ function cluster_info() {
 		'offline' => array('slave'),
 		'ms' => array('ms_drbd_asterisk' =>
 			   array('master' => array('master', 'UpToDate'),
-				 'slave' => array('slave', 'Inconsistent')),
+				 'slave' => array('slave', 'Inconsistent'),
+				 'status' => 'SyncSource'),
 			      'ms_drbd_http' =>
 			   array('master' => array('master', 'UpToDate'),
-				 'slave' => array('slave', 'Inconsistent')),
+				 'slave' => array('slave', 'Inconsistent'),
+				 'status' => 'SyncSource'),
 			      'ms_drbd_mysql' =>
 			   array('master' => array('master', 'UpToDate'),
-				 'slave' => array('slave', 'Inconsistent')),
+				 'slave' => array('slave', 'Inconsistent'),
+				 'status' => 'SyncSource'),
 			      'ms_drbd_dhcp' =>
 			   array('master' => null,
 				 'slave' => null,),
@@ -128,3 +161,19 @@ function cluster_info() {
 }
 			
 		
+
+function drbd_get($resname) {
+	// Firstly, do we know about this resource? 
+	if (!file_exists("/etc/drbd.d/$resname.res")) {
+		// One of those things we should never hit, but...
+		$ret['status'] = "MISSING";
+		$ret['this'] = "MISSING";
+		$ret['other'] = "MISSING";
+		return $ret;
+	}
+	// Oh god, this is horrible.
+	$drbdno = `grep device /etc/drbd.d/$resname.res | sed 's/\(.*drbd\)\(.\)./\2/'`;
+	$ret['status'] = `grep "^ $drbdno:" /proc/drbd | sed 's/\(.*cs:\)\([[:alpha:]]*\)\(.*\)/\2/'`;
+	$ret['this'] =  `grep "^ $drbdno:" /proc/drbd | sed 's/\(.*ro:\)\([[:alpha:]]*\)\/\([[:alpha:]]*\)\(.*\)/\2/'`;
+	$ret['other'] =  `grep "^ $drbdno:" /proc/drbd |sed 's/\(.*ro:\)\([[:alpha:]]*\)\/\([[:alpha:]]*\)\(.*\)/\3/'`;
+}
