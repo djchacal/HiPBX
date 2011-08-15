@@ -5,6 +5,7 @@ function show_cluster() {
 	if ($cluster === null) {
 		return;
 	}
+	print_r($cluster);
 	// OK, so the cluster is up, and running. We're in HiPBX - probably.
         $out = '<div id="cluster" class="infobox">'."\n";
         $out .= "<h3>"._("Cluster Information")."</h3>";
@@ -53,10 +54,54 @@ function cluster_info() {
 		// CRM isn't installed, or isn't running. 
 		return null;
 	}
-	// Stuff.
-	$result = array( 
-		'dc' => 'master',
+	// Loop through $output and care about stuff.
+	foreach ($output as $rowno => $val) {
+		// Cluster DC
+		if (preg_match('/^Current DC: (.+) -/', $val, $matches)) {
+			$result['dc']=$matches[1];
+		}
+		// Nodes (Online)
+		if (preg_match('/^Online: \[ (.+) \]/', $val, $matches)) {
+			$nodes = preg_split('/ /', $matches[1]);
+			foreach ($nodes as $nodename) {
+				$result['nodes'][]=$nodename;
+				$result['online'][]=$nodename;
+			}
+		}
+		// Nodes (Offline)
+		if (preg_match('/^OFFLINE: \[ (.+) \]/', $val, $matches)) {
+			$nodes = preg_split('/ /', $matches[1]);
+			foreach ($nodes as $nodename) {
+				$result['nodes'][]=$nodename;
+				$result['offline'][]=$nodename;
+			}
+		}
+		// Nodes (Standby)
+		if (preg_match('/^Node (.+): standby/', $val, $matches)) {
+			$result['nodes'][]=$nodename;
+			$result['standby'][]=$nodename;
+		}
+		// Master/Slave sets
+		if (preg_match('/^ Master\/Slave Set: (.+)/', $val, $matches)) {
+			print "Found a set at $rowno\n";
+			// This is always two lines. 
+			$startat = $rowno;
+			for ( $startat ; $rowno < $startat + 3; $rowno++) {
+				if (preg_match('/Masters: \[ (.+) \]/', $output[$rowno], $myline)) {
+					$result['ms'][$matches[1]]['master'][]=$myline[1];
+				} 
+				if (preg_match('/Slaves: \[ (.+) \]/', $output[$rowno], $myline)) {
+					$result['ms'][$matches[1]]['slave'][]=$myline[1];
+				} 
+			}
+		}
+			
+	}
+	$xresult = array( 
 		'nodes' => array('master', 'slave'),
+		'online' => array('master'),
+		'standby' => null,
+		'offline' => array('slave'),
 		'ms' => array('ms_drbd_asterisk' =>
 			   array('master' => array('master', 'UpToDate'),
 				 'slave' => array('slave', 'Inconsistent')),
