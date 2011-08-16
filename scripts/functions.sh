@@ -1054,7 +1054,7 @@ function apache_install {
 	# Fix timezone in php.ini..
 	. /etc/sysconfig/clock
 	# Let apache view cluster status
-	useradd -G haclient apache 2>/dev/null
+	usermod -G haclient apache 2>/dev/null
 	sed -i "s_^;*date.timezone.*\$_date.timezone = '$ZONE'_" /drbd/http/php.ini
 	crm configure primitive httpd lsb:httpd meta target-role="Stopped"
 	echo group http fs_http ip_http httpd | crm configure load update - 
