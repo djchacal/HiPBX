@@ -77,6 +77,8 @@ create_links /etc/php.d /drbd/http/php yes
 ln -sf /drbd/http/php.ini /etc/php.ini
 ln -sf /drbd/asterisk/freepbx.conf /etc/freepbx.conf
 ln -sf /drbd/asterisk/amportal.conf /etc/amportal.conf
-create_links /usr/share/asterisk /drbd/asterisk/share yes
+rm -rf /usr/share/asterisk
+ln -sf /drbd/asterisk/share /usr/share/asterisk 
+rm -rf /var/lib/asterisk
+ln -sf /drbd/asterisk/lib /var/lib/asterisk
 usermod -G haclient apache
-
