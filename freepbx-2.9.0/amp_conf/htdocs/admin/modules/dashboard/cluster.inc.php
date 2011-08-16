@@ -19,24 +19,9 @@ function show_cluster() {
 	$out .= '<tr><th>'._('Disk Sets').':</th><td colspan=2></td></tr>';
 	foreach ($cluster['ms'] as $key => $value) {
 		$disp = substr($key, 8);
-		if (isset($cluster['ms'][$key][$node0])) {
-			$r0 = "<td>".$cluster['ms'][$key][$node0][0]." (".$cluster['ms'][$key][$node0][1].")</td>";
-		} else {
-			$r0 = "<td>down</td>";
-		}
-		if (isset($cluster['ms'][$key][$node1])) {
-			$r1 = "<td>".$cluster['ms'][$key][$node1][0]." (".$cluster['ms'][$key][$node1][1].")</td>";
-		} else {
-			$r1 = "<td>down</td>";
-		}
-		if (isset($cluster['ms'][$key]['status'])) {
-			$out .= "<tr><td align='right'>$disp (".$cluster['ms'][$key]['status']."):</td>";
-		} else {
-			$out .= "<tr><td align='right'>$disp (Unknown):</td>";
-		}
-		$out .= "<tr><td align='right'>$disp:</td>";
-		$out .= "$r0\n";
-		$out .= "$r1\n";
+		$out .= "<tr><td align='right'> $disp (".$cluster['ms'][$key]['status'].")</td>";
+		$out .= "<td>".$cluster['ms'][$key]['master']['status']."/";
+		$out .= "<td>".$cluster['ms'][$key]['slave']['status']."</td></tr>";
 	}
 	$out .= '<tr><th>'._('Resources').':</th><td colspan=2></td></tr>';
 	foreach ($cluster['res'] as $key => $value) {
@@ -88,81 +73,48 @@ function cluster_info() {
 		}
 		// Master/Slave sets
 		if (preg_match('/^ Master\/Slave Set: (.+)/', $val, $matches)) {
-			print "Found a set at $rowno\n";
-			$mymaster="unknown";
-			$myslave="unknown";
-			// This is always two lines. 
+			$mymaster="Unknown";
+			$myslave="Unknown";
+			// This is always two lines.  Figure out which is the master
+			// and the slave.
 			$startat = $rowno;
-			for ( $startat ; $rowno < $startat + 3; $rowno++) {
+			for ( $rowno++ ; $rowno < $startat + 3; $rowno++) {
 				if (preg_match('/Masters: \[ (.+) \]/', $output[$rowno], $myline)) {
-					$result['ms'][$matches[1]]['master'][]=$myline[1];
 					$mymaster=$myline[1];
-				} 
-				if (preg_match('/Slaves: \[ (.+) \]/', $output[$rowno], $myline)) {
-					$result['ms'][$matches[1]]['slave'][]=$myline[1];
+				} elseif (preg_match('/Slaves: \[ (.+) \]/', $output[$rowno], $myline)) {
 					$myslave=$myline[1];
 				} 
 			}
-			// Now, ['master'] is going to be the one that is 'Primary' in /proc/drbd
-			$msname=preg_match('/\//', $val[1]);
-			exec("drbdadmin role $msname[1]", $adminout, $retvar);
-			// Check for weirdisms.
-			if ($retvar == 3) { // Name not defined
-				$result['ms'][$matches[1]]['master'][]="Error: Unconf";
-				$result['ms'][$matches[1]]['slave'][]="Error: Unconf";
-			} elseif ($retvar == 10 ) { // drbd not started for that volume
-				$result['ms'][$matches[1]]['master'][]="Error: Not Started";
-				$result['ms'][$matches[1]]['slave'][]="Error: Not Started";
-			} elseif ($retvar != 0 )  { // Something else odd happened.
-				$result['ms'][$matches[1]]['master'][]="Error: Unknown $retvar";
-				$result['ms'][$matches[1]]['slave'][]="Error: Unknown $retvar";
-			} else {
-				// We have results!
-				exec("drbdadmin cstate $msname[1]", $state);
-				$result['ms'][$matches[1]]['status'][]=$state[0];
-				if (preg_match('/(.+)\/Primary$/', $adminout[1], $whoami)) { // Master is second col
+			$drbd_status=drbd_get($matches[1]);
+			$result['ms'][$matches[1]]['status']=$drbd_status['status'];
+			$result['ms'][$matches[1]]['master']['host']=$mymaster;
+			$result['ms'][$matches[1]]['slave']['host']=$myslave;
+			$result['ms'][$matches[1]]['master']['status']=$drbd_status['this']['status'];
+			$result['ms'][$matches[1]]['slave']['status']=$drbd_status['other']['status'];
+		} 
+		// Resource Groups
+		if (preg_match('/^ Resource Group: (.+)/', $val, $rgname)) {
+			// Resource groups start with 5 spaces. Pull all the items
+			// in from the rg.
+			$startat = $rowno;
+			for ( $rowno++ ; strpos($output[$rowno], "     ") !== false ; $rowno++) {
+				if (preg_match('/^\s+([\w_]+)\s+\(.+\):\s+(.+)$/', $output[$rowno], $matches)) {
+					$result['res'][$rgname[1]][$matches[1]]=$matches[2];
 				}
 			}
-				
 		}
-			
 	}
-	$xresult = array( 
-		'nodes' => array('master', 'slave'),
-		'online' => array('master'),
-		'standby' => null,
-		'offline' => array('slave'),
-		'ms' => array('ms_drbd_asterisk' =>
-			   array('master' => array('master', 'UpToDate'),
-				 'slave' => array('slave', 'Inconsistent'),
-				 'status' => 'SyncSource'),
-			      'ms_drbd_http' =>
-			   array('master' => array('master', 'UpToDate'),
-				 'slave' => array('slave', 'Inconsistent'),
-				 'status' => 'SyncSource'),
-			      'ms_drbd_mysql' =>
-			   array('master' => array('master', 'UpToDate'),
-				 'slave' => array('slave', 'Inconsistent'),
-				 'status' => 'SyncSource'),
-			      'ms_drbd_dhcp' =>
-			   array('master' => null,
-				 'slave' => null,),
-			      'ms_drbd_ldap' =>
-			   array('master' => null,
-				 'slave' => null,)),
-		'res' => array(
-			'asterisk' => array('fs_asterisk' => 'master', 'ip_asterisk' => 'master', 'dahdi' => 'master', 'asteriskd' => 'master'),
-			'http' => array('fs_http' => 'master', 'ip_http' => 'master', 'httpd' => 'master'),
-			'mysql' => array('fs_mysql' => 'master', 'ip_mysql' => 'master', 'mysqld' => 'master'),
-			'dhcp' => array('fs_dhcp' => 'Stopped', 'ip_dhcp' => 'Stopped'),
-			'ldap' => array('fs_ldap' => 'Stopped', 'ip_ldap' => 'Stopped'))
-		);
 	return $result;
 }
 			
 		
 
 function drbd_get($resname) {
+	// Get the real name - strip of ms_drbd_ from the front of it.
+	if (!preg_match('/ms_drbd_(\w+)/', $resname, $name)) {
+		return null;
+	}
+	$resname=$name[1];
 	// Firstly, do we know about this resource? 
 	if (!file_exists("/etc/drbd.d/$resname.res")) {
 		// One of those things we should never hit, but...
@@ -172,8 +124,22 @@ function drbd_get($resname) {
 		return $ret;
 	}
 	// Oh god, this is horrible.
-	$drbdno = `grep device /etc/drbd.d/$resname.res | sed 's/\(.*drbd\)\(.\)./\2/'`;
-	$ret['status'] = `grep "^ $drbdno:" /proc/drbd | sed 's/\(.*cs:\)\([[:alpha:]]*\)\(.*\)/\2/'`;
-	$ret['this'] =  `grep "^ $drbdno:" /proc/drbd | sed 's/\(.*ro:\)\([[:alpha:]]*\)\/\([[:alpha:]]*\)\(.*\)/\2/'`;
-	$ret['other'] =  `grep "^ $drbdno:" /proc/drbd |sed 's/\(.*ro:\)\([[:alpha:]]*\)\/\([[:alpha:]]*\)\(.*\)/\3/'`;
+	$drbdno = trim(`grep device /etc/drbd.d/$resname.res | sed 's/\(.*drbd\)\(.\)./\\2/'`);
+	$drbdline = trim(`grep "^ $drbdno:" /proc/drbd`);
+	if (strstr($drbdline, 'cs:Unconfigured') || $drbdline == "") {
+		$ret['status'] = "Down";
+		$ret['this']['role'] = "Unknown";
+		$ret['this']['status'] = "Unknown";
+		$ret['other']['role'] = "Unknown";
+		$ret['other']['status'] = "Unknown";
+		return $ret;
+	}
+	preg_match('_ cs:(\w+) ro:(\w+)/(\w+) ds:(\w+)/(\w+) _', $drbdline, $tmparray);
+	$ret['status'] = $tmparray[1];
+	$ret['this']['role'] = $tmparray[2];
+	$ret['other']['role'] = $tmparray[3];
+	$ret['this']['status'] = $tmparray[4];
+	$ret['other']['status'] = $tmparray[5];
+	return $ret;
 }
+
