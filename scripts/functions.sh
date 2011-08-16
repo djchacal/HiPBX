@@ -105,12 +105,11 @@ function installpackages {
 	fi
 	if [ "$UPGRADE" != "" ] ; then
 		echo -e "\tUpgrading rpm packages"
-		rpm -i $INSTALL
+		rpm -U $UPGRADE
 	else
 		echo -e "\tNo upgrades required"
 	fi
 	echo -e "\tPackages done"
-	rpm -U $UPGRADE
 }
 
 function disableall {
