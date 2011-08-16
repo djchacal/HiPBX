@@ -5,7 +5,7 @@
 <input type="hidden" name="action" value="edit" />
 <div class="setting">
 	<label for="module_name"><a href="#" class="info">Module Name:<span>Specify the kernel module used by the installed analog hardware.</span></a></label>
-	<input type="text" id="module_name" name="module_name" size="10" value="<?=$dahdi_cards->get_advanced('module_name')?>" />
+	<input type="text" id="module_name" name="module_name" size="10" value="<?php echo $dahdi_cards->get_advanced('module_name')?>" />
 </div>
 <div class="setting">
 	<label for="tone_region"><a href="#" class="info">Tone Region:<span>Please choose your country or your nearest neighboring country for default Tones (Ex: dialtone, busy tone, ring tone etc.)</span></a></label>
@@ -55,7 +55,7 @@
 </div>
 <div class="setting">
 	<label for="opermode_checkbox" class="info"><a href="#" class="info">Opermode:<span>Specify the On Hook Speed, Ringer Impedance, Ringer Threshold, Current limiting, Tip/Ring voltage adjustment, Minimum Operational Loop current, and AC Impedance selection as predefined for each countries' analog line characteristics. Select the country in which your Asterisk server is operating. FCC is equivalent to United States. TBR21 is equivalent to Austria, Belgium, Denmark, Finland, France, Germany, Greece, Iceland, Ireland, Italy, Luxembourg, Netherlands, Norway, Portugal, Spain, Sweden, Switzerland, and the United Kingdom. If no choice is specified, the default is FCC.</span></a></label>
-	<input type="checkbox" id="opermode_checkbox" name="opermode_checkbox" <?=($dahdi_cards->get_advanced('opermode_checkbox'))?'checked':''?> />
+	<input type="checkbox" id="opermode_checkbox" name="opermode_checkbox" <?php echo ($dahdi_cards->get_advanced('opermode_checkbox'))?'checked':''?> />
 	<select id="opermode" name="opermode">
 		<option value="USA">USA</option>
 		<option value="ARGENTINA">ARGENTINA</option>
@@ -134,7 +134,7 @@
 </div>
 <div class="setting">
 	<label for="alawoverride_checkbox"><a href="#" class="info">A-law Override:<span>Specify the audio compression scheme (codec) to be used for analog lines. North American users should choose ulaw. All other countries, unless otherwise known, should be assumed to be alaw. If no choice is specified, the default is ulaw. Confirm the scheme which will be best for operation.</span></a></label>
-	<input type="checkbox" id="alawoverride_checkbox" name="alawoverride_checkbox" <?=($dahdi_cards->get_advanced('alawoverride_checkbox'))?'checked':''?> />
+	<input type="checkbox" id="alawoverride_checkbox" name="alawoverride_checkbox" <?php echo ($dahdi_cards->get_advanced('alawoverride_checkbox'))?'checked':''?> />
 	<select id="alawoverride" name="alawoverride">
 		<option value="0">ulaw</option>
 		<option value="1">alaw</option>
@@ -142,7 +142,7 @@
 </div>
 <div class="setting">
 	<label for="fxs_honor_mode_checkbox"><a href="#" class="info">FXS Honor Mode:<span>Specify whether to apply the opermode setting to your FXO modules only, or to both FXS and FXO modules. If no choice is specified, the default is apply opermode to fxo modules only.</span></a></label>
-	<input type="checkbox" id="fxs_honor_mode_checkbox" name="fxs_honor_mode_checkbox" <?=($dahdi_cards->get_advanced('fxs_honor_mode_checkbox'))?'checked':''?> />
+	<input type="checkbox" id="fxs_honor_mode_checkbox" name="fxs_honor_mode_checkbox" <?php echo ($dahdi_cards->get_advanced('fxs_honor_mode_checkbox'))?'checked':''?> />
 	<select id="fxs_honor_mode" name="fxs_honor_mode">
 		<option value="0">Apply Opermode to FXO Modules</option>
 		<option value="1">Apply Opermode to FXS and FXO Modules</option>
@@ -150,7 +150,7 @@
 </div>
 <div class="setting">
 	<label for="boostringer_checkbox"><a href="#" class="info">Boostringer:<span>Specify the voltage used for ringing an analog phone. Normal will set the ring voltage to 40V, and Peak will set the voltage to 89V. If no choice is specified, the default is normal.</span></a></label>
-	<input type="checkbox" id="boostringer_checkbox" name="boostringer_checkbox" <?=($dahdi_cards->get_advanced('boostringer_checkbox'))?'checked':''?> />
+	<input type="checkbox" id="boostringer_checkbox" name="boostringer_checkbox" <?php echo ($dahdi_cards->get_advanced('boostringer_checkbox'))?'checked':''?> />
 	<select id="boostringer" name="boostringer">
 		<option value="0">Normal</option>
 		<option value="1">Peak (89v)</option>
@@ -158,7 +158,7 @@
 </div>
 <div class="setting">
 	<label for="fastringer_checkbox"><a href="#" class="info">Fastringer:<span>Specify whether to apply Fast Ringer operation. Setting Fast Ringer (25Hz) (commonly used in conjunction with the Low Power option) increases the ringing speed to 25Hz. If no choice is specified, the default is normal.</span></a></label>
-	<input type="checkbox" id="fastringer_checkbox" name="fastringer_checkbox" <?=($dahdi_cards->get_advanced('fastringer_checkbox'))?'checked':''?> />
+	<input type="checkbox" id="fastringer_checkbox" name="fastringer_checkbox" <?php echo ($dahdi_cards->get_advanced('fastringer_checkbox'))?'checked':''?> />
 	<select id="fastringer" name="fastringer">
 		<option value="0">Normal</option>
 		<option value="1">Fast Ringer (25hz)</option>
@@ -166,7 +166,7 @@
 </div>
 <div class="setting">
 	<label for="lowpower_checkbox"><a href="#" class="info">Lowpower:<span>Specify whether to apply Low Power operation. Setting Fast Ringer to 50V peak in conjunction with the Fast Ringer option increases the peak voltage during Fast Ringer operation to 50V. If no choice is specified, the default is normal.</span></a></label>
-	<input type="checkbox" id="lowpower_checkbox" name="lowpower_checkbox" <?=($dahdi_cards->get_advanced('lowpower_checkbox'))?'checked':''?> />
+	<input type="checkbox" id="lowpower_checkbox" name="lowpower_checkbox" <?php echo ($dahdi_cards->get_advanced('lowpower_checkbox'))?'checked':''?> />
 	<select id="lowpower" name="lowpower">
 		<option value="0">Normal</option>
 		<option value="1">Fast Ringer to 50v Peak</option>
@@ -174,7 +174,7 @@
 </div>
 <div class="setting">
 	<label for="ringdetect_checkbox"><a href="#" class="info">Ring Detect:<span>Specify whether to apply normal ring detection, or a full wave detection to prevent false ring detection for lines where CallerID is sent before the first ring and proceeded by a polarity reversal (as in the United Kingdom). If you are experiencing trouble with detecting CallerID from analog service providers, or have lines which exhibit a polarity reversal before CallerID is transmitted from the provider, then select Full Wave. If no choice is specified, the default is standard.</span></a></label>
-	<input type="checkbox" id="ringdetect_checkbox" name="ringdetect_checkbox" <?=($dahdi_cards->get_advanced('ringdetect_checkbox'))?'checked':''?> />
+	<input type="checkbox" id="ringdetect_checkbox" name="ringdetect_checkbox" <?php echo ($dahdi_cards->get_advanced('ringdetect_checkbox'))?'checked':''?> />
 	<select id="ringdetect" name="ringdetect">
 		<option value="0">Standard</option>
 		<option value="1">Full Wave</option>
@@ -188,20 +188,20 @@
 		<li>NEON - Performs Neon MWI detection.</li>
 	</ul>
 	</span></a></label>
-	<input type="checkbox" id="mwi_checkbox" name="mwi_checkbox" <?=($dahdi_cards->get_advanced('mwi_checkbox'))?'checked':''?> />
+	<input type="checkbox" id="mwi_checkbox" name="mwi_checkbox" <?php echo ($dahdi_cards->get_advanced('mwi_checkbox'))?'checked':''?> />
 	<select id="mwi" name="mwi">
 		<option value="none">None</option>
 		<option value="fsk">FSK</option>
 		<option value="neon">NEON</option>
 	</select>
 </div>
-<div class="setting neon"<?=(($dahdi_cards->get_advanced['mwi'] != 'neon') ? ' style="display:none;"' : "")?>>
+<div class="setting neon"<?php echo (($dahdi_cards->get_advanced['mwi'] != 'neon') ? ' style="display:none;"' : "")?>>
 	<label for="neon_voltage">Neon MWI Voltage Level: </label>
-	<input id="neon_voltage" name="neon_voltage" size="2" value="<?=$dahdi_cards->get_advanced('neon_voltage')?>" /><br />
+	<input id="neon_voltage" name="neon_voltage" size="2" value="<?php echo $dahdi_cards->get_advanced('neon_voltage')?>" /><br />
 	<label for="neon_offlimit">Neon MWI Off Limit: </label>
-	<input id="neon_offlimit" name="neon_offlimit" size="4" value="<?=$dahdi_cards->get_advanced('neon_offlimit')?>" />
+	<input id="neon_offlimit" name="neon_offlimit" size="4" value="<?php echo $dahdi_cards->get_advanced('neon_offlimit')?>" />
 </div>
-<div id="vpmsettings"<?=((!$dahdi_cards->has_vpm())? ' style="display:none;"': "")?>>
+<div id="vpmsettings"<?php echo ((!$dahdi_cards->has_vpm())? ' style="display:none;"': "")?>>
 	<div class="setting">
 		<label for="echocan_nlp_type"><a href="#" class="info">Echo Canc. NLP Type:<span> This option allows you to specify the type of Non Linear Processor you want applied to the post echo-cancelled audio reflections received from analog connections (VPMADT032 only). There are several options:
 		<ul>
@@ -242,18 +242,18 @@
 		$('#echocan_nlp_threshold').append('<option value="'+i+'">'+i+'</option>');
 	}
 
-	ChangeSelectByValue('tone_region', '<?=$dahdi_cards->get_advanced('tone_region')?>', true);
-	ChangeSelectByValue('opermode', '<?=$dahdi_cards->get_advanced('opermode')?>', true);
-	ChangeSelectByValue('alawoverride', '<?=$dahdi_cards->get_advanced('alawoverride')?>', true);
-	ChangeSelectByValue('fxs_honor_mode', '<?=$dahdi_cards->get_advanced('fxs_honor_mode')?>', true);
-	ChangeSelectByValue('boostringer', '<?=$dahdi_cards->get_advanced('boostringer')?>', true);
-	ChangeSelectByValue('fastringer', '<?=$dahdi_cards->get_advanced('fastringer')?>', true);
-	ChangeSelectByValue('lowpower', '<?=$dahdi_cards->get_advanced('lowpower')?>', true);
-	ChangeSelectByValue('ringdetect', '<?=$dahdi_cards->get_advanced('ringdetect')?>', true);
-	ChangeSelectByValue('mwi', '<?=$dahdi_cards->get_advanced('mwi')?>', true);
-	ChangeSelectByValue('echocan_nlp_type', '<?=$dahdi_cards->get_advanced('echocan_nlp_type')?>', true);
-	ChangeSelectByValue('echocan_nlp_threshold', '<?=$dahdi_cards->get_advanced('echocan_nlp_threshold')?>', true);
-	ChangeSelectByValue('echocan_nlp_max_supp', '<?=$dahdi_cards->get_advanced('echocan_nlp_max_supp')?>', true);
+	ChangeSelectByValue('tone_region', '<?php echo $dahdi_cards->get_advanced('tone_region')?>', true);
+	ChangeSelectByValue('opermode', '<?php echo $dahdi_cards->get_advanced('opermode')?>', true);
+	ChangeSelectByValue('alawoverride', '<?php echo $dahdi_cards->get_advanced('alawoverride')?>', true);
+	ChangeSelectByValue('fxs_honor_mode', '<?php echo $dahdi_cards->get_advanced('fxs_honor_mode')?>', true);
+	ChangeSelectByValue('boostringer', '<?php echo $dahdi_cards->get_advanced('boostringer')?>', true);
+	ChangeSelectByValue('fastringer', '<?php echo $dahdi_cards->get_advanced('fastringer')?>', true);
+	ChangeSelectByValue('lowpower', '<?php echo $dahdi_cards->get_advanced('lowpower')?>', true);
+	ChangeSelectByValue('ringdetect', '<?php echo $dahdi_cards->get_advanced('ringdetect')?>', true);
+	ChangeSelectByValue('mwi', '<?php echo $dahdi_cards->get_advanced('mwi')?>', true);
+	ChangeSelectByValue('echocan_nlp_type', '<?php echo $dahdi_cards->get_advanced('echocan_nlp_type')?>', true);
+	ChangeSelectByValue('echocan_nlp_threshold', '<?php echo $dahdi_cards->get_advanced('echocan_nlp_threshold')?>', true);
+	ChangeSelectByValue('echocan_nlp_max_supp', '<?php echo $dahdi_cards->get_advanced('echocan_nlp_max_supp')?>', true);
 
 	$('#mwi').change(function(evt) {
 		if ($('#mwi :selected').val() == 'neon') {

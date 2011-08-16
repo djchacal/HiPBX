@@ -1,26 +1,26 @@
-<form name="dahdi_editspan" action="<?=$_SERVER['REQUEST_URI']?>" method="post">
-<h2>Span: <span id="span"><?=$span['description']?></span></h2>
-<input type="hidden" name="editspan_span" value="<?=$_GET['span']/* I'm aware this is xss-vulnerable, but this is suppose to be a safe admin site. */?>" />
+<form name="dahdi_editspan" action="<?php echo $_SERVER['REQUEST_URI']?>" method="post">
+<h2>Span: <span id="span"><?php echo $span['description']?></span></h2>
+<input type="hidden" name="editspan_span" value="<?php echo $_GET['span']/* I'm aware this is xss-vulnerable, but this is suppose to be a safe admin site. */?>" />
 <hr />
 <div class="setting">
 	<label for="editspan_alarm">Alarms:</label>
-	<span id="editspan_alarms" name="editspan_alarms"><?=$span['alarms']?></span>
+	<span id="editspan_alarms" name="editspan_alarms"><?php echo $span['alarms']?></span>
 </div>
 <div class="setting">
 	<label for="editspan_framing">Framing/Coding:</label>
 	<select id="editspan_fac" name="editspan_fac">
-	<? switch($span['totchans']) {
+	<?php switch($span['totchans']) {
 	   case 3: ?>
 		<option value="CCS/AMI"></option>
-	<? 	break;
+	<?php 	break;
 	   case 24: ?>
 		<option value="ESF/B8ZS">ESF/B8ZS</option>
 		<option value="D4/AMI">D4/AMI</option>
-	<? 	break;
+	<?php 	break;
 	   case 31: ?>
 		<option value="CCS/HDB3">CCS/HDB3</option>
 		<option value="CCS/HDB3/CRC4">CCS/HDB3/CRC4</option>
-	   <?	break;
+	   <?php	break;
 	   default:
 	   	break;
 	} ?>
@@ -42,7 +42,7 @@
 		<option value="fxo_ls">FXOLS</option>
 	</select>
 </div>
-<? if ($span['totchans'] != 3 || substr($span['signalling'],0,3) == 'pri'): ?>
+<?php if ($span['totchans'] != 3 || substr($span['signalling'],0,3) == 'pri'): ?>
 <div class="setting" id="switchtype">
 	<label for="editspan_switchtype">Switchtype:</label>
 	<select id="editspan_switchtype" name="editspan_switchtype">
@@ -55,13 +55,13 @@
 		<option value="qsig">Q.SIG</option>
 	</select>
 </div>
-<? endif; ?>
+<?php endif; ?>
 <div class="setting">
 	<label for="editspan_syncsrc">Sync/Clock Source:</label>
 	<select id="editspan_syncsrc" name="editspan_syncsrc">
-	<? for($i=0; $i<$dahdi_cards->get_span_count($span['location']); $i++): ?>
-		<option value="<?=$i?>"><?=$i?></option>
-	<? endfor; ?>
+	<?php for($i=0; $i<$dahdi_cards->get_span_count($span['location']); $i++): ?>
+		<option value="<?php echo $i?>"><?=$i?></option>
+	<?php endfor; ?>
 	</select>
 </div>
 <div class="setting">
@@ -101,7 +101,7 @@
 </div>
 <div class="setting">
 	<label for="editspan_group">Group: </label>
-	<input type="text" id="editspan_group" name="editspan_group" size="2" value="<?=($_GET['span']-1)?>" />
+	<input type="text" id="editspan_group" name="editspan_group" size="2" value="<?php echo ($_GET['span']-1)?>" />
 </div>
 <div class="setting">
 	<label for="editspan_context">Context: </label>
@@ -110,9 +110,9 @@
 <div class="setting">
 	<label for="editspan_definedchans">Channels: </label>
 	<select id="editspan_definedchans" name="editspan_definedchans">
-	<? for($i=0; $i<=$span['totchans']; $i++): ?>
-		<option value="<?=$i?>"><?=$i?></option>
-	<? endfor; ?>
+	<?php for($i=0; $i<=$span['totchans']; $i++): ?>
+		<option value="<?php echo $i?>"><?=$i?></option>
+	<?php endfor; ?>
 	</select>
 	From: <span id="editspan_from"></span>
 	Reserved: <span id="editspan_reserved"></span>
@@ -124,22 +124,22 @@
 </form>
 <script>
 window.onload = function () {
-	ChangeSelectByValue('editspan_fac', "<?=$span['framing']."/".$span['coding']?>", true);
-	document.getElementById('editspan_channels').innerHTML = "<?="{$span['definedchans']}/{$span['totchans']} ({$span['spantype']})"?>";
-	ChangeSelectByValue('editspan_signalling', "<?=$span['signalling']?>", true);
-	ChangeSelectByValue('editspan_switchtype', "<?=$span['switchtype']?>", true);
-	ChangeSelectByValue('editspan_pridialplan', "<?=$span['pridialplan']?>", true);
-	ChangeSelectByValue('editspan_prilocaldialplan', "<?=$span['prilocaldialplan']?>", true);
-	if ("<?=$span['group']?>" != "") {
-		$('#editspan_group').val("<?=$span['group']?>");
+	ChangeSelectByValue('editspan_fac', "<?php echo $span['framing']."/".$span['coding']?>", true);
+	document.getElementById('editspan_channels').innerHTML = "<?php echo "{$span['definedchans']}/{$span['totchans']} ({$span['spantype']})"?>";
+	ChangeSelectByValue('editspan_signalling', "<?php echo $span['signalling']?>", true);
+	ChangeSelectByValue('editspan_switchtype', "<?php echo $span['switchtype']?>", true);
+	ChangeSelectByValue('editspan_pridialplan', "<?php echo $span['pridialplan']?>", true);
+	ChangeSelectByValue('editspan_prilocaldialplan', "<?php echo $span['prilocaldialplan']?>", true);
+	if ("<?php echo $span['group']?>" != "") {
+		$('#editspan_group').val("<?php echo $span['group']?>");
 	}
-	if ("<?=$span['context']?>" != "") {
-		$('#editspan_context').val("<?=$span['context']?>");
+	if ("<?php echo $span['context']?>" != "") {
+		$('#editspan_context').val("<?php echo $span['context']?>");
 	}
-	ChangeSelectByValue('editspan_syncsrc', "<?=$span['syncsrc']?>", true);
-	ChangeSelectByValue('editspan_lbo', "<?=$span['lbo']?>", true);
-	document.getElementById('editspan_from').innerHTML = "<?=$dahdi_cards->calc_bchan_fxx($_GET['span'])?>";
-	document.getElementById('editspan_reserved').innerHTML = "<?=$span['reserved_ch']?>";
+	ChangeSelectByValue('editspan_syncsrc', "<?php echo $span['syncsrc']?>", true);
+	ChangeSelectByValue('editspan_lbo', "<?php echo $span['lbo']?>", true);
+	document.getElementById('editspan_from').innerHTML = "<?php echo $dahdi_cards->calc_bchan_fxx($_GET['span'])?>";
+	document.getElementById('editspan_reserved').innerHTML = "<?php echo $span['reserved_ch']?>";
 }
-	ChangeSelectByValue('editspan_definedchans', "<?=$span['definedchans']?>", true);
+	ChangeSelectByValue('editspan_definedchans', "<?php echo $span['definedchans']?>", true);
 </script>

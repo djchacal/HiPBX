@@ -108,11 +108,11 @@ if ($_POST['advanced_submit']) {
 	tr.odd td { background: #fde9d1; } 
 	.alert { background: #fde9d1; border: 2px dashed red; margin: 5px; padding: 5px; }
 
-	<? if ($reboot): ?>
+	<?php if ($reboot): ?>
 	#reboot { background: #fde9d1; border: 2px dashed red; margin: 5px; padding: 5px; }
-	<? else: ?>
+	<?php else: ?>
 	#reboot { display: none; }
-	<? endif; ?>
+	<?php endif; ?>
 
 </style>
 <script>
@@ -133,16 +133,16 @@ function ChangeSelectByValue(dom_id, value, change) {
 
 <div id="reboot">For your hardware changes to take effect, you need to reboot your system!</div>
 
-<?
+<?php
 /**
- * The following switch statement determines what to render. This
- * determination is dependent on the dahdi_form variable.
- */
+* The following switch statement determines what to render. This
+* determination is dependent on the dahdi_form variable.
+*/
 switch($page) {
 case 'digital_span':
-	if ( ! isset($_GET['span'])) { ?>
-		<h1>No Span specified</h1>
-	<? }
+if ( ! isset($_GET['span'])) { ?>
+	<h1>No Span specified</h1>
+<?php }
 	$span = $dahdi_cards->get_span($_GET['span']);
 	require 'modules/dahdiconfig/views/dahdi_digital_span_form.php';
 	break;
@@ -152,7 +152,7 @@ case 'analog_signalling':
 default:
 	if ($dahdi_cards->hdwr_changes()): ?>
 		<div class="alert">You have new hardware! Please configure your new hardware using the Edit button(s).</div>
-	<? endif; ?>
+	<?php endif; ?>
 	<div id="digital_hardware">
 	<?php require 'modules/dahdiconfig/views/dahdi_digital_hardware.php'; ?>
 	</div>
