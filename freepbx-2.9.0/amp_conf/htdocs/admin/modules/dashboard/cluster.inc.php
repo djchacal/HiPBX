@@ -5,7 +5,6 @@ function show_cluster() {
 	if ($cluster === null) {
 		return;
 	}
-	print_r($cluster);
 	// OK, so the cluster is up, and running. We're in HiPBX - probably.
         $out = '<div id="cluster" class="infobox">'."\n";
         $out .= "<h3>"._("Cluster Information")."</h3>";
@@ -13,21 +12,27 @@ function show_cluster() {
 	// Give an overview of cluster status.
         $out .= '<table summary="'._('Cluster Information Table').'">';
         $out .= '<tr><th>'._('Cluster DC').':</th><td colspan=2>'.$cluster['dc'].'</td></tr>';
-        $out .= '<tr><th>'._('Node(s)').':</th><td>'.$cluster['nodes'][0].'</td><td>'.$cluster['nodes'][1].'</td></tr>';
+        $out .= '<tr><th>'._('Node(s)').':</th><td>'.$cluster['nodes'][0].', '.$cluster['nodes'][1].'</td></tr>';
 	$node0 = $cluster['nodes'][0];
 	$node1 = $cluster['nodes'][1];
-	$out .= '<tr><th>'._('Disk Sets').':</th><td colspan=2></td></tr>';
+	$out .= '<tr><th>'._('Disk Sets').':</th><td align="center" style="font-style:italic;">This Node</td>';
+	$out .= '<td align="center" style="font-style:italic;">Other Node</td></tr>';
 	foreach ($cluster['ms'] as $key => $value) {
 		$disp = substr($key, 8);
-		$out .= "<tr><td align='right'> $disp (".$cluster['ms'][$key]['status'].")</td>";
-		$out .= "<td>".$cluster['ms'][$key]['master']['status']."/";
-		$out .= "<td>".$cluster['ms'][$key]['slave']['status']."</td></tr>";
+		$out .= "<tr><td align='right' style='vertical-align:top; font-style:italic; font-weight:bold;'> $disp: </td>";
+		$out .= "<td align='center'>".$cluster['ms'][$key]['master']['status']."</td>";
+		$out .= "<td align='center'>".$cluster['ms'][$key]['slave']['status']."</td></tr>";
 	}
 	$out .= '<tr><th>'._('Resources').':</th><td colspan=2></td></tr>';
 	foreach ($cluster['res'] as $key => $value) {
-		$out .= "<tr><td align='right'>$key:</td><td colspan=2>";
+		$out .= "<tr><td align='right' style='vertical-align:top; font-style:italic; font-weight:bold;'>$key:</td><td colspan=2>";
 		foreach ($cluster['res'][$key] as $rname => $rval) {
-			$out .= "$rname (".$cluster['res'][$key][$rname].") ";
+			if (stristr($rname, "_$key")) {
+				$resource = substr($rname,0, (strlen($key)*-1)-1);
+			} else {
+				$resource = $rname;
+			}
+			$out .= "$resource (".$cluster['res'][$key][$rname].") ";
 		}
 		$out .= "</tr>\n";
 	}
@@ -68,8 +73,8 @@ function cluster_info() {
 		}
 		// Nodes (Standby)
 		if (preg_match('/^Node (.+): standby/', $val, $matches)) {
-			$result['nodes'][]=$nodename;
-			$result['standby'][]=$nodename;
+			$result['nodes'][]=$matches[1];
+			$result['standby'][]=$matches[1];
 		}
 		// Master/Slave sets
 		if (preg_match('/^ Master\/Slave Set: (.+)/', $val, $matches)) {
