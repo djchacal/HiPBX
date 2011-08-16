@@ -78,3 +78,5 @@ ln -sf /drbd/http/php.ini /etc/php.ini
 ln -sf /drbd/asterisk/freepbx.conf /etc/freepbx.conf
 ln -sf /drbd/asterisk/amportal.conf /etc/amportal.conf
 create_links /usr/share/asterisk /drbd/asterisk/share yes
+usermod -G haclient apache
+
