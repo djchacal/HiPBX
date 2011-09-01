@@ -60,7 +60,7 @@
 	<label for="editspan_syncsrc">Sync/Clock Source:</label>
 	<select id="editspan_syncsrc" name="editspan_syncsrc">
 	<?php for($i=0; $i<$dahdi_cards->get_span_count($span['location']); $i++): ?>
-		<option value="<?php echo $i?>"><?=$i?></option>
+		<option value="<?php echo $i?>"><?php echo $i?></option>
 	<?php endfor; ?>
 	</select>
 </div>
@@ -111,7 +111,7 @@
 	<label for="editspan_definedchans">Channels: </label>
 	<select id="editspan_definedchans" name="editspan_definedchans">
 	<?php for($i=0; $i<=$span['totchans']; $i++): ?>
-		<option value="<?php echo $i?>"><?=$i?></option>
+		<option value="<?php echo $i?>"><?php echo $i?></option>
 	<?php endfor; ?>
 	</select>
 	From: <span id="editspan_from"></span>
