@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# rpmer: a wrapper script for rpmbuild
+
+set -e
+
+mkdir -p BUILD
+mkdir -p RPMS
+mkdir -p SRPMS
+if [ ! -d SOURCES ]; then ln -s . SOURCES; fi
+if [ ! -d SPECS ]; then ln -s . SPECS; fi
+
+TOPDIR=`pwd`
+cd SPECS
+rpmbuild --target i686 --define "_topdir $TOPDIR" "$@"

@@ -1,0 +1,64 @@
+Zaptel auto detection module for freepbx
+----------------------------------------
+
+This module is capable of detecting most Zaptel hardware by a single click
+on the WEB interface. The code has a WEB interface, as well as a console 
+only script. 
+
+
+You need to install sudo on the machine, as have the following lines 
+in /etc/sudoers :
+
+Debian/Ubuntu:
+    asterisk ALL=NOPASSWD:/usr/share/freepbx-common/detect_zap
+
+Trixbox/Centos/Fedora:
+    asterisk ALL=NOPASSWD:/var/lib/asterisk/bin/detect_zap
+
+These lines are set up by the post install of the RPM/DEB packages,
+so usually you don't need to deal with this. In rare cases
+in which the lines are missing, please add them manually using the "visudo" 
+command.
+
+Note that the official RPMs for Trixbox/Centos/Fedora do not contain 
+genzaptelconf and that the version of genzaptelconf found in Trixbox 
+(/usr/local/sbin/genzaptelconf) is not suitable for this utility. Use 
+/usr/sbin/genzaptelconf from Zaptel.
+
+This version is should work in FreePBX 2.1.X, 2.2.X, 2.3, 2.4, 2.5 and 2.6.
+Only versions 2.5 and 2.6 are tested, all others are completely not tested.
+If you find a problem, please contact us.
+
+How it works
+------------
+The hardware detection is splited into 4 logical levels
+
+1) genzaptelconf/dahdi_genconf will generate /etc/zaptel.conf or /etc/dahdi/system.conf
+   and also make /etc/asterisk/zapata-auto.conf (or zapata-channels.conf on some
+   systems), or dahdi-channels* in new systems. with FXO/BRI/PRI channels only. 
+   This stage stops asterisk, generates the FXO definitions as well as the zaptel.conf|system.conf 
+   needed to properly configure the devices using ztcfg/dahdi_cfg.
+   
+2) zap2amp will generate the settings for FXS channels (based on what is 
+   found on /etc/zapata.conf,/etc/dahdi/system.conf) from a template 
+   (/var/lib/asterisk/bin/zap.template) and upload then into the sql 
+   tables, so you can see the FXS stations as normal extensions on 
+   FreePBX (you can put them into ring groups, have them as the default 
+   station in incomming calls, etc).
+
+3.a) The retrieve scripts are called. Asterisk configuration are created. 
+3.b) Asterisk is restarted with the new Zaptel/DAHDI configuration.
+
+The reason for these stages, is because on Zapata/DAHDI HW removal, the 
+configuration will be so messed up that asterisk will fail to load and 
+freePBX will be completely non functional. This situation is fixed with 
+Asterisk 1.4 (in which case asterisk will load without zap channels).
+
+4) fix_ast_db will connect to the Asterisk manager, and create the 
+   apropiate astdb entries for dialparties. It will also create the 
+   links in the voicemail needed by freePBX to properly work.
+
+
+If you have any question about the functionality of this package, or bug 
+reports please contact support@xorcom.com .
+
