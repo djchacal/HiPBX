@@ -26,6 +26,20 @@
 # and eventually restart asterisk to make it aware of the new HW
 
 
+# First, set some important defaults. Note that running 'apache' as a different
+# user is no longer the recommended way, and it's better to run Asterisk as
+# apache.  However, for historical reasons, this defaults to the old way.
+
+AMPASTERISKUSER=asterisk
+AMPASTERISKGROUP=asterisk
+
+# Are we running on a FreePBX machine? If so, grab its config
+if [ -x /var/lib/asterisk/bin/gen_amp_conf.php ] ; then
+	# This will override any previous defaults, defined above.
+	$(php /var/lib/asterisk/bin/gen_amp_conf.php)
+fi
+	
+
 make_sound_zaptel(){
 	if [ ! -x /usr/bin/beep ]; then
 		return 0
@@ -45,18 +59,19 @@ make_sound_zaptel(){
 	fi	
 }
 
-# nullify a file
+# Empty a file. 
+# Note that this does NOT destroy any file handles still open to the file,
+# so you won't have random unlinked inodes hanging around.
 blank_file(){
-	if [ -f  $1 ]; then
-		rm -f $1
-		touch $1
+	if [ -f $1 ]; then
+		echo > $1
 	fi
 }
 
 set -e
 
-AST_USER=asterisk
-AST_GROUP=asterisk
+AST_USER=$AMPASTERISKUSER
+AST_GROUP=$AMPASTERISKGROUP
 AST_SHELL=/bin/sh
 # on some systems use /usr/sbin/amportal instead:
 ASTERISK_INIT=${ASTERISK_INIT:-/etc/init.d/asterisk}
@@ -190,15 +205,16 @@ $prep_hardware_func
 echo ' * Generating freePBX configuration'
 if [ "$dahdi_used" = 1 ]; then
 	dahdi_files="/etc/asterisk/dahdi-channels.conf /etc/asterisk/chan_dahdi*.conf"
-	chown asterisk: $dahdi_files
+	chown $AST_USER:$AST_GROUP $dahdi_files
 	chmod g+rw $dahdi_files
 	chmod o+r /etc/dahdi/system.conf
 else
-	chown asterisk: /etc/asterisk/zapata*
+	chown $AST_USER:$AST_GROUP /etc/asterisk/zapata*
 	chmod g+rw /etc/asterisk/zapata*
 	chmod o+r /etc/zaptel.conf
 fi
-${ASTERISK_INIT} start
+# Note that 'asterisk_init' calls 'exit', so spawn ANTOTHER shell to run this
+sh ${ASTERISK_INIT} start
 su $AST_USER -s $AST_SHELL -c "$ZAP2AMP"
 # Make sure Asterisk has finished registering everything
 # so it can report its version:

@@ -265,6 +265,12 @@ sub reg_channel($$)
 	my $wait	= "";
 	my $privacyman	= "";
 	my $mohclass	= "";
+	my $noanswer_cid = "";
+	my $busy_cid	= "";
+	my $chanunavail_cid = "";
+	my $noanswer_dest = "";
+	my $busy_dest	= "";
+	my $chanunavail_dest = "";
 	if ($freepbx_version >= 2.7) {
 		$mohclass = "default";
 	}
@@ -279,8 +285,11 @@ sub reg_channel($$)
         elsif ($freepbx_version == 2.3 || $freepbx_version == 2.4) {
 		$sql_statement = "INSERT INTO users VALUES ( '$extension', '$password', '$name', '$voicemail', '$ringtimer', '$noanswer', '$recording', '$outboundcid', '$directdid', '$didalert', '$faxexten', '$faxemail', '$answer', '$wait', '$privacyman', '$mohclass', '$sipname' )\n";
         }
-        elsif ($freepbx_version >= 2.5) {
+        elsif ($freepbx_version == 2.5 || $freepbx_version == 2.6 || $freepbx_version == 2.7) {
 		$sql_statement = "INSERT INTO users VALUES ( '$extension', '$password', '$name', '$voicemail', '$ringtimer', '$noanswer', '$recording', '$outboundcid', '$sipname', '$mohclass' )\n";
+        }
+	 elsif ($freepbx_version == 2.8 || $freepbx_version == 2.9) {
+		$sql_statement = "INSERT INTO users VALUES ( '$extension', '$password', '$name', '$voicemail', '$ringtimer', '$noanswer', '$recording', '$outboundcid', '$sipname', '$noanswer_cid', '$busy_cid', '$chanunavail_cid', '$noanswer_dest', '$busy_dest', '$chanunavail_dest', '$mohclass' )\n";
         }
 	
 	if ($debug==1) { printf( "$sql_statement\n" ); }
@@ -331,7 +340,7 @@ sub parse_amportal_conf
 # about the username and password for mysql
 $ampconf = parse_amportal_conf( "/etc/amportal.conf" );
 
-my $database  = "asterisk";
+my $database  = $$ampconf{"AMPDBNAME"};
 my $hostname  = $$ampconf{"AMPDBHOST"}; 
 my $username  = $$ampconf{"AMPDBUSER"};
 my $password  = $$ampconf{"AMPDBPASS"};
@@ -381,7 +390,7 @@ unless ($result)
 foreach my $row ( @{ $result } ) 
 {
 	my $version = @{ $row }[0];
-	if ( $version =~ /^(2\.[1234567])/ ){
+	if ( $version =~ /^(2\.[123456789])/ ){
 		$freepbx_version = $1;
 		if ($debug==1) { printf( "Using freePBX $freepbx_version\n" ); }
 	}
