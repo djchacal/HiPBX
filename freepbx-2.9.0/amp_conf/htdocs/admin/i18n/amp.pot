@@ -18,9 +18,9 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: FreePBX framework\n"
+"Project-Id-Version: FreePBX\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-03-20 15:22+0100\n"
+"POT-Creation-Date: 2011-08-07 21:40+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -509,6 +509,19 @@ msgstr ""
 msgid "Daily load"
 msgstr ""
 
+msgid "Please select a \"Destination\""
+msgstr ""
+
+msgid ""
+"Custom Goto contexts must contain the string \"custom-\".  ie: custom-app,s,1"
+msgstr ""
+
+msgid "The secret must be at minimum six characters in length."
+msgstr ""
+
+msgid "The secret must contain at least two numbers and two letters."
+msgstr ""
+
 msgid "Submit"
 msgstr ""
 
@@ -569,7 +582,7 @@ msgid "called set_conf_values with a non-array"
 msgstr ""
 
 #, php-format
-msgid "trying to set keyword [%s] to [%s] on unitialized setting"
+msgid "trying to set keyword [%s] to [%s] on uninitialized setting"
 msgstr ""
 
 #, php-format
@@ -729,7 +742,15 @@ msgid "Could not remove %s to install new version"
 msgstr ""
 
 #, php-format
+msgid "failed to open %s module archive into _cache directory."
+msgstr ""
+
+#, php-format
 msgid "Could not untar %s to %s"
+msgstr ""
+
+#, php-format
+msgid "failed to delete %s from cache directory after opening module archive."
 msgstr ""
 
 #, php-format
@@ -900,17 +921,10 @@ msgid ""
 "runs under that assumption"
 msgstr ""
 
-msgid "Please select a \"Destination\""
+msgid "choose one"
 msgstr ""
 
-msgid ""
-"Custom Goto contexts must contain the string \"custom-\".  ie: custom-app,s,1"
-msgstr ""
-
-msgid "The secret must be at minimum six characters in length."
-msgstr ""
-
-msgid "The secret must contain at least two numbers and two letters."
+msgid "Terminate Call"
 msgstr ""
 
 msgid "Potential Security Breach"
@@ -1154,12 +1168,6 @@ msgid ""
 msgstr ""
 
 msgid "We hope you enjoy using FreePBX!"
-msgstr ""
-
-msgid "choose one"
-msgstr ""
-
-msgid "Terminate Call"
 msgstr ""
 
 msgid "Core"
@@ -1452,7 +1460,7 @@ msgstr ""
 
 msgid ""
 "Default setting for SIP sendrpid. A value of 'yes' is equivalent to 'rpid' "
-"and will send the 'Remote-Pary-ID' header. A value of 'pai' is only valid "
+"and will send the 'Remote-Party-ID' header. A value of 'pai' is only valid "
 "starting with Asterisk 1.8 and will send the 'P-Asserted-Identity' header. "
 "See Asterisk documentation for details."
 msgstr ""
@@ -1520,20 +1528,20 @@ msgid ""
 "documentation for details."
 msgstr ""
 
-msgid "SIP & DAHDI callgroup"
+msgid "SIP and DAHDi callgroup"
 msgstr ""
 
 msgid ""
-"Default setting for SIP, DAHDI (and Zap) callgroup. Callgroup(s) that the "
+"Default setting for SIP, DAHDi (and Zap) callgroup. Callgroup(s) that the "
 "device is part of, can be one or more callgroups, e.g. '1,3-5' would be in "
 "groups 1,3,4,5. See Asterisk documentation for details."
 msgstr ""
 
-msgid "SIP & DAHDI pickupgroup"
+msgid "SIP and DAHDi pickupgroup"
 msgstr ""
 
 msgid ""
-"Default setting for SIP, DAHDI (and Zap) pickupgroup. Pickupgroups(s) that "
+"Default setting for SIP, DAHDi (and Zap) pickupgroup. Pickupgroups(s) that "
 "the device can pickup calls from, can be one or more groups, e.g. '1,3-5' "
 "would be in groups 1,3,4,5. Device does not have to be in a group to be able "
 "to pickup calls from that group. See Asterisk documentation for details."
@@ -1579,9 +1587,9 @@ msgstr ""
 msgid ""
 "If set to true, FreePBX will check if you have chan_dahdi installed. If so, "
 "it will automatically use all your ZAP configuration settings (devices and "
-"trunks) and silently convert them, under the covers, to DAHDI so no changes "
+"trunks) and silently convert them, under the covers, to DAHDi so no changes "
 "are needed. The GUI will continue to refer to these as ZAP but it will use "
-"the proper DAHDI channels. This will also keep Zap Channel DIDs working."
+"the proper DAHDi channels. This will also keep Zap Channel DIDs working."
 msgstr ""
 
 msgid "CW Enabled by Default"
@@ -1608,6 +1616,24 @@ msgid ""
 "include though it results in no errors. If you know that you want the "
 "includes, you can set this to true. If you comment it out FreePBX will "
 "revert to legacy behavior and include the contexts."
+msgstr ""
+
+msgid "Ditech VQA Inbound Setting"
+msgstr ""
+
+msgid ""
+"If Ditech's VQA, Voice Quality application is installed, this setting will "
+"be used for all inbound calls. For more information 'core show application "
+"VQA' at the Asterisk CLI will show the different settings."
+msgstr ""
+
+msgid "Ditech VQA Outbound Setting"
+msgstr ""
+
+msgid ""
+"If Ditech's VQA, Voice Quality application is installed, this setting will "
+"be used for all outbound calls. For more information 'core show application "
+"VQA' at the Asterisk CLI will show the different settings."
 msgstr ""
 
 msgid "Dynamically Generate Hints"
@@ -1967,10 +1993,18 @@ msgid ""
 "and go straight to the wget calls."
 msgstr ""
 
-msgid "Asterisk Function CONNECTEDLINE"
+msgid "Asterisk Application VQA"
 msgstr ""
 
 msgid "Internal Use"
+msgstr ""
+
+msgid ""
+"Set to the application name if the application is present in this Asterisk "
+"install"
+msgstr ""
+
+msgid "Asterisk Function CONNECTEDLINE"
 msgstr ""
 
 msgid ""
@@ -1992,9 +2026,7 @@ msgstr ""
 msgid "Asterisk Version"
 msgstr ""
 
-msgid ""
-"Asterisk Version used during last 'Apply Configuration Changes' when "
-"retrieve_conf is run"
+msgid "Last Asterisk Version detected (or forced)"
 msgstr ""
 
 msgid "Auto Generated Copy of Main CSS"
@@ -2034,6 +2066,9 @@ msgid ""
 "DO NOT set this unless you know what you are doing. Only used if you do not "
 "use the default values provided by FreePBX.<br>Password for connecting to db "
 "if its not the same as AMPDBPASS."
+msgstr ""
+
+msgid "Remote CDR DB Port"
 msgstr ""
 
 msgid ""
@@ -2589,10 +2624,6 @@ msgstr ""
 msgid "Inbound Route: %s (%s)"
 msgstr ""
 
-#, php-format
-msgid "%s: %s (%s)"
-msgstr ""
-
 msgid "You must put in an extension (or user) number"
 msgstr ""
 
@@ -2695,8 +2726,8 @@ msgid ""
 msgstr ""
 
 msgid ""
-"Please enter a valid Caller ID Number or leave it blank for your Assigned "
-"DID/CID pair"
+"Please enter a valid CallerID Number or leave it blank for your Assigned DID/"
+"CID pair"
 msgstr ""
 
 msgid "Edit Extension"
@@ -2729,11 +2760,17 @@ msgstr ""
 msgid "logs out of a device."
 msgstr ""
 
+msgid "Conflicting Extensions"
+msgstr ""
+
+msgid "Extension number conflict, please choose another."
+msgstr ""
+
 msgid "Display Name"
 msgstr ""
 
 msgid ""
-"The caller id name for calls from this user will be set to this name. Only "
+"The CallerID name for calls from this user will be set to this name. Only "
 "enter the name, NOT the number."
 msgstr ""
 
@@ -2770,8 +2807,8 @@ msgid "Outbound CID"
 msgstr ""
 
 msgid ""
-"Overrides the caller id when dialing out a trunk. Any setting here will "
-"override the common outbound caller id set in the Trunks admin."
+"Overrides the CallerID when dialing out a trunk. Any setting here will "
+"override the common outbound CallerID set in the Trunks admin."
 "<br><br>Format: <b>\"caller name\" &lt;#######&gt;</b><br><br>Leave this "
 "field blank to disable the outbound CallerID feature for this user."
 msgstr ""
@@ -2831,7 +2868,7 @@ msgstr ""
 msgid ""
 "Call Screening requires external callers to say their name, which will be "
 "played back to the user and allow the user to accept or reject the call.  "
-"Screening with memory only verifies a caller for their caller-id once. "
+"Screening with memory only verifies a caller for their CallerID once. "
 "Screening without memory always requires a caller to say their name. Either "
 "mode will always announce the caller based on the last introduction saved "
 "with that CallerID. If any user on the system uses the memory option, when "
@@ -2957,20 +2994,6 @@ msgid "Warning! Extension"
 msgstr ""
 
 msgid "is not allowed for your account"
-msgstr ""
-
-msgid "Conflicting Extensions"
-msgstr ""
-
-msgid ""
-"The following extension numbers are in conflict, you can click on the item"
-"(s) below to edit the conflicting entity."
-msgstr ""
-
-msgid "Configure user again:"
-msgstr ""
-
-msgid "Configure extension again:"
 msgstr ""
 
 msgid "Please enter the dtmfmode for this device"
@@ -3291,7 +3314,7 @@ msgstr ""
 msgid "Generic ZAP Device"
 msgstr ""
 
-msgid "Generic DAHDI Device"
+msgid "Generic DAHDi Device"
 msgstr ""
 
 msgid "Other (Custom) Device"
@@ -3365,7 +3388,7 @@ msgid ""
 msgstr ""
 
 msgid ""
-"The caller id name for this device will be set to this description until it "
+"The CallerID name for this device will be set to this description until it "
 "is logged into."
 msgstr ""
 
@@ -3373,8 +3396,8 @@ msgid "Emergency CID"
 msgstr ""
 
 msgid ""
-"This caller id will always be set when dialing out an Outbound Route flagged "
-"as Emergency.  The Emergency CID overrides all other caller id settings."
+"This CallerID will always be set when dialing out an Outbound Route flagged "
+"as Emergency.  The Emergency CID overrides all other CallerID settings."
 msgstr ""
 
 msgid "Device Type"
@@ -3402,7 +3425,7 @@ msgstr ""
 msgid "This device uses %s technology."
 msgstr ""
 
-msgid "Via DAHDI compatibility mode"
+msgid "Via DAHDi compatibility mode"
 msgstr ""
 
 msgid "User Logon"
@@ -3755,11 +3778,11 @@ msgid ""
 "can also use a pattern match (eg _2[345]X) to match a range of numbers"
 msgstr ""
 
-msgid "Caller ID Number"
+msgid "CallerID Number"
 msgstr ""
 
 msgid ""
-"Define the Caller ID Number to be matched on incoming calls.<br><br>Leave "
+"Define the CallerID Number to be matched on incoming calls.<br><br>Leave "
 "this field blank to match any or no CID info. In addition to standard dial "
 "sequences, you can also put Private, Blocked, Unknown, Restricted, Anonymous "
 "and Unavailable in order to catch these special cases if the Telco transmits "
@@ -3790,7 +3813,7 @@ msgid "CID name prefix"
 msgstr ""
 
 msgid ""
-"You can optionally prefix the Caller ID name. ie: If you prefix with \"Sales:"
+"You can optionally prefix the CallerID name. ie: If you prefix with \"Sales:"
 "\", a call from John Doe would display as \"Sales:John Doe\" on the "
 "extensions that ring."
 msgstr ""
@@ -3833,7 +3856,7 @@ msgid "Privacy Manager"
 msgstr ""
 
 msgid ""
-"If no Caller ID has been received, Privacy Manager will ask the caller to "
+"If no CallerID has been received, Privacy Manager will ask the caller to "
 "enter their phone number. If an user/extension has Call Screening enabled, "
 "the incoming caller will be be prompted to say their name when the call "
 "reaches the user/extension."
@@ -3862,7 +3885,7 @@ msgstr ""
 msgid "Please enter a valid DID Number"
 msgstr ""
 
-msgid "Please enter a valid Caller ID Number"
+msgid "Please enter a valid CallerID Number"
 msgstr ""
 
 msgid "Please enter a valid Fax Email or leave it empty to use the default"
@@ -3875,9 +3898,9 @@ msgid "Please enter a valid number for Pause Before Answer field"
 msgstr ""
 
 msgid ""
-"Leaving the DID Number AND the Caller ID Number empty will match all "
-"incoming calls received not routed using any other defined Incoming Route.\\n"
-"\\nAre you sure?"
+"Leaving the DID Number AND the CallerID Number empty will match all incoming "
+"calls received not routed using any other defined Incoming Route.\\n\\nAre "
+"you sure?"
 msgstr ""
 
 msgid ""
@@ -3889,7 +3912,7 @@ msgstr ""
 msgid "A Slash ('/') is never a valid DID. Please remove it and try again"
 msgstr ""
 
-msgid "Invalid Caller ID prefix."
+msgid "Invalid CallerID prefix."
 msgstr ""
 
 msgid "Dialing Options"
@@ -4273,7 +4296,7 @@ msgstr ""
 
 msgid ""
 "Optional: Selecting Intra-Company will treat this route as an intra-company "
-"connection, preserving the internal Caller ID information instead of the "
+"connection, preserving the internal CallerID information instead of the "
 "outbound CID of either the extension or trunk."
 msgstr ""
 
@@ -4536,7 +4559,7 @@ msgstr ""
 msgid "At least one trunk must be picked"
 msgstr ""
 
-msgid "Invalid Outbound Caller ID"
+msgid "Invalid Outbound CallerID"
 msgstr ""
 
 msgid "No dial pattern, there must be at least one"
@@ -4555,13 +4578,13 @@ msgstr ""
 msgid "Add SIP Trunk"
 msgstr ""
 
-msgid "Add DAHDI Trunk"
+msgid "Add DAHDi Trunk"
 msgstr ""
 
 msgid "Add Zap Trunk"
 msgstr ""
 
-msgid "DAHDI compatibility mode"
+msgid "DAHDi compatibility mode"
 msgstr ""
 
 msgid "Add IAX2 Trunk"
@@ -4587,7 +4610,7 @@ msgstr ""
 msgid "Edit %s Trunk"
 msgstr ""
 
-msgid "DAHDI compatibility Mode"
+msgid "DAHDi compatibility Mode"
 msgstr ""
 
 #, php-format
@@ -4644,14 +4667,13 @@ msgstr ""
 msgid "Descriptive Name for this Trunk"
 msgstr ""
 
-msgid "Outbound Caller ID"
+msgid "Outbound CallerID"
 msgstr ""
 
 msgid ""
-"Caller ID for calls placed out on this trunk<br><br>Format: <b>&lt;"
-"#######&gt;</b>. You can also use the format: \"hidden\" <b>&lt;#######&gt;</"
-"b> to hide the CallerID sent out over Digital lines if supported (E1/T1/J1/"
-"BRI/SIP/IAX)."
+"CallerID for calls placed out on this trunk<br><br>Format: <b>&lt;#######&gt;"
+"</b>. You can also use the format: \"hidden\" <b>&lt;#######&gt;</b> to hide "
+"the CallerID sent out over Digital lines if supported (E1/T1/J1/BRI/SIP/IAX)."
 msgstr ""
 
 msgid "CID Options"
@@ -4775,7 +4797,7 @@ msgid "Remove prefix from local numbers"
 msgstr ""
 
 msgid ""
-"is useful for ZAP and DAHDI trunks, where if a local number is dialed as "
+"is useful for ZAP and DAHDi trunks, where if a local number is dialed as "
 "\"6135551234\", it can be converted to \"555-1234\"."
 msgstr ""
 
@@ -4888,11 +4910,11 @@ msgid ""
 "(group zero)."
 msgstr ""
 
-msgid "DAHDI Identifier"
+msgid "DAHDi Identifier"
 msgstr ""
 
 msgid ""
-"DAHDI channels are referenced either by a group number or channel number "
+"DAHDi channels are referenced either by a group number or channel number "
 "(which is defined in chan_dahdi.conf).  <br><br>The default setting is "
 "<b>g0</b> (group zero)."
 msgstr ""
@@ -5009,13 +5031,13 @@ msgid "User Context was left blank and User Details will not be saved!"
 msgstr ""
 
 msgid ""
-"You must define an Outbound Caller ID when Choosing this CID Options value"
+"You must define an Outbound CallerID when Choosing this CID Options value"
 msgstr ""
 
 msgid ""
-"It is highly recommended that you define an Outbound Caller ID on all "
-"trunks, undefined behavior can result when nothing is specified. The CID "
-"Options can control when this CID is used. Do you still want to continue?"
+"It is highly recommended that you define an Outbound CallerID on all trunks, "
+"undefined behavior can result when nothing is specified. The CID Options can "
+"control when this CID is used. Do you still want to continue?"
 msgstr ""
 
 msgid ""
