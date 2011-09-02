@@ -9,15 +9,15 @@
 	<?php $port = $dahdi_cards->get_port($p); ?>
 	<div>
 		Port <?php echo $p?>: 
-		<select name="port_<?php echo $p?>" id="port_<?=$p?>">
+		<select name="port_<?php echo $p?>" id="port_<?php echo $p?>">
 			<option value="ks">Kewl Start</option>
 			<option value="ls">Loop Start</option>
 		</select>
 		Group:
-		<input type="text" name="port_<?php echo $p?>_group" id="port_<?=$p?>_group" size="2" value="<?=$port['group']?>" />
+		<input type="text" name="port_<?php echo $p?>_group" id="port_<?php echo $p?>_group" size="2" value="<?php echo $port['group']?>" />
 		<?php if ($_GET['ports'] == 'fxo'): ?>
 		Context:
-		<input type="text" name="port_<?php echo $p?>_context" id="port_<?=$p?>_context" value="<?=$port['context']?>" />
+		<input type="text" name="port_<?php echo $p?>_context" id="port_<?php echo $p?>_context" value="<?php echo $port['context']?>" />
 		<?php endif; ?>
 	</div>
 	<?php endforeach; ?>
@@ -32,6 +32,6 @@
 	$lsports = $dahdi_cards->get_ls_ports();
 	
 	foreach ($spans as $p): ?>
-	ChangeSelectByValue('port_<?php echo $p?>', "<?=((in_array($p, $lsports)) ? 'ls' : 'ks')?>", true);
+	ChangeSelectByValue('port_<?php echo $p?>', "<?php echo ((in_array($p, $lsports)) ? 'ls' : 'ks')?>", true);
 	<?php endforeach; ?>
 </script>

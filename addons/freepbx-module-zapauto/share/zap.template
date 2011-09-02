@@ -1,0 +1,43 @@
+# ZAPTEL template
+#
+# lines starting with "#" will be not saved to the SQL
+# all spaces will be converted to single space
+# SQL values are separated by one or more tab
+#
+# THIS IS A TEMPLATE THAT WILL NOT BE WRITTEN DIRECTLY INTO
+# ZAPATA_ADDITIONAL. The listed values are parameters be written to 
+# the 'zap' table of SQL database. The zapata_additional.conf file 
+# will be created by the freePBX later on when the retrieve_conf PHP
+# script will be called.
+
+# The following parameters will be replaced for each zap channel
+#      __EXTENSION__  - the extension number of this channel
+#      __CONTEXT__    - the context to be used (should be "from-internal")
+#      __GROUP__      - the group (for dial(Zap/g<num>) and similar)
+#      __CHANNEL__    - the channel found
+#      __NAME__       - the name part of caller-ID name given to this channel
+#      __SIGNALLING__ - the signalling methoed used for this channel (depends on context on BRI channels)
+#      __CALLGROUP__  - callgroup for call hunting (introduced in freePBX 2.5)
+#      __PICKUPGROUP__ - pickupgroup for call hunting (introduced in freePBX 2.5)
+
+account			__EXTENSION__
+accountcode             0
+busydetect		no
+busycount		no
+callerid		__NAME__ <__EXTENSION__>
+channel			__CHANNEL__
+context			__CONTEXT__
+callprogress		no
+dial			ZAP/__CHANNEL__
+echocancelwhenbridged   no
+echocancel      	yes  
+echotraining    	no
+mailbox			__EXTENSION__@default
+record_in       	Adhoc
+record_out      	Adhoc
+signalling		__SIGNALLING__
+group			__GROUP__
+immediate		__IMMEDIATE__
+callgroup		__CALLGROUP__
+pickupgroup		__PICKUPGROUP__
+
