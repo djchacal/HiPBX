@@ -170,8 +170,12 @@ chown_asterisk() {
 	chmod -R g+w $(readlink -f $ASTSPOOLDIR)
 	chown -R $AMPASTERISKWEBUSER:$AMPASTERISKWEBGROUP $(readlink -f $AMPWEBROOT/admin)
 	chmod -R g+w $(readlink -f $AMPWEBROOT/admin)
-	chown -R $AMPASTERISKWEBUSER:$AMPASTERISKWEBGROUP $(readlink -f $FOPWEBROOT)
-	chmod -R g+w $(readlink -f $FOPWEBROOT)
+	if [ "$(readlink -f $FOPWEBROOT)" != "" ]; then
+		chown -R $AMPASTERISKWEBUSER:$AMPASTERISKWEBGROUP $(readlink -f $FOPWEBROOT)
+		chmod -R g+w $(readlink -f $FOPWEBROOT)
+		chmod u+x,g+x $FOPWEBROOT/*.pl
+		chmod u+x $FOPWEBROOT/safe_opserver
+	fi
 	chown -R $AMPASTERISKWEBUSER:$AMPASTERISKWEBGROUP $(readlink -f $AMPWEBROOT/recordings)
 	chmod -R g+w $(readlink -f $AMPWEBROOT/recordings)
 	chown -R $AMPASTERISKWEBUSER:$AAMPASTERISKWEBGROUP $(readlink -f $AMPWEBROOT/_asterisk)
@@ -198,8 +202,6 @@ chown_asterisk() {
 		chmod u+x $ASTVARLIBDIR/$MOHDIR
 	fi
 
-	chmod u+x,g+x $FOPWEBROOT/*.pl
-	chmod u+x $FOPWEBROOT/safe_opserver
 	chown $AMPASTERISKUSER /dev/tty9
 
 	# Ensure that various hardware devices are owned correctly.
