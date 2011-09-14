@@ -53,7 +53,7 @@ function installpackages {
 	echo "Done"
 	INSTALL=""
 	# CentOS 6 RPMs from yum.
-	YUMPACKS="bc vim-enhanced sox libusb-devel httpd php php-gd php-pear php-mysql mysql-server curl mysql mysql-devel php-process libxml2-devel ncurses-devel libtiff-devel libogg-devel libvorbis vorbis-tools pacemaker unixODBC bluez-libs postgresql-libs festival"
+	YUMPACKS="bc vim-enhanced sox libusb-devel httpd php php-gd php-pear php-mysql mysql-server curl mysql mysql-devel php-process libxml2-devel ncurses-devel libtiff-devel libogg-devel libvorbis vorbis-tools pacemaker unixODBC bluez-libs postgresql-libs festival ImageMagick"
 	for x in $YUMPACKS ; do 
 		if ! (grep "^${x}$" /tmp/rpms.$$ > /dev/null) ; then 
 			INSTALL="$INSTALL $x"
