@@ -26,13 +26,28 @@ if (!isset($_REQUEST['from']) || !(isset($_REQUEST['to']))) {
 	print ("Sorry. This doesn't work that way.");
 	exit;
 }
+
+$bootstrap_settings['freepbx_auth'] = false;
 include("/etc/freepbx.conf");
+
 $host = $amp_conf['ASTMANAGERHOST'];
 $port = $amp_conf['ASTMANAGERPORT'];
 $user = $amp_conf['AMPMGRUSER'];
 $pass = $amp_conf['AMPMGRPASS'];
 $from = $_REQUEST['from'];
 $to = $_REQUEST['to'];
+
+# Sanity check. Is 'from' a valid 3 digit exten?
+if ($from === '' || !preg_match('/^\d\d\d$/', $from)) {
+	print("Sorry. From is derped\n");
+	exit;
+}
+
+# Is 'to' a valid number?
+if ($to === '' || !preg_match('/^(\d+|\*\d+)$/', $to)) {
+	print("No. To must be a number. And only a number.\n");
+	exit;
+}
 
 $socket = fsockopen($host,$port, $errno, $errstr) 
   or die ("Cannot connect to asterisk - $errstr");
@@ -49,14 +64,16 @@ fputs($socket, "Exten: $to\r\n");
 fputs($socket, "CallerID: Click-to-Dial <$to>\r\n");
 fputs($socket, "Priority: 1\r\n");
 fputs($socket, "ActionID: ".rand(1000)."\r\n");
+fputs($socket, "Variable: AMPUSER=$from\r\n");
+fputs($socket, "Variable: REALCALLERIDNUM=$from\r\n");
 fputs($socket, "Timeout: 10000\r\n\r\n");
 while ($ret = fgets($socket, 512)) {
 	if (preg_match("/^Resp/", $ret)) break;
 }
 fputs($socket, "Action: Logoff\r\n"); 
-while ($ret = fgets($socket, 512)) {
-	if (preg_match("/^Resp/", $ret)) break;
-}
+#while ($ret = fgets($socket, 512)) {
+#	if (preg_match("/^Resp/", $ret)) break;
+#}
 
 ?>
 
