@@ -33,24 +33,29 @@ $res = $db->getAll($sql, array(), DB_FETCHMODE_ASSOC);
 <script src='jquery.tools.min.js'></script>
 <script src='spin.js'></script>
 <STYLE type="text/css">
+   body { font-family: 'Trebuchet MS', Arial; }
    H1.myclass {border-width: 1; border: solid; text-align: center}
    .click {text-decoration: underline; cursor: pointer}
    .ext {color: blue; cursor: pointer}
    TD {text-align: center}
    #port_9,#port_10,#port_11,#port_12,#port_13,#port_14 {background-color: LightGray}
-   #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #000;
+   #olay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #000;
     		filter:alpha(opacity=50); -moz-opacity:0.5; -khtml-opacity: 0.5; opacity: 0.5; z-index: 1000; }
    #content { display:none; width:400px; border:10px solid #666; background-color: #fff; 
-		border:10px solid rgba(182, 182, 182, 0.698); -moz-border-radius:8px; -webkit-border-radius:8px; }
+		border:10px solid rgba(182, 182, 182, 0.698); -moz-border-radius:8px; -webkit-border-radius:8px;
+		z-index: 2000 }
    #content .close { background-image:url(close.png); position:absolute; right:-15px; top:-15px; cursor:pointer;
 		height:35px; width:35px; }
+   #content h2 { text-align: center; }
+   .right { width: 100px; }
+   .left { padding-left: 1em; display: inline-block; width: 150px; }
 
 </STYLE>
 </head>
 <body>
 
-<div id="overlay" style="display: none"></div>
-<div id="content" style="display: none"><h2>Modify Port</h2><p id='portmod'></p></div>
+<div id="olay" style="display: none"></div>
+<div id="content" style="display: none"><div id="ctext"></div></div>
 
 
 <form method='post'>
@@ -72,7 +77,7 @@ foreach ($res as $row) {
 		# Now, how many extens do we have assigned to these ports?
 		$sql = "select * from provis_dahdi_ports where serial='".$row['serial']."' and xpd='".$span['xpd']."' order by ext";
 		$exts = $db->getAll($sql, array(), DB_FETCHMODE_ASSOC);
-		print "<div class='click' sno='".$row['serial']."' xpd='".$span['xpd']."'>";
+		print "<div class='click' data-sno='".$row['serial']."' data-xpd='".$span['xpd']."'>";
 		if (count($exts) === 0) {
 			print "No Ports Assigned";
 		} else {
@@ -89,34 +94,43 @@ foreach ($res as $row) {
 ?>
 <script>
 	$('.click').bind('click', function() {
-		var s=$(this).attr('sno');
-		var x=$(this).attr('xpd');
+		var s=$(this).data('sno');
+		var x=$(this).attr('data-xpd'); // 00 = 0 if you use '.data'
 		$.ajax({
 			type: 'POST',
 			url: 'ports.php',
-			data: 'sno='+s+"&xpd="+x,
+			data: 'sno='+s+'&xpd='+x,
 			beforeSend: function() {
 				$(".ports").hide("fast");
-				$("#overlay").show();
-				$("#overlay").spin("large", "white");
+				$("#olay").show();
+				$("#olay").spin("large", "white");
 			},
 			success: function( msg ) {  
-				$("#overlay").spin(false);
-				$("#overlay").hide();
+				$("#olay").spin(false);
+				$("#olay").hide();
 				$(".ports").hide('fast');
 				$("#"+s).html(msg);
 				$("#"+s).show('fast');
 				$(".ext").bind('click', function() { 
-					modport($(this).attr('sno'), $(this).attr('xpd'), $(this).attr('portno'));
+					modport($(this).data('sno'), $(this).attr('data-xpd'), $(this).data('portno'));
 				});
 			},
 
 		});
 	});
 	function modport(ser, xpd, no) {
-		$("#portmod").html("I want to mod ser "+ser+", xpd "+xpd+", nbr "+no);
-		$("#content").overlay({ top: 260, load: true, mask: { color: '#fff', loadSpeed: 200, opacity: 0.5 },});
+		$("#olay").show();
+		$("#ctext").html("<i>Loading...</i>");
+		$("#content").overlay({ 
+			top: 260, 
+			load: true, 
+			mask: { color: '#fff', loadSpeed: 200, opacity: 0.5 },
+			onBeforeClose: function() { $("#olay").hide(); },
+		});
 		$("#content").overlay().load();
+		$.get("ext.php", 'sno='+ser+'&xpd='+xpd+'&port='+no, function(data) {
+			$("#ctext").html(data);
+		});
 	}
 </script>
 

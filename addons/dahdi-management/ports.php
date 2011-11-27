@@ -30,7 +30,7 @@ for ($x=1; $x <= $ports; $x=$x+2) {
 	} else {
 		$str = $res;
 	}
-	print "<td id='port_$x'><div class='ext' id='port$x' sno='$sno' xpd='$xpd' portno='$x' rel='#content'>$str</div></td>\n";
+	print "<td id='port_$x'><div class='ext' id='port$x' data-sno='$sno' data-xpd='$xpd' data-portno='$x'>$str</div></td>\n";
 }
 print "</tr>\n";
 print "<tr>\n";
@@ -43,6 +43,6 @@ for ($x=2; $x <= $ports; $x=$x+2) {
 	} else {
 		$str = $res;
 	}
-	print "<td id='port_$x'><div class='ext' id='port$x' sno='$sno' xpd='$xpd' portno='$x' rel='#content'>$str</div></td>\n";
+	print "<td id='port_$x'><div class='ext' id='port$x' data-sno='$sno' data-xpd='$xpd' data-portno='$x'>$str</div></td>\n";
 }
 print "</tr></table>\n";
