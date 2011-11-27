@@ -1,0 +1,150 @@
+usb:003/005          xpp_usb+     e4e4:1162 Astribank-modular FPGA-firmware
+ MPP: TWINSTAR_PORT=0
+ MPP: TWINSTAR_WATCHDOG=0
+ MPP: TWINSTAR_POWER[0]=1
+ MPP: TWINSTAR_POWER[1]=1
+ LABEL=[usb:X1046341]       CONNECTOR=@usb-0000:04:01.2-2.2
+	XBUS-08/XPD-00: FXS      (14)  Span 3 
+	XBUS-08/XPD-10: FXS      (8)   Span 4 
+	XBUS-08/XPD-20: FXS      (8)   Span 5 
+	XBUS-08/XPD-30: FXS      (8)   Span 6 
+	XBUS-08/XPD-40: ECHO     (0)   Unregistered 
+usb:003/006          xpp_usb+     e4e4:1162 Astribank-modular FPGA-firmware
+ MPP: TWINSTAR_PORT=0
+ MPP: TWINSTAR_WATCHDOG=0
+ MPP: TWINSTAR_POWER[0]=1
+ MPP: TWINSTAR_POWER[1]=1
+ LABEL=[usb:X1046335]       CONNECTOR=@usb-0000:04:01.2-2.3
+	XBUS-09/XPD-00: FXS      (14)  Span 7 
+	XBUS-09/XPD-10: FXS      (8)   Span 8 
+	XBUS-09/XPD-20: FXS      (8)   Span 9 
+	XBUS-09/XPD-30: FXS      (8)   Span 10 
+	XBUS-09/XPD-40: ECHO     (0)   Unregistered 
+usb:003/007          xpp_usb+     e4e4:1162 Astribank-modular FPGA-firmware
+ MPP: TWINSTAR_PORT=0
+ MPP: TWINSTAR_WATCHDOG=0
+ MPP: TWINSTAR_POWER[0]=1
+ MPP: TWINSTAR_POWER[1]=1
+ LABEL=[usb:X1046195]       CONNECTOR=@usb-0000:04:01.2-3.1
+	XBUS-10/XPD-00: FXS      (14)  Span 11 
+	XBUS-10/XPD-10: FXS      (8)   Span 12 
+	XBUS-10/XPD-20: FXS      (8)   Span 13 
+	XBUS-10/XPD-30: FXS      (8)   Span 14 
+	XBUS-10/XPD-40: ECHO     (0)   Unregistered 
+usb:003/008          xpp_usb+     e4e4:1162 Astribank-modular FPGA-firmware
+ MPP: TWINSTAR_PORT=0
+ MPP: TWINSTAR_WATCHDOG=0
+ MPP: TWINSTAR_POWER[0]=1
+ MPP: TWINSTAR_POWER[1]=1
+ LABEL=[usb:X1046192]       CONNECTOR=@usb-0000:04:01.2-3.2
+	XBUS-11/XPD-00: FXS      (14)  Span 15 
+	XBUS-11/XPD-10: FXS      (8)   Span 16 
+	XBUS-11/XPD-20: FXS      (8)   Span 17 
+	XBUS-11/XPD-30: FXS      (8)   Span 18 
+	XBUS-11/XPD-40: ECHO     (0)   Unregistered 
+usb:003/009          xpp_usb+     e4e4:1162 Astribank-modular FPGA-firmware
+ MPP: TWINSTAR_PORT=0
+ MPP: TWINSTAR_WATCHDOG=0
+ MPP: TWINSTAR_POWER[0]=1
+ MPP: TWINSTAR_POWER[1]=1
+ LABEL=[usb:X1046337]       CONNECTOR=@usb-0000:04:01.2-3.3
+	XBUS-12/XPD-00: FXS      (14)  Span 19 
+	XBUS-12/XPD-10: FXS      (8)   Span 20 
+	XBUS-12/XPD-20: FXS      (8)   Span 21 
+	XBUS-12/XPD-30: FXS      (8)   Span 22 
+	XBUS-12/XPD-40: ECHO     (0)   Unregistered 
+usb:003/010          xpp_usb+     e4e4:1162 Astribank-modular FPGA-firmware
+ MPP: TWINSTAR_PORT=0
+ MPP: TWINSTAR_WATCHDOG=0
+ MPP: TWINSTAR_POWER[0]=1
+ MPP: TWINSTAR_POWER[1]=1
+ LABEL=[usb:X1046336]       CONNECTOR=@usb-0000:04:01.2-3.4
+	XBUS-13/XPD-00: FXS      (14)  Span 23 
+	XBUS-13/XPD-10: FXS      (8)   Span 24 
+	XBUS-13/XPD-20: FXS      (8)   Span 25 
+	XBUS-13/XPD-30: FXS      (8)   Span 26 
+	XBUS-13/XPD-40: ECHO     (0)   Unregistered 
+usb:004/100          xpp_usb+     e4e4:1162 Astribank-modular FPGA-firmware
+ MPP: TWINSTAR_PORT=0
+ MPP: TWINSTAR_WATCHDOG=0
+ MPP: TWINSTAR_POWER[0]=1
+ MPP: TWINSTAR_POWER[1]=0
+ LABEL=[usb:X1046330]       CONNECTOR=@usb-0000:06:01.2-2.1
+	XBUS-00/XPD-00: FXS      (14)  Span 27 
+	XBUS-00/XPD-10: FXS      (8)   Span 28 
+	XBUS-00/XPD-20: FXS      (8)   Span 29 
+	XBUS-00/XPD-30: FXS      (8)   Span 30 
+	XBUS-00/XPD-40: ECHO     (0)   Unregistered 
+usb:004/101          xpp_usb+     e4e4:1162 Astribank-modular FPGA-firmware
+ MPP: TWINSTAR_PORT=0
+ MPP: TWINSTAR_WATCHDOG=0
+ MPP: TWINSTAR_POWER[0]=1
+ MPP: TWINSTAR_POWER[1]=1
+ LABEL=[usb:X1046340]       CONNECTOR=@usb-0000:06:01.2-2.4
+	XBUS-01/XPD-00: E1       (31)  Span 1  DAHDI-SYNC
+	XBUS-01/XPD-01: E1       (31)  Span 2 
+	XBUS-01/XPD-40: ECHO     (0)   Unregistered 
+usb:004/102          xpp_usb+     e4e4:1162 Astribank-modular FPGA-firmware
+ MPP: TWINSTAR_PORT=0
+ MPP: TWINSTAR_WATCHDOG=0
+ MPP: TWINSTAR_POWER[0]=1
+ MPP: TWINSTAR_POWER[1]=1
+ LABEL=[usb:X1046339]       CONNECTOR=@usb-0000:06:01.2-3.1
+	XBUS-02/XPD-00: E1       (31)  Span 51 
+	XBUS-02/XPD-01: E1       (31)  Span 52 
+	XBUS-02/XPD-40: ECHO     (0)   Unregistered 
+usb:004/103          xpp_usb+     e4e4:1162 Astribank-modular FPGA-firmware
+ MPP: TWINSTAR_PORT=0
+ MPP: TWINSTAR_WATCHDOG=0
+ MPP: TWINSTAR_POWER[0]=1
+ MPP: TWINSTAR_POWER[1]=1
+ LABEL=[usb:X1046334]       CONNECTOR=@usb-0000:06:01.2-3.2
+	XBUS-03/XPD-00: FXS      (14)  Span 39 
+	XBUS-03/XPD-10: FXS      (8)   Span 40 
+	XBUS-03/XPD-20: FXS      (8)   Span 41 
+	XBUS-03/XPD-30: FXS      (8)   Span 42 
+	XBUS-03/XPD-40: ECHO     (0)   Unregistered 
+usb:004/104          xpp_usb+     e4e4:1162 Astribank-modular FPGA-firmware
+ MPP: TWINSTAR_PORT=0
+ MPP: TWINSTAR_WATCHDOG=0
+ MPP: TWINSTAR_POWER[0]=1
+ MPP: TWINSTAR_POWER[1]=1
+ LABEL=[usb:X1046331]       CONNECTOR=@usb-0000:06:01.2-3.3
+	XBUS-04/XPD-00: FXS      (14)  Span 43 
+	XBUS-04/XPD-10: FXS      (8)   Span 44 
+	XBUS-04/XPD-20: FXS      (8)   Span 45 
+	XBUS-04/XPD-30: FXS      (8)   Span 46 
+	XBUS-04/XPD-40: ECHO     (0)   Unregistered 
+usb:004/105          xpp_usb+     e4e4:1162 Astribank-modular FPGA-firmware
+ MPP: TWINSTAR_PORT=0
+ MPP: TWINSTAR_WATCHDOG=0
+ MPP: TWINSTAR_POWER[0]=1
+ MPP: TWINSTAR_POWER[1]=0
+ LABEL=[usb:X1046332]       CONNECTOR=@usb-0000:06:01.2-2.2
+	XBUS-05/XPD-00: FXS      (14)  Span 31 
+	XBUS-05/XPD-10: FXS      (8)   Span 32 
+	XBUS-05/XPD-20: FXS      (8)   Span 33 
+	XBUS-05/XPD-30: FXS      (8)   Span 34 
+	XBUS-05/XPD-40: ECHO     (0)   Unregistered 
+usb:004/110          xpp_usb+     e4e4:1162 Astribank-modular FPGA-firmware
+ MPP: TWINSTAR_PORT=0
+ MPP: TWINSTAR_WATCHDOG=0
+ MPP: TWINSTAR_POWER[0]=1
+ MPP: TWINSTAR_POWER[1]=0
+ LABEL=[usb:X1046333]       CONNECTOR=@usb-0000:06:01.2-3.4
+	XBUS-06/XPD-00: FXS      (14)  Span 47 
+	XBUS-06/XPD-10: FXS      (8)   Span 48 
+	XBUS-06/XPD-20: FXS      (8)   Span 49 
+	XBUS-06/XPD-30: FXS      (8)   Span 50 
+	XBUS-06/XPD-40: ECHO     (0)   Unregistered 
+usb:004/111          xpp_usb+     e4e4:1162 Astribank-modular FPGA-firmware
+ MPP: TWINSTAR_PORT=0
+ MPP: TWINSTAR_WATCHDOG=0
+ MPP: TWINSTAR_POWER[0]=1
+ MPP: TWINSTAR_POWER[1]=1
+ LABEL=[usb:X1046194]       CONNECTOR=@usb-0000:06:01.2-2.3
+	XBUS-07/XPD-00: FXS      (14)  Span 35 
+	XBUS-07/XPD-10: FXS      (8)   Span 36 
+	XBUS-07/XPD-20: FXS      (8)   Span 37 
+	XBUS-07/XPD-30: FXS      (8)   Span 38 
+	XBUS-07/XPD-40: ECHO     (0)   Unregistered 
