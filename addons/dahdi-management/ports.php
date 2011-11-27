@@ -45,8 +45,4 @@ for ($x=2; $x <= $ports; $x=$x+2) {
 	}
 	print "<td id='port_$x'><div class='ext' id='port$x' sno='$sno' xpd='$xpd' portno='$x' rel='#content'>$str</div></td>\n";
 }
-print "</tr></table><div id='content'><h2>Modify Port</h2><p id='portmod'>Text here</p>\n";
-#print "<p><button class='close'>Close</button></p></div>\n";
-print "</div>\n";
-	
-
+print "</tr></table>\n";

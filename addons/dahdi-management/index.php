@@ -32,41 +32,6 @@ $res = $db->getAll($sql, array(), DB_FETCHMODE_ASSOC);
 <title>DAHDI Overview</title>
 <script src='jquery.tools.min.js'></script>
 <script src='spin.js'></script>
-<script>
-  $.fn.spin = function(opts, color) {
-		var presets = {
-			"tiny": { lines: 8, length: 2, width: 2, radius: 3 },
-			"small": { lines: 8, length: 4, width: 3, radius: 5 },
-			"large": { lines: 10, length: 8, width: 4, radius: 8 }
-		};
-		if (Spinner) {
-			return this.each(function() {
-				var $this = $(this),
-					data = $this.data();
-
-				if (data.spinner) {
-					data.spinner.stop();
-					delete data.spinner;
-				}
-				if (opts !== false) {
-					if (typeof opts === "string") {
-						if (opts in presets) {
-							opts = presets[opts];
-						} else {
-							opts = {};
-						}
-						if (color) {
-							opts.color = color;
-						}
-					}
-					data.spinner = new Spinner($.extend({color: $this.css('color')}, opts)).spin(this);
-				}
-			});
-		} else {
-			throw "Spinner class not available.";
-		}
-	};
-</script>
 <STYLE type="text/css">
    H1.myclass {border-width: 1; border: solid; text-align: center}
    .click {text-decoration: underline; cursor: pointer}
@@ -85,6 +50,8 @@ $res = $db->getAll($sql, array(), DB_FETCHMODE_ASSOC);
 <body>
 
 <div id="overlay" style="display: none"></div>
+<div id="content" style="display: none"><h2>Modify Port</h2><p id='portmod'></p></div>
+
 
 <form method='post'>
 
@@ -130,12 +97,12 @@ foreach ($res as $row) {
 			data: 'sno='+s+"&xpd="+x,
 			beforeSend: function() {
 				$(".ports").hide("fast");
-		//		$("#overlay").show();
-		//		$("#overlay").spin("large", "white");
+				$("#overlay").show();
+				$("#overlay").spin("large", "white");
 			},
 			success: function( msg ) {  
-			//	$("#overlay").spin(false);
-		//		$("#overlay").hide();
+				$("#overlay").spin(false);
+				$("#overlay").hide();
 				$(".ports").hide('fast');
 				$("#"+s).html(msg);
 				$("#"+s).show('fast');
