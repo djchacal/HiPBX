@@ -31,14 +31,60 @@ $res = $db->getAll($sql, array(), DB_FETCHMODE_ASSOC);
 <head>
 <title>DAHDI Overview</title>
 <script src='jquery.tools.min.js'></script>
+<script src='spin.js'></script>
+<script>
+  $.fn.spin = function(opts, color) {
+		var presets = {
+			"tiny": { lines: 8, length: 2, width: 2, radius: 3 },
+			"small": { lines: 8, length: 4, width: 3, radius: 5 },
+			"large": { lines: 10, length: 8, width: 4, radius: 8 }
+		};
+		if (Spinner) {
+			return this.each(function() {
+				var $this = $(this),
+					data = $this.data();
+
+				if (data.spinner) {
+					data.spinner.stop();
+					delete data.spinner;
+				}
+				if (opts !== false) {
+					if (typeof opts === "string") {
+						if (opts in presets) {
+							opts = presets[opts];
+						} else {
+							opts = {};
+						}
+						if (color) {
+							opts.color = color;
+						}
+					}
+					data.spinner = new Spinner($.extend({color: $this.css('color')}, opts)).spin(this);
+				}
+			});
+		} else {
+			throw "Spinner class not available.";
+		}
+	};
+</script>
 <STYLE type="text/css">
    H1.myclass {border-width: 1; border: solid; text-align: center}
    .click {text-decoration: underline; cursor: pointer}
-   .exts {color: blue}
+   .ext {color: blue; cursor: pointer}
+   TD {text-align: center}
    #port_9,#port_10,#port_11,#port_12,#port_13,#port_14 {background-color: LightGray}
+   #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #000;
+    		filter:alpha(opacity=50); -moz-opacity:0.5; -khtml-opacity: 0.5; opacity: 0.5; z-index: 1000; }
+   #content { display:none; width:400px; border:10px solid #666; background-color: #fff; 
+		border:10px solid rgba(182, 182, 182, 0.698); -moz-border-radius:8px; -webkit-border-radius:8px; }
+   #content .close { background-image:url(close.png); position:absolute; right:-15px; top:-15px; cursor:pointer;
+		height:35px; width:35px; }
+
 </STYLE>
 </head>
 <body>
+
+<div id="overlay" style="display: none"></div>
 
 <form method='post'>
 
@@ -82,15 +128,28 @@ foreach ($res as $row) {
 			type: 'POST',
 			url: 'ports.php',
 			data: 'sno='+s+"&xpd="+x,
-		}).done(function( msg ) {  
-			$(".ports").hide('fast');
-			$(".ports").html("");
-			$("#"+s).html(msg);
-			$("#"+s).show('fast');
+			beforeSend: function() {
+				$(".ports").hide("fast");
+		//		$("#overlay").show();
+		//		$("#overlay").spin("large", "white");
+			},
+			success: function( msg ) {  
+			//	$("#overlay").spin(false);
+		//		$("#overlay").hide();
+				$(".ports").hide('fast');
+				$("#"+s).html(msg);
+				$("#"+s).show('fast');
+				$(".ext").bind('click', function() { 
+					modport($(this).attr('sno'), $(this).attr('xpd'), $(this).attr('portno'));
+				});
+			},
+
 		});
 	});
 	function modport(ser, xpd, no) {
-		alert("I want to mod ser "+ser+", xpd "+xpd+", nbr "+no);
+		$("#portmod").html("I want to mod ser "+ser+", xpd "+xpd+", nbr "+no);
+		$("#content").overlay({ top: 260, load: true, mask: { color: '#fff', loadSpeed: 200, opacity: 0.5 },});
+		$("#content").overlay().load();
 	}
 </script>
 
