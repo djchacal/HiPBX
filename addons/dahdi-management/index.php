@@ -1,3 +1,4 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <?php 
 $bootstrap_settings['freepbx_auth'] = false;
 if (!@include_once(getenv('FREEPBX_CONF') ? getenv('FREEPBX_CONF') : '/etc/freepbx.conf')) {
@@ -52,13 +53,30 @@ $res = $db->getAll($sql, array(), DB_FETCHMODE_ASSOC);
    #content h2 { text-align: center; }
    .right { width: 100px; }
    .left { padding-left: 1em; display: inline-block; width: 150px; }
+	#triggers {
+		text-align:center;
+	}
+	
+	#triggers img {
+		cursor:pointer;
+		margin:0 5px;
+		background-color:#fff;
+		border:1px solid #ccc;
+		padding:2px;
+	
+		-moz-border-radius:4px;
+		-webkit-border-radius:4px;
+		
+	}
+	
+
 
 </STYLE>
 </head>
 <body>
 
 <div id="olay" style="display: none"></div>
-<div id="content" style="display: none"><div id="ctext"></div></div>
+<div id="content" style="display: none"><span id="ctext"></span></div>
 
 
 <form method='post'>

@@ -30,7 +30,11 @@ switch ($action) {
 		addext($ext, $sno, $xpd, $port, $tone, $cidname);
 		break;
 	case "remove":
-		removeext($ext);
+		removeext($sno, $xpd, $port);
+		break;
+	case "doremove":
+		sleep(2);
+		delext($ext);
 		break;
 }
 
@@ -73,7 +77,7 @@ function ajax_ext($sno, $xpd, $port) {
 	
 	$ext = $db->getOne("select ext from provis_dahdi_ports where `serial`='$sno' and `xpd`='$xpd' and `portno`='$port'");
 	if ($ext == "") {
-		showextpage(null, null, null);
+		showextpage(null, 'Plant Phone', null);
 		print "<center><button id='addext' onClick='addext()'>Add Ext</button></center>";
 	} else {
 		$res=core_users_get($ext);
@@ -81,12 +85,16 @@ function ajax_ext($sno, $xpd, $port) {
 			<h3>FreePBX Error</h3>
 			<span>This extension <strong>does not exist</strong> in FreePBX. It's probably been deleted.
 			You may either remove this from provisioning, or re-create it.</span>
-			<br /><br /><center><button id='remove' onClick='removeext()'>Remove</button>&nbsp;&nbsp;
+			<br /><br /><center><button id='xxremove' onClick='removeext()'>Remove</button>&nbsp;&nbsp;
 			<button id='create' onClick='addext()'>Create</button></center>
 		<?php
 		exit;
 		}
-	print "Port configured to be $ext, owned by ".$res['name'];
+	# We're here because we've clicked on an Exten that exists, and is valid in 
+	# FreePBX. Lets do some stuff.
+	showextpage($ext, $res['name'], 'AU');
+	print "<center><button id='modext' onClick='modext()'>Modify</button>&nbsp;&nbsp;";
+	print "<button id='xxremove' onClick='removeext()'>Remove</button></center>";
 	}
 }
 
@@ -184,8 +192,15 @@ function addext($ext, $sno, $xpd, $port, $tone, $cidname) {
 	core_devices_add($ext, 'dahdi', '', 'fixed', $ext, $name);
 } 
 
-function removeext($ext) {
+function removeext($sno, $xpd, $port) {
+	global $db;
+
+	$ext = $db->getOne("select ext from provis_dahdi_ports where `serial`='$sno' and `xpd`='$xpd' and `portno`='$port'");
 	print "<h2>Removing Extension</h2>\n";
+	print "<input type='hidden' id='astribank' data-sno='$sno' data-xpd='$xpd' data-port='$port'></input>\n";
+	print "<p><center>Are you sure you wish to remove extension $ext?</center></p>\n";
+	print "<center><button id='modext'>No</button>&nbsp;&nbsp;";
+	print "<button onClick='doremoveext()'>Yes</button></center>";
 }
 
 # core_devices_add($deviceid,$tech,$devinfo_dial,$devicetype,$deviceuser,$description,$emergency_cid,true);
@@ -194,13 +209,28 @@ function removeext($ext) {
 
 function showextpage($ext, $name, $tone) {
 	print "<span class='left'>CallerID Name</span>\n";
-	print "<span class='right'><input id='cidname' type=text size=15></span><br />\n";
+	print "<span class='right'><input id='cidname' type=text size=15 value='$name'></span><br />\n";
 	print "<span class='left'>Extension</span>\n";
-	print "<span class='right'><input id='extno' type=text size=4></span><br />\n";
+	print "<span class='right'><input id='extno' type=text size=4 value='$ext'></span><br />\n";
 	print "<span class='left'>Dial Tone</span>\n";
 	print "<span class='right'>\n";
-	print "  <input type='radio' name='tonezone' value='AU' checked >Au</input>\n";
-	print "  <input type='radio' name='tonezone' value='XX'>Loud</input>\n";
-	print "  <input type='radio' name='tonezone' value='YY'>Fax</input>\n";
+	foreach (array('au' => 'Au', 'xx' => 'Loud', 'yy' => 'Fax') as $t => $v) {
+		if ($tone === $t) {
+			$selected = 'selected';
+		} else {
+			$selected = '';
+		}
+		print "<input type='radio' name='tonezone' $selected value='$t'>$v</input>\n";
+	}
 	print "</span><p id='addstat'>&nbsp;</p>\n";
+}
+
+function delext($ext) {
+	print "Really deleting ext $ext\n";
+	print "<span class='left'>CallerID Name</span>\n";
+	print "<span class='right'><input id='cidname' type=text size=15 value='$name'></span><br />\n";
+	print "<span class='left'>Extension</span>\n";
+	print "<span class='right'><input id='extno' type=text size=4 value='$ext'></span><br />\n";
+	print "<span class='left'>Dial Tone</span>\n";
+	print "<span class='right'>\n";
 }

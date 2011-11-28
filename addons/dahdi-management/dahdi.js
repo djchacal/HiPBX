@@ -27,7 +27,7 @@ function showports(s, x, bounce) {
 			$(".ext").bind('click', function() { 
 				modport($(this).data('sno'), $(this).attr('data-xpd'), $(this).data('portno'));
 			});
-		},
+		}
 	});
 }
 function modport(ser, xpd, no) {
@@ -41,14 +41,14 @@ function modport(ser, xpd, no) {
 			var query = {
 				sno:  $('#astribank').data('sno'),
 				xpd:  $('#astribank').attr('data-xpd'),
-				action: 'span',
+				action: 'span'
 			};
 			$.post("ajax.php", query, function(data) {
 				$('#'+$('#astribank').data('sno')+'_'+$('#astribank').attr('data-xpd')).html(data);
 				showports($('#astribank').data('sno'), $('#astribank').attr('data-xpd'), false);
 				bindall();
 			});
-		},
+		}
 	});
 	$("#content").overlay().load();
 	$.get("ajax.php", 'action=ext&sno='+ser+'&xpd='+xpd+'&port='+no, function(data) {
@@ -67,7 +67,7 @@ function addext() {
 				ext:  $("#extno").val(),
 				cidname: $("#cidname").val(),
 				tone:  $(this).attr('value'),
-				action: 'addext',
+				action: 'addext'
 			};
 		$.post("ajax.php", query, function(data) { $("#addstat").html(data); });
 		}
@@ -79,8 +79,16 @@ function removeext() {
 		sno:  $('#astribank').data('sno'),
 		xpd:  $('#astribank').attr('data-xpd'),
 		port: $('#astribank').data('port'),
-		action: 'remove',
+		action: 'remove'
 	};
 	$.post("ajax.php", query, function(data) { $("#ctext").html(data); });
 }
 
+function doremoveext(ext) {
+	$("#ctext").spin("large", "black");
+	 var query= {
+		ext:  ext,
+		action: 'doremove'
+	};
+	$.post("ajax.php", query, function(data) { $("#ctext").spin(false); $("#ctext").html(data); });
+}
