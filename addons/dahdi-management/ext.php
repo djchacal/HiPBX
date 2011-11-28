@@ -22,7 +22,7 @@ $port = $_REQUEST['port'];
 
 if ($xpd == 0 && ($port > 8 && $port < 15)) {
 	print "<h2>WARNING: THIS IS A RELAY PORT</h2>";
-	print "<p>This port is NOT ACCESSABLE through the TCO, only through the front of the ";
+	print "<p class='warning'>This port is NOT ACCESSIBLE through the TCO, only through the front of the ";
 	print "Astribank. You probably do NOT want to use this</p>";
 	$relay = true;
 } else {
@@ -48,6 +48,7 @@ if ($portno > 16) {
 	
 $ext = $db->getOne("select ext from provis_dahdi_ports where `serial`='$sno' and `xpd`='$xpd' and `portno`='$port'");
 if ($ext == "") {
+	print "<input type='hidden' id='astribank' data-sno='$sno' data-xpd='$xpd' data-port='$port'></input>\n";
 	print "<span class='left'>CallerID Name</span>\n";
 	print "<span class='right'><input id='cidname' type=text size=15></span><br />\n";
 	print "<span class='left'>Extension</span>\n";
@@ -57,8 +58,11 @@ if ($ext == "") {
 	print "  <input type='radio' name='tonezone' value='AU' checked >Au</input>\n";
 	print "  <input type='radio' name='tonezone' value='XX'>Loud</input>\n";
 	print "  <input type='radio' name='tonezone' value='YY'>Fax</input>\n";
-	print "</span><p style='text-align: center' id='addstat'>&nbsp;</p>\n";
-	print "<center><button id='addext' name'addext'>Add Ext</button></center>\n";
+	print "</span><p id='addstat'>&nbsp;</p>\n";
+	print "<center><button id='addext' name='addext'>Add Ext</button></center>";
+	#print "<button id='delext name='delext'>Del Ext</button>'</center>\n";
+	#print "<center><button id='addext' name='addext'>Add Ext</button>&nbsp;&nbsp";
+	#print "<button id='delext name='delext'>Del Ext</button>'</center>\n";
 	exit;
 } else {
 	print "Port configured to be $ext";

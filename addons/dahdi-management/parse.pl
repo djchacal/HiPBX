@@ -117,5 +117,5 @@ sub create_tables() {
 	$dbh->do('CREATE TABLE IF NOT EXISTS `provis_dahdi_spans` ( `serial` char(15) DEFAULT NULL, `span` int(11) DEFAULT NULL, `ports` int(11) DEFAULT NULL, `xpd` char(5) DEFAULT NULL)'); 
 	$dbh->do('CREATE TABLE IF NOT EXISTS `provis_dahdi_astribanks` ( `serial` char(15) DEFAULT NULL, `usbport` char(15) DEFAULT NULL, `power1` int(11) DEFAULT NULL, `power2` int(11) DEFAULT NULL)');
 	$dbh->do('CREATE TABLE IF NOT EXISTS `provis_dahdi_astribanks_layout` ( `serial` char(15) DEFAULT NULL, disporder int(11) DEFAULT NULL )');
-	$dbh->do('CREATE TABLE IF NOT EXISTS `provis_dahdi_ports` ( `serial` char(15) DEFAULT NULL, `xpd` int(11) DEFAULT NULL, `portno` int(11) DEFAULT NULL, `ext` char(10) DEFAULT NULL)');
+	$dbh->do('CREATE TABLE IF NOT EXISTS `provis_dahdi_ports` ( `serial` char(15) DEFAULT NULL, `xpd` int(11) DEFAULT NULL, `portno` int(11) DEFAULT NULL, `ext` char(10) DEFAULT NULL, `tone` char(5) DEFAULT "AU")');
 }

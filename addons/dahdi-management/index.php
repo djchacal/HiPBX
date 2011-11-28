@@ -38,6 +38,8 @@ $res = $db->getAll($sql, array(), DB_FETCHMODE_ASSOC);
    .click {text-decoration: underline; cursor: pointer}
    .ext {color: blue; cursor: pointer}
    TD {text-align: center}
+   P.warning {padding-left: 1em;}
+   P#addstat {margin: 0px; text-align: center}
    #port_9,#port_10,#port_11,#port_12,#port_13,#port_14 {background-color: LightGray}
    #olay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #000;
     		filter:alpha(opacity=50); -moz-opacity:0.5; -khtml-opacity: 0.5; opacity: 0.5; z-index: 1000; }
@@ -77,6 +79,7 @@ foreach ($res as $row) {
 		# Now, how many extens do we have assigned to these ports?
 		$sql = "select * from provis_dahdi_ports where serial='".$row['serial']."' and xpd='".$span['xpd']."' order by ext";
 		$exts = $db->getAll($sql, array(), DB_FETCHMODE_ASSOC);
+		print "<div class='header'>XPD: ".$span['xpd']."/Span: ".$span['span']."</div>\n";
 		print "<div class='click' data-sno='".$row['serial']."' data-xpd='".$span['xpd']."'>";
 		if (count($exts) === 0) {
 			print "No Ports Assigned";
@@ -122,7 +125,7 @@ foreach ($res as $row) {
 		$("#olay").show();
 		$("#ctext").html("<i>Loading...</i>");
 		$("#content").overlay({ 
-			top: 260, 
+			top: 160, 
 			load: true, 
 			mask: { color: '#fff', loadSpeed: 200, opacity: 0.5 },
 			onBeforeClose: function() { $("#olay").hide(); },
@@ -133,7 +136,8 @@ foreach ($res as $row) {
 			$("#addext").bind('click', function() {
 				$('input:radio').each(function(){
 					if ($(this).attr('checked')) {
-						addext($("#cidname").val(), $("#extno").val(), $(this).attr('value') );
+						addext(
+							$("#cidname").val(), $("#extno").val(), $(this).attr('value') );
 					}
 				});
 			});	
@@ -141,7 +145,19 @@ foreach ($res as $row) {
 	}
 
 	function addext(cidname, ext, tone) {
-		$("#addstat").html("Cidname is "+cidname+", ext is"+ext+", tone is  "+tone);
+		$("#addstat").html("<i>Processing...</i>");
+		var query= {
+			sno:  $('#astribank').data('sno'),
+			xpd:  $('#astribank').attr('data-xpd'),
+		  	port: $('#astribank').data('port'),
+			ext:  ext,
+			cidname: cidname,
+			tone: tone,
+			action: 'addext',
+		};
+		$.post("doext.php", query, function(data) {
+			$("#addstat").html(data);
+		});
 	}
 </script>
 
@@ -150,6 +166,7 @@ foreach ($res as $row) {
 function move_astribank($ser, $dir) {
 	global $db;
 	# First, check to see if we're the bottom-most already.
+	# Order our query
 	if ($dir == "down")  {
 		$cmd = " desc "; 
 	} else {
