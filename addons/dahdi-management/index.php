@@ -130,7 +130,18 @@ foreach ($res as $row) {
 		$("#content").overlay().load();
 		$.get("ext.php", 'sno='+ser+'&xpd='+xpd+'&port='+no, function(data) {
 			$("#ctext").html(data);
+			$("#addext").bind('click', function() {
+				$('input:radio').each(function(){
+					if ($(this).attr('checked')) {
+						addext($("#cidname").val(), $("#extno").val(), $(this).attr('value') );
+					}
+				});
+			});	
 		});
+	}
+
+	function addext(cidname, ext, tone) {
+		$("#addstat").html("Cidname is "+cidname+", ext is"+ext+", tone is  "+tone);
 	}
 </script>
 

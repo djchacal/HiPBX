@@ -6,8 +6,6 @@ if (!@include_once(getenv('FREEPBX_CONF') ? getenv('FREEPBX_CONF') : '/etc/freep
 ?>
 <?php
 
-usleep(500000);
-
 global $db;
 
 # Grab the xpd and serial number that we're looking at
@@ -38,28 +36,29 @@ if ($portno > 16) {
 	if ($relay) {
 		print "<h2>Modify Port $portno (No TCO)</h2>\n";
 	} else {
-		print "<h2>Modify Port $portno (Pair $pairno, Cable B)</h2>\n";
+		print "<h2>Modify Port $portno (Cable B, Pair $pairno)</h2>\n";
 	}
 } else {
 	if ($relay) {
 		print "<h2>Modify Port $portno (No TCO)</h2>\n";
 	} else {
-		print "<h2>Modify Port $portno (Pair $portno, Cable A)</h2>\n";
+		print "<h2>Modify Port $portno (Cable A, Pair $portno)</h2>\n";
 	}
 }
 	
 $ext = $db->getOne("select ext from provis_dahdi_ports where `serial`='$sno' and `xpd`='$xpd' and `portno`='$port'");
 if ($ext == "") {
 	print "<span class='left'>CallerID Name</span>\n";
-	print "<span class='right'><input name='cidname' type=text size=15></span><br />\n";
+	print "<span class='right'><input id='cidname' type=text size=15></span><br />\n";
 	print "<span class='left'>Extension</span>\n";
-	print "<span class='right'><input name='ext' type=text size=4></span><br />\n";
+	print "<span class='right'><input id='extno' type=text size=4></span><br />\n";
 	print "<span class='left'>Dial Tone</span>\n";
 	print "<span class='right'>\n";
 	print "  <input type='radio' name='tonezone' value='AU' checked >Au</input>\n";
 	print "  <input type='radio' name='tonezone' value='XX'>Loud</input>\n";
 	print "  <input type='radio' name='tonezone' value='YY'>Fax</input>\n";
-	print "</span><br />\n";
+	print "</span><p style='text-align: center' id='addstat'>&nbsp;</p>\n";
+	print "<center><button id='addext' name'addext'>Add Ext</button></center>\n";
 	exit;
 } else {
 	print "Port configured to be $ext";
