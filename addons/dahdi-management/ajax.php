@@ -23,6 +23,8 @@ switch ($action) {
 	case "span":
 		update_span($sno, $xpd);
 		break;
+	case "ports":
+		show_ports($sno, $xpd);
 			
 }
 
@@ -112,3 +114,38 @@ function update_span($sno, $xpd) {
 	print display_ports($sno, $xpd, "99");
 }
 	
+function show_ports($sno, $xpd) {
+	global $db;
+
+	$ports = $db->getOne("select ports from provis_dahdi_spans where `serial`='$sno' and `xpd`='$xpd'");
+	if ($ports > 14) {
+		print "Invalid. Not suitble for PRI";
+		exit;
+	}
+
+	print "<table border=1>\n<tr>\n";
+	# Do the top row first, 1,3,5,7(,9,11,13)
+	for ($x=1; $x <= $ports; $x=$x+2) {
+		$sql = "select ext from provis_dahdi_ports where `serial`='$sno' and `xpd`='$xpd' and `portno`='$x'";
+		$res = $db->getOne($sql);
+		if ($res == "") {
+			$str = "Empty";
+		} else {
+			$str = $res;
+		}
+		print "<td id='port_$x'><div class='ext' id='port$x' data-sno='$sno' data-xpd='$xpd' data-portno='$x'>$str</div></td>\n";
+	}
+	print "</tr><tr>\n";
+	# Now the second row
+	for ($x=2; $x <= $ports; $x=$x+2) {
+		$sql = "select ext from provis_dahdi_ports where `serial`='$sno' and `xpd`='$xpd' and `portno`='$x'";
+		$res = $db->getOne($sql);
+		if ($res == "") {
+			$str = "Empty";
+		} else {
+			$str = $res;
+		}
+		print "<td id='port_$x'><div class='ext' id='port$x' data-sno='$sno' data-xpd='$xpd' data-portno='$x'>$str</div></td>\n";
+	}
+	print "</tr></table>\n";
+}
