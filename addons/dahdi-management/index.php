@@ -34,35 +34,7 @@ $res = $db->getAll($sql, array(), DB_FETCHMODE_ASSOC);
 <script src='jquery.tools.min.js'></script>
 <script src='spin.js'></script>
 <script src='dahdi.js'></script>
-<STYLE type="text/css">
-   body { font-family: 'Trebuchet MS', Arial; }
-   H1.myclass {border-width: 1; border: solid; text-align: center}
-   .click {text-decoration: underline; cursor: pointer}
-   .ext {color: blue; cursor: pointer}
-   TABLE {border-width: 1px; border-style: solid; }
-   TD {text-align: center; position: relative; border-width: 1px; border-style: solid;}
-
-   P.warning {padding-left: 1em;}
-   P#addstat {margin: 0px; text-align: center}
-   .extports { width: 80px; height: 50px;}
-   #port_9,#port_10,#port_11,#port_12,#port_13,#port_14 {background-color: LightGray; border-width: 1px; border-style: solid;}
-   #olay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #000;
-    		filter:alpha(opacity=50); -moz-opacity:0.5; -khtml-opacity: 0.5; opacity: 0.5; z-index: 1000; }
-   #content { display:none; width:400px; border:10px solid #666; background-color: #fff; 
-		border:10px solid rgba(182, 182, 182, 0.698); -moz-border-radius:8px; -webkit-border-radius:8px;
-		z-index: 2000 }
-   #content .close { background-image:url(close.png); position:absolute; right:-15px; top:-15px; cursor:pointer;
-		height:35px; width:35px; }
-   #content h2 { text-align: center; }
-   .right { width: 100px; }
-   .left { padding-left: 1em; display: inline-block; width: 150px; }
-   #xxtriggers { text-align:center; }
-   #xxtriggers img { cursor:pointer; margin:0 5px; background-color:#fff; border:1px solid #ccc; padding:2px; -moz-border-radius:4px; -webkit-border-radius:4px; }
-	
-  .ext { margin: 0px; position: absolute; z-index: 5; font-size: 14pt; font-weight: bold; }
-  .bg { margin: 0px; position: absolute; z-index: 2; top: 1px; font-size: 14pt; color: #333; }
-
-</STYLE>
+<link rel="stylesheet" type="text/css" href="dahdi.css" />
 </head>
 <body>
 
@@ -82,10 +54,10 @@ foreach ($res as $row) {
 	$spans = $db->getAll($sql, array(), DB_FETCHMODE_ASSOC);
 	foreach ($spans as $span) {
 		if ($span['ports'] > 14) {
-			print "<td>PRI</td>";
+			print "<td class='pri'>PRI</td>";
 			continue;
 		}
-		print "<td id='".$row['serial']."_".$span['xpd']."'>";
+		print "<td class='spans' id='".$row['serial']."_".$span['xpd']."'>";
 		print display_ports($row['serial'], $span['xpd'], $span['span']);
 		print "</td>";
 	}

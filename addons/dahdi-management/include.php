@@ -52,7 +52,7 @@ function display_ports($ser, $xpd, $span) {
 	$sql = "select * from provis_dahdi_ports where serial='".$ser."' and xpd='".$xpd."' order by ext";
 	$exts = $db->getAll($sql, array(), DB_FETCHMODE_ASSOC);
 	print "<div class='header'>XPD: ".$xpd."/Span: ".$span."</div>\n";
-	print "<div id ='".$row['serial']."_".$xpd."' class='click' data-sno='".$ser."' data-xpd='".$xpd."'>";
+	print "<div id ='".$ser."_".$xpd."' class='click' data-sno='".$ser."' data-xpd='".$xpd."'>";
 	if (count($exts) === 0) {
 		print "No Ports Assigned";
 	} else {
