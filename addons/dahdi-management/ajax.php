@@ -7,14 +7,14 @@ if (!@include_once(getenv('FREEPBX_CONF') ? getenv('FREEPBX_CONF') : '/etc/freep
 global $db;
 include("include.php");
 
-# Grab the xpd and serial number that we're looking at
-$sno = $_REQUEST['sno'];
-$xpd = $_REQUEST['xpd'];
-$port = $_REQUEST['port'];
-$ext = $_REQUEST['ext'];
-$cidname = $_REQUEST['cidname'];
-$tone = $_REQUEST['tone'];
-$action = $_REQUEST['action'];
+# RFC3986 all the things.
+$sno = mysql_real_escape_string($_REQUEST['sno']);
+$xpd = mysql_real_escape_string($_REQUEST['xpd']);
+$port = mysql_real_escape_string($_REQUEST['port']);
+$ext = mysql_real_escape_string($_REQUEST['ext']);
+$cidname = mysql_real_escape_string($_REQUEST['cidname']);
+$tone = mysql_real_escape_string($_REQUEST['tone']);
+$action = mysql_real_escape_string($_REQUEST['action']);
 
 # Dump everything we need to care about.
 print "<input type='hidden' id='astribank' data-sno='$sno' data-xpd='$xpd' data-port='$port'></input>\n";
@@ -145,6 +145,20 @@ function addext($ext, $sno, $xpd, $port, $tone, $cidname) {
 	# Rule 1: Sanity check ALL THE THINGS.
 	if ($ext === '') {
 		print "Extension can't be blank\n";
+		print '<script>$("#extno").focus();</script>';
+		exit;
+	}
+	if (!is_numeric($ext)) {
+		print "Extension '$ext' is not numeric\n";
+		print '<script>$("#extno").focus();$("#extno").select();</script>';
+		exit;
+	}
+	if ($ext > 9999) {
+		print "Extension '$ext' too long\n";
+		exit;
+	}
+	if (strlen($cidname) > 20) {
+		print "CallerID Name too long";
 		exit;
 	}
 	if ($cidname === '') {
@@ -193,7 +207,7 @@ function addext($ext, $sno, $xpd, $port, $tone, $cidname) {
 	# And FreePBX Also wants them to be in $_REQUEST, too.
 	$_REQUEST=$vars;
 	core_users_add($vars);
-	core_devices_add($ext, 'dahdi', '', 'fixed', $ext, $name);
+	core_devices_add($ext, 'dahdi', $vars['devinfo_dial'], 'fixed', $ext, $cidname);
 	print "Sucessfully Assigned $ext to DAHDI/$dahdi<br />\n";
 	#print '<script>${"#addext").html("Close");${"#addext").unbind();$("#addext").bind("click", function() { ${"#overlay").close() });</script>';
 	print '<script>$("#addextbutton").html("Close"); $("#addextbutton").attr({onClick: ""});$("#addextbutton").bind("click", function() {$("#content").overlay().close();});</script>';
@@ -246,3 +260,7 @@ function delext($ext) {
 	print "<script>$('#content').overlay().close();</script>";
 }
 
+
+function r($str) {
+	return rawurlencode($str); 
+}
