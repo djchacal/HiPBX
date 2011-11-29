@@ -54,15 +54,18 @@ foreach ($res as $row) {
 	$spans = $db->getAll($sql, array(), DB_FETCHMODE_ASSOC);
 	foreach ($spans as $span) {
 		if ($span['ports'] > 14) {
-			print "<td class='pri'>PRI</td>";
+			print "<td><h3 class='pri'>PRI Not Available</h3>&nbsp;Use FreePBX to manage this PRI&nbsp;</td>";
 			continue;
 		}
 		print "<td class='spans' id='".$row['serial']."_".$span['xpd']."'>";
 		print display_ports($row['serial'], $span['xpd'], $span['span']);
 		print "</td>";
 	}
-	print "<td><input type='submit' name='".$row['serial']."' value='Move Up'>";
-	print "<input type='submit' name='".$row['serial']."' value='Move Down'>";
+	print "<td style='padding: 0px; border: 0px'>";
+	print "<table class='buttons'><tr><td><input class='mbuttons' type='submit' name='".$row['serial']."' value='Move Up'></td>\n";
+	print "<td><button class='mbuttons'>Blink On</button></td></tr>";
+	print "<tr><td><input class='mbuttons' type='submit' name='".$row['serial']."' value='Move Down'></td>\n";
+	print "<td><button class='mbuttons'>Blink Off</button></td></tr></table>";
 	print "</td>";
 	print "</tr></table><div class='ports' id='".$row['serial']."'></div>";
 }

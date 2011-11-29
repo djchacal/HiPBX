@@ -9,6 +9,14 @@ body { font-family: 'Trebuchet MS', Arial; }
 TABLE {border-width: 1px; border-style: solid; }
 TD {text-align: center; position: relative; border-width: 1px; border-style: solid;}
 
+/* Table with buttons in it... */
+TABLE .buttons {border-collapse: collapse; border-width: 0px}
+
+H3.pri { margin: 0 }
+
+/* Our 'move' buttons should be the same size */
+.mbuttons {width: 6em} 
+
 /* 'Warning' class is used when FreePBX is missing the ext, but this still thinks
  * it exists.  */
 P.warning {padding-left: 1em;}

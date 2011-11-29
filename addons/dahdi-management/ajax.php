@@ -94,6 +94,7 @@ function ajax_ext($sno, $xpd, $port) {
 	showextpage($ext, $res['name'], 'AU');
 	print "<center><button id='modext' onClick='modext()'>Modify</button>&nbsp;&nbsp;";
 	print "<button id='xxremove' onClick='removeext()'>Remove</button></center>";
+	print '<script>$("#cidname").focus();</script>';
 	}
 }
 
@@ -193,7 +194,7 @@ function addext($ext, $sno, $xpd, $port, $tone, $cidname) {
 	$_REQUEST=$vars;
 	core_users_add($vars);
 	core_devices_add($ext, 'dahdi', '', 'fixed', $ext, $name);
-	print "Assigned $ext to DAHDI/$dahdi\n";
+	print "Sucessfully Assigned $ext to DAHDI/$dahdi<br />\n";
 	#print '<script>${"#addext").html("Close");${"#addext").unbind();$("#addext").bind("click", function() { ${"#overlay").close() });</script>';
 	print '<script>$("#addextbutton").html("Close"); $("#addextbutton").attr({onClick: ""});$("#addextbutton").bind("click", function() {$("#content").overlay().close();});</script>';
 } 
@@ -206,6 +207,7 @@ function removeext($sno, $xpd, $port) {
 	print "<p><center>Are you sure you wish to remove extension $ext?</center></p>\n";
 	print "<center><button id='modext' onClick=\"$('#content').overlay().close()\">No</button>&nbsp;&nbsp;";
 	print "<button id='yesbutton' onClick='doremoveext($ext)'>Yes</button></center>";
+	print '<script>$("#modext").focus();</script>';
 }
 
 # core_devices_add($deviceid,$tech,$devinfo_dial,$devicetype,$deviceuser,$description,$emergency_cid,true);
@@ -213,7 +215,7 @@ function removeext($sno, $xpd, $port) {
 
 
 function showextpage($ext='', $name='', $tone='au') {
-	print "<span class='left'>CallerID ($tone)  Name</span>\n";
+	print "<span class='left'>CallerID Name</span>\n";
 	print "<span class='right'><input id='cidname' type=text size=15 value='$name'></span><br />\n";
 	print "<span class='left'>Extension</span>\n";
 	print "<span class='right'><input id='extno' type=text size=4 value='$ext'></span><br />\n";
@@ -236,9 +238,11 @@ function delext($ext) {
 	core_users_del($ext);
 	core_devices_del($ext);
 	$sql = "delete from provis_dahdi_ports where `ext`='$ext'";
-	$db->query($sql);
-	print "<h2>Extension $ext Deleted</h2>\n";
-	print "<p /><p /><p /><p />\n";
-	print "<center><button id='modext' onClick=\"$('#content').overlay().close()\">Continue</button>&nbsp;&nbsp;";
+	$res = $db->query($sql);
+	if (PEAR::isError($res)) {
+		print "Unable to update database:<br />SQL: $sql<br /><pre>".$res->getMessage()."</pre>";
+		exit;
+	}
+	print "<script>$('#content').overlay().close();</script>";
 }
 

@@ -3,6 +3,8 @@ function bindall() {
 	$('.click').bind('click', function() {
 		var s=$(this).data('sno');
 		var x=$(this).attr('data-xpd'); // 00 = 0 if you use '.data'
+		$('.spans').each( function() { $(this).css({"background-color": ''}); });
+		$('#'+s+"_"+x).css({ "background-color": 'pink'});
 		showports(s, x, true);
 	});
 };
@@ -89,7 +91,7 @@ function doremoveext(ext) {
 		$(this).attr("disabled", true);
 	});
 	$("#content").spin("large", "black");
-	 var query= {
+	var query= {
 		sno:  $('#astribank').data('sno'),
 		xpd:  $('#astribank').attr('data-xpd'),
 		ext:  ext,
@@ -100,3 +102,13 @@ function doremoveext(ext) {
 		$("#ctext").html(data);
 	});
 }
+
+
+function modext() {
+	var query= {
+		sno:  $('#astribank').data('sno'),
+		xpd:  $('#astribank').attr('data-xpd'),
+		ext:  ext,
+		action: 'domodify'
+	};
+}	
