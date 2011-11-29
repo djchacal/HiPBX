@@ -37,7 +37,7 @@ function modport(ser, xpd, no) {
 		top: 160, 
 		load: true, 
 		mask: { color: '#fff', loadSpeed: 200, opacity: 0.5 },
-		onBeforeClose: function() { 
+		onClose: function() { 
 			var query = {
 				sno:  $('#astribank').data('sno'),
 				xpd:  $('#astribank').attr('data-xpd'),
@@ -85,10 +85,18 @@ function removeext() {
 }
 
 function doremoveext(ext) {
-	$("#ctext").spin("large", "black");
+	$(":button").each(function() {
+		$(this).attr("disabled", true);
+	});
+	$("#content").spin("large", "black");
 	 var query= {
+		sno:  $('#astribank').data('sno'),
+		xpd:  $('#astribank').attr('data-xpd'),
 		ext:  ext,
 		action: 'doremove'
 	};
-	$.post("ajax.php", query, function(data) { $("#ctext").spin(false); $("#ctext").html(data); });
+	$.post("ajax.php", query, function(data) { 
+		$("#content").spin(false); 
+		$("#ctext").html(data);
+	});
 }

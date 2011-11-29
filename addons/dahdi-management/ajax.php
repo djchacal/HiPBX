@@ -16,6 +16,8 @@ $cidname = $_REQUEST['cidname'];
 $tone = $_REQUEST['tone'];
 $action = $_REQUEST['action'];
 
+# Dump everything we need to care about.
+print "<input type='hidden' id='astribank' data-sno='$sno' data-xpd='$xpd' data-port='$port'></input>\n";
 switch ($action) {
 	case "ext":
 		ajax_ext($sno, $xpd, $port);
@@ -33,7 +35,6 @@ switch ($action) {
 		removeext($sno, $xpd, $port);
 		break;
 	case "doremove":
-		sleep(2);
 		delext($ext);
 		break;
 }
@@ -41,8 +42,6 @@ switch ($action) {
 function ajax_ext($sno, $xpd, $port) {
 	global $db;
 
-	# Dump everything we need to care about.
-	print "<input type='hidden' id='astribank' data-sno='$sno' data-xpd='$xpd' data-port='$port'></input>\n";
 
 	# Firstly, figure out if we're on ports 9-14 inclusive. If so,
 	# need to make the user aware this is a relay port, not a phone
@@ -77,15 +76,15 @@ function ajax_ext($sno, $xpd, $port) {
 	
 	$ext = $db->getOne("select ext from provis_dahdi_ports where `serial`='$sno' and `xpd`='$xpd' and `portno`='$port'");
 	if ($ext == "") {
-		showextpage(null, 'Plant Phone', null);
-		print "<center><button id='addext' onClick='addext()'>Add Ext</button></center>";
+		showextpage('', 'Plant Phone');
+		print "<center><button id='addextbutton' onClick='addext()'>Add Ext</button></center>";
 	} else {
 		$res=core_users_get($ext);
 		if (!isset($res['name'])) { ?>
 			<h3>FreePBX Error</h3>
 			<span>This extension <strong>does not exist</strong> in FreePBX. It's probably been deleted.
 			You may either remove this from provisioning, or re-create it.</span>
-			<br /><br /><center><button id='xxremove' onClick='removeext()'>Remove</button>&nbsp;&nbsp;
+			<br /><br /><center><button id='xxremove' onClick='doremoveext(<?php echo $ext?>)'>Remove</button>&nbsp;&nbsp;
 			<button id='create' onClick='addext()'>Create</button></center>
 		<?php
 		exit;
@@ -111,7 +110,7 @@ function show_ports($sno, $xpd) {
 		exit;
 	}
 
-	print "<table border=1>\n<tr>\n";
+	print "<p></p><table cellspacing=0>\n<tr>\n";
 	# Do the top row first, 1,3,5,7(,9,11,13)
 	for ($x=1; $x <= $ports; $x=$x+2) {
 		$sql = "select ext from provis_dahdi_ports where `serial`='$sno' and `xpd`='$xpd' and `portno`='$x'";
@@ -121,7 +120,7 @@ function show_ports($sno, $xpd) {
 		} else {
 			$str = $res;
 		}
-		print "<td id='port_$x'><div class='ext' id='port$x' data-sno='$sno' data-xpd='$xpd' data-portno='$x'>$str</div></td>\n";
+		print "<td class='extports' id='port_$x'><span class='bg'>Port $x</span><span class='ext' id='port$x' data-sno='$sno' data-xpd='$xpd' data-portno='$x'>$str</span></td>\n";
 	}
 	print "</tr><tr>\n";
 	# Now the second row
@@ -133,7 +132,7 @@ function show_ports($sno, $xpd) {
 		} else {
 			$str = $res;
 		}
-		print "<td id='port_$x'><div class='ext' id='port$x' data-sno='$sno' data-xpd='$xpd' data-portno='$x'>$str</div></td>\n";
+		print "<td class='extports' id='port_$x'><span class='bg'>Port $x</span><span class='ext' id='port$x' data-sno='$sno' data-xpd='$xpd' data-portno='$x'>$str</span></td>\n";
 	}
 	print "</tr></table>\n";
 }
@@ -149,6 +148,11 @@ function addext($ext, $sno, $xpd, $port, $tone, $cidname) {
 	}
 	if ($cidname === '') {
 		$cidname = "Plant Phone\n";
+	}
+	if ($sno == '' || $xpd == '' || $port == '') {
+		print "<h2>Missing stuff in the POST</h2><p>This is an ajax error</p><p>Tell Rob</p>";
+		print "<p>I have serial='$sno', xpd='$xpd', port='$port'</p>";
+		exit;
 	}
 	# Now. Does this ext already exist?
 	$results = $db->getRow("SELECT extension,name FROM users where extension='$ext'", DB_FETCHROW_ASSOC);
@@ -169,7 +173,6 @@ function addext($ext, $sno, $xpd, $port, $tone, $cidname) {
 	# And how many ports are before this span? 
 	$baseno = $db->getOne("select SUM(ports) from provis_dahdi_spans where `span` < $spanno");
 	$dahdi = $baseno + $port;
-	print "Port $port This would be port DAHDI/$dahdi\n";
 	# Big array of vars that FreePBX cares about. Half of this stuff probably isn't needed.
 	$vars = array (
 		'display' => 'extensions', 'type' => 'setup', 'action' => 'add', 'extdisplay' => '', 'extension' => $ext, 'name' => $cidname,
@@ -190,6 +193,9 @@ function addext($ext, $sno, $xpd, $port, $tone, $cidname) {
 	$_REQUEST=$vars;
 	core_users_add($vars);
 	core_devices_add($ext, 'dahdi', '', 'fixed', $ext, $name);
+	print "Assigned $ext to DAHDI/$dahdi\n";
+	#print '<script>${"#addext").html("Close");${"#addext").unbind();$("#addext").bind("click", function() { ${"#overlay").close() });</script>';
+	print '<script>$("#addextbutton").html("Close"); $("#addextbutton").attr({onClick: ""});$("#addextbutton").bind("click", function() {$("#content").overlay().close();});</script>';
 } 
 
 function removeext($sno, $xpd, $port) {
@@ -197,26 +203,25 @@ function removeext($sno, $xpd, $port) {
 
 	$ext = $db->getOne("select ext from provis_dahdi_ports where `serial`='$sno' and `xpd`='$xpd' and `portno`='$port'");
 	print "<h2>Removing Extension</h2>\n";
-	print "<input type='hidden' id='astribank' data-sno='$sno' data-xpd='$xpd' data-port='$port'></input>\n";
 	print "<p><center>Are you sure you wish to remove extension $ext?</center></p>\n";
-	print "<center><button id='modext'>No</button>&nbsp;&nbsp;";
-	print "<button onClick='doremoveext()'>Yes</button></center>";
+	print "<center><button id='modext' onClick=\"$('#content').overlay().close()\">No</button>&nbsp;&nbsp;";
+	print "<button id='yesbutton' onClick='doremoveext($ext)'>Yes</button></center>";
 }
 
 # core_devices_add($deviceid,$tech,$devinfo_dial,$devicetype,$deviceuser,$description,$emergency_cid,true);
 
 
 
-function showextpage($ext, $name, $tone) {
-	print "<span class='left'>CallerID Name</span>\n";
+function showextpage($ext='', $name='', $tone='au') {
+	print "<span class='left'>CallerID ($tone)  Name</span>\n";
 	print "<span class='right'><input id='cidname' type=text size=15 value='$name'></span><br />\n";
 	print "<span class='left'>Extension</span>\n";
 	print "<span class='right'><input id='extno' type=text size=4 value='$ext'></span><br />\n";
 	print "<span class='left'>Dial Tone</span>\n";
 	print "<span class='right'>\n";
 	foreach (array('au' => 'Au', 'xx' => 'Loud', 'yy' => 'Fax') as $t => $v) {
-		if ($tone === $t) {
-			$selected = 'selected';
+		if ($tone == $t) {
+			$selected = 'checked';
 		} else {
 			$selected = '';
 		}
@@ -226,11 +231,14 @@ function showextpage($ext, $name, $tone) {
 }
 
 function delext($ext) {
-	print "Really deleting ext $ext\n";
-	print "<span class='left'>CallerID Name</span>\n";
-	print "<span class='right'><input id='cidname' type=text size=15 value='$name'></span><br />\n";
-	print "<span class='left'>Extension</span>\n";
-	print "<span class='right'><input id='extno' type=text size=4 value='$ext'></span><br />\n";
-	print "<span class='left'>Dial Tone</span>\n";
-	print "<span class='right'>\n";
+	global $db;
+
+	core_users_del($ext);
+	core_devices_del($ext);
+	$sql = "delete from provis_dahdi_ports where `ext`='$ext'";
+	$db->query($sql);
+	print "<h2>Extension $ext Deleted</h2>\n";
+	print "<p /><p /><p /><p />\n";
+	print "<center><button id='modext' onClick=\"$('#content').overlay().close()\">Continue</button>&nbsp;&nbsp;";
 }
+
