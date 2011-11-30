@@ -1,12 +1,45 @@
 <?php
-
-
-$buttons = array("Rob Thomas <500>", "Do Not Disturb", "Day/Night switch", "Xorcom <+972 4 9951999>", "Fred's Mobile <0402 077 155>", "dbond <756>", null, null, null, "Other", "Ford Prefect <+44 1837 223 224>", "Divert to Mobile <*450402077155>", "Blah Blah <123>", "I'm getting bored <of typing these>", "But I need more", "I don't need to", "put numbers <123>", "In all of the m <though>");
+# Die noisily if fpdf doesn't exist
 require('fpdf/fpdf.php');
+
+# Load our FreePBX stuff up.
+$bootstrap_settings['freepbx_auth'] = false;
+if (!@include_once(getenv('FREEPBX_CONF') ? getenv('FREEPBX_CONF') : '/etc/freepbx.conf')) {
+    include_once('/etc/asterisk/freepbx.conf');
+}
+
+$ext = $_REQUEST['ext'];
+if (!is_numeric($ext)) {
+	print "Need a numeric extension. Got $ext instead\n";
+	exit;
+}
+
+# Grab the details of the handset
+$sql="select m.global_settings_override as conf, m.global_custom_cfg_data as data from simple_endpointman_mac_list as m, simple_endpointman_line_list as e where m.id=e.mac_id and e.ext='$ext'";
+$results = $db->getRow($sql, DB_FETCHROW_ASSOC);
+$conf=json_decode($results[0], true);
+$data=json_decode($results[1], true);
+
+if (!$conf['enable_sidecar1'] && !$conf['enable_sidecar2']) { 
+	print "No Sidecar\n";
+	exit;
+}
+
+if (!isset($data['data']['unit1'])) {
+	print "No data for sidecar\n";
+	exit;
+}
+
+# Load up the stuff into an array
+foreach ($data['data']['unit1'] as $arr) {
+	$buttons[]=getuser($arr['data']);
+}
+
+# Start making a PDF!
 $pdf=new FPDF('P', 'mm', 'A4');
 $pdf->AddPage();
 $pdf->SetFont('Arial','',16);
-$pdf->Cell(40,10, 'SPA500 Keypad Layout for 999 (Username)');
+$pdf->Cell(40,10, 'SPA500 Keypad Layout for '.getuser($ext));
 $pdf->SetFont('Arial','',8);
 
 $xpos = 10;
@@ -43,8 +76,15 @@ for ($i = 0; $i <=31; $i++) {
                 $pdf->Cell(23.5, 9.6875,$buttons[$i], 0, 0, "C");
   }
 }
-#
+# And display it.
 $pdf->Output();
-?>
 
+function getuser($ext) {
+	$res=core_users_get($ext);
+	if (!isset($res['name'])) {
+		return "$ext";
+	} else {
+		return $res['name']." <$ext>";
+	}
+}
 
