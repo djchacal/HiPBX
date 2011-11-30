@@ -19,7 +19,7 @@ H3.pri { margin: 0 }
 
 /* 'Warning' class is used when FreePBX is missing the ext, but this still thinks
  * it exists.  */
-P.warning {padding-left: 1em;}
+P.warning {padding-left: 1em; padding-right: 1em; }
 
 /* Empty <p> to put stuff in when adding ext */
 P#addstat {margin: 0px; text-align: center}

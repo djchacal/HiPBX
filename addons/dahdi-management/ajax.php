@@ -280,6 +280,9 @@ function blinkon($ser) {
 }
 
 function blink($ser, $mode) {
+
+	$xpp = "/usr/sbin/xpp_blink";
+
 	if ($mode == 'on') {
 		$cmd = 'Enabling';
 		$action = 'on';
@@ -288,10 +291,24 @@ function blink($ser, $mode) {
 		$action = 'off';
 	}
 	print "<H2>$cmd 'blink' on $ser</h2>";
-	$r = exec("xpp_blink $action label $ser 2>&1", $output, $retvar);
+	if (!file_exists($xpp)) {
+		print "<p class='warning'>Error: file $xpp does not exist, or is not accessable</p>";
+		print "<p></p><p><center><button onClick='$(\"#content\").overlay().close()'>Close</button></center></p>";
+		exit;
+	}
+	$cmd = "sudo $xpp $action label usb:$ser 2>&1";
+	$r = exec($cmd, $output, $retvar);
+	# Is sudo set up correctly?
+	if (!strstr($r, 'sudo:') === false) {
+		print "<p class='warning'>Error: SUDO is not set up correctly. Ensure that '$xpp' is a command available to the user ".get_current_user()." in /etc/sudoers</p><p>$r</p>";
+		print "<p></p><p><center><button onClick='$(\"#content\").overlay().close()'>Close</button></center></p>";
+		exit;
+	}
 	if ($retvar === 127) {
-		print "<p class='warning'>Error: Unable to run 'xpp_blink'. Is it installed?</p>";
+		print "<p class='warning'>Error: Unable to run '$cmd'. Is it installed?</p>";
+		print "<p></p><p><center><button onClick='$(\"#content\").overlay().close()'>Close</button></center></p>";
 		exit;
 	}
 	print "<p>Done. xpp_blink returned $retvar</p><p><pre>$r</pre></p>";
+	print "<p></p><p><center><button onClick='$(\"#content\").overlay().close()'>Close</button></center></p>";
 }
