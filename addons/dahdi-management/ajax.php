@@ -1,4 +1,6 @@
 <?php 
+header("Cache-Control: no-cache, must-revalidate");
+header("Expires: Sat, 23 Jul 1971 00:00:00 GMT");
 $bootstrap_settings['freepbx_auth'] = false;
 if (!@include_once(getenv('FREEPBX_CONF') ? getenv('FREEPBX_CONF') : '/etc/freepbx.conf')) {
     include_once('/etc/asterisk/freepbx.conf');
@@ -43,6 +45,9 @@ switch ($action) {
 	case "blinkon":
 		blinkon($sno);
 		break;
+	case "modify":
+		modify($ext, $sno, $xpd, $port, $tone, $cidname);
+		break;
 }
 
 function ajax_ext($sno, $xpd, $port) {
@@ -80,26 +85,26 @@ function ajax_ext($sno, $xpd, $port) {
 		}
 	}
 	
-	$ext = $db->getOne("select ext from provis_dahdi_ports where `serial`='$sno' and `xpd`='$xpd' and `portno`='$port'");
-	if ($ext == "") {
+	$ext = $db->getRow("select ext,tone from provis_dahdi_ports where `serial`='$sno' and `xpd`='$xpd' and `portno`='$port'", DB_FETCHROW_ASSOC);
+	if ($ext[0] == "") {
 		showextpage('', 'Plant Phone');
 		print "<center><button id='addextbutton' onClick='addext()'>Add Ext</button></center>";
 	} else {
-		$res=core_users_get($ext);
+		$res=core_users_get($ext[0]);
 		if (!isset($res['name'])) { ?>
 			<h3>FreePBX Error</h3>
 			<span>This extension <strong>does not exist</strong> in FreePBX. It's probably been deleted.
 			You may either remove this from provisioning, or re-create it.</span>
-			<br /><br /><center><button id='xxremove' onClick='doremoveext(<?php echo $ext?>)'>Remove</button>&nbsp;&nbsp;
+			<br /><br /><center><button id='remove_button' onClick='doremoveext(<?php echo $ext[0]?>)'>Remove</button>&nbsp;&nbsp;
 			<button id='create' onClick='addext()'>Create</button></center>
 		<?php
 		exit;
 		}
 	# We're here because we've clicked on an Exten that exists, and is valid in 
 	# FreePBX. Lets do some stuff.
-	showextpage($ext, $res['name'], 'AU');
-	print "<center><button id='modext' onClick='modext()'>Modify</button>&nbsp;&nbsp;";
-	print "<button id='xxremove' onClick='removeext()'>Remove</button></center>";
+	showextpage($ext[0], $res['name'], $ext[1]);
+	print "<center><button id='modext_button' onClick='modext()'>Modify</button>&nbsp;&nbsp;";
+	print "<button id='remove_button' onClick='removeext()'>Remove</button></center>";
 	print '<script>$("#cidname").focus();</script>';
 	}
 }
@@ -117,7 +122,7 @@ function show_ports($sno, $xpd) {
 		exit;
 	}
 
-	print "<p></p><table cellspacing=0>\n<tr>\n";
+	print "<div style='width:722px; text-align: center;'><center><table cellspacing=0>\n<tr>\n";
 	# Do the top row first, 1,3,5,7(,9,11,13)
 	for ($x=1; $x <= $ports; $x=$x+2) {
 		$sql = "select ext from provis_dahdi_ports where `serial`='$sno' and `xpd`='$xpd' and `portno`='$x'";
@@ -141,7 +146,7 @@ function show_ports($sno, $xpd) {
 		}
 		print "<td class='extports' id='port_$x'><span class='bg'>Port $x</span><span class='ext' id='port$x' data-sno='$sno' data-xpd='$xpd' data-portno='$x'>$str</span></td>\n";
 	}
-	print "</tr></table>\n";
+	print "</tr></table></center></div>\n";
 }
 
 function addext($ext, $sno, $xpd, $port, $tone, $cidname) {
@@ -266,11 +271,6 @@ function delext($ext) {
 	print "<script>$('#content').overlay().close();</script>";
 }
 
-
-function r($str) {
-	return rawurlencode($str); 
-}
-
 function blinkoff($ser) {
 	blink($ser, 'off');
 }
@@ -300,7 +300,8 @@ function blink($ser, $mode) {
 	$r = exec($cmd, $output, $retvar);
 	# Is sudo set up correctly?
 	if (!strstr($r, 'sudo:') === false) {
-		print "<p class='warning'>Error: SUDO is not set up correctly. Ensure that '$xpp' is a command available to the user ".get_current_user()." in /etc/sudoers</p><p>$r</p>";
+		$processUser = posix_getpwuid(posix_geteuid());
+		print "<p class='warning'>Error: SUDO is not set up correctly. Ensure that '$xpp' is a command available to the user ".$processUser['name']." in /etc/sudoers</p><p>$r</p>";
 		print "<p></p><p><center><button onClick='$(\"#content\").overlay().close()'>Close</button></center></p>";
 		exit;
 	}
@@ -311,4 +312,37 @@ function blink($ser, $mode) {
 	}
 	print "<p>Done. xpp_blink returned $retvar</p><p><pre>$r</pre></p>";
 	print "<p></p><p><center><button onClick='$(\"#content\").overlay().close()'>Close</button></center></p>";
+}
+
+function modify($ext, $sno, $xpd, $port, $tone, $cidname) {
+	global $db;
+
+	$changed = false;
+
+	print "<input type='hidden' id='modifydata' data-ext='$ext' data-cidname='$cidname' data-tone='$tone'></input>\n";
+	print "<H2>Modifying $sno/$xpd/$port</h2>";
+	# OK, what's being changed? 
+	# Is it the extension number?
+	$myext = $db->getRow("select ext,tone from provis_dahdi_ports where `serial`='$sno' and `xpd`='$xpd' and `portno`='$port'", DB_FETCHROW_ASSOC);
+	if ($myext['ext'] !== $ext) {
+		print "<span class='left'>Extension Changed:</span><span class='right'>$myext -> $ext</span>\n";
+		$changed = true;
+	} else {
+		print "<span class='left'>Extension unchanged.</span><br />\n";
+	}
+	# How about the name, is that being changed?
+	$res=core_users_get($ext);
+	if (!isset($res['name'])) {
+		print "<span class='left'>User missing from FreePBX</span>\n";
+		$changed = true;
+	} else {
+		if ($res['name'] != $cidname) {
+			print "<span class='left'>Name Changed:</span><span class='right'>".$res['name']." -> $cidname</span><br />\n";
+			$changed = true;
+		} else {
+			print "<span class='left'>CID Name unchanged.</span>\n";
+		}
+	}
+	
+		
 }

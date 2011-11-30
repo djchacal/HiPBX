@@ -46,7 +46,7 @@ $res = $db->getAll($sql, array(), DB_FETCHMODE_ASSOC);
 
 <?php
 foreach ($res as $row) {
-	print "<table cellspacing=0>\n";
+	print "<table class='astribank' cellspacing=0>\n";
 	print "<caption> ".$row['serial']."</caption>\n";
 	print "<tr>\n";
 	# Each Astribank has a number of spans
@@ -61,7 +61,7 @@ foreach ($res as $row) {
 		print display_ports($row['serial'], $span['xpd'], $span['span']);
 		print "</td>";
 	}
-	print "<td style='padding: 0px; border: 0px'>";
+	print "<td style='width: 167px; padding: 0px; border: 0px'>";
 	print "<table class='buttons'><tr><td><input class='mbuttons' type='submit' name='".$row['serial']."' value='Move Up'></td>\n";
 	print "<td><button class='mbuttons' onClick='return blink(\"".$row['serial']."\", \"blinkon\");'>Blink On</button></td></tr>";
 	print "<tr><td><input class='mbuttons' type='submit' name='".$row['serial']."' value='Move Down'></td>\n";

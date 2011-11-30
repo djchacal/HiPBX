@@ -15,6 +15,7 @@ function showports(s, x, bounce) {
 		type: 'POST',
 		url: 'ajax.php',
 		data: 'action=ports&sno='+s+'&xpd='+x,
+		cache: false,
 		beforeSend: function() {
 			if (bounce) { $(".ports").hide("fast"); }
 			$("#olay").show();
@@ -25,7 +26,7 @@ function showports(s, x, bounce) {
 			$("#olay").hide();
 			if (bounce) { $(".ports").hide('fast'); }
 			$("#"+s).html(msg);
-			if (bounce) { $("#"+s).show('fast'); }
+			if (bounce) { $("#"+s).show('fast', function() { alert('Flow'); document.body.ClassName = document.body.ClassName; }); }
 			$(".ext").bind('click', function() { 
 				modport($(this).data('sno'), $(this).attr('data-xpd'), $(this).data('portno'));
 			});
@@ -87,9 +88,8 @@ function removeext() {
 }
 
 function doremoveext(ext) {
-	$(":button").each(function() {
-		$(this).attr("disabled", true);
-	});
+	$("#yesbutton").attr("disabled", true);
+	$("#modext").attr("disabled", true);
 	$("#content").spin("large", "black");
 	var query= {
 		sno:  $('#astribank').data('sno'),
@@ -108,9 +108,15 @@ function modext() {
 	var query= {
 		sno:  $('#astribank').data('sno'),
 		xpd:  $('#astribank').attr('data-xpd'),
-		ext:  ext,
-		action: 'domodify'
+		port: $('#astribank').data('port'),
+		ext:  $("#extno").val(),
+		cidname: $("#cidname").val(),
+		tone:  $(this).attr('value'),
+		action: 'modify'
 	};
+	$.post("ajax.php", query, function(data) { 
+		$("#ctext").html(data);
+	});
 }	
 
 function blink(sno, cmd) {

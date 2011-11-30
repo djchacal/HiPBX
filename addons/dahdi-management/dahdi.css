@@ -1,12 +1,13 @@
 /* Start with a purty font */
 body { font-family: 'Trebuchet MS', Arial; }
 /* For the Spans */
-.click {text-decoration: underline; color: blue;  cursor: pointer; padding: 0 .2em 0 .2em;}
+.click {text-decoration: underline; color: blue;  cursor: pointer; padding: 0 .2em 0 .2em; }
 /* For the Extensions */
 .ext {text-decoration: underline; color: blue; cursor: pointer}
 
 /* Make tables look less like 1985 */
 TABLE {border-width: 1px; border-style: solid; }
+.astribank { width: 800px }
 TD {text-align: center; position: relative; border-width: 1px; border-style: solid;}
 
 /* Table with buttons in it... */
@@ -25,7 +26,7 @@ P.warning {padding-left: 1em; padding-right: 1em; }
 P#addstat {margin: 0px; text-align: center}
 
 /* TD for all the Ports/Exts */
-.extports { width: 80px; height: 50px;}
+.extports { width: 80px; height: 50px; text-align: center;}
 
 /* Mark 9-14 as gray */
 #port_9,#port_10,#port_11,#port_12,#port_13,#port_14 {background-color: LightGray; border-width: 1px; border-style: solid;}
@@ -43,9 +44,9 @@ P#addstat {margin: 0px; text-align: center}
 #content h2 { text-align: center; }
 
 /* For the 'Port x' and $ext table */
-.ext { margin: 0px; position: absolute; z-index: 5; font-size: 14pt; font-weight: bold; }
-.bg { margin: 0px; position: absolute; z-index: 2; top: 1px; font-size: 14pt; color: #333; }
+.ext { margin: 0px; position: absolute; z-index: 5; font-size: 14pt; font-weight: bold; text-align: center; }
+.bg { margin: 0px; position: absolute; z-index: 2; top: 1px; font-size: 14pt; color: #333; text-align: center;}
 
 /* Inside Overlay, for left and right */
-.right { width: 100px; }
-.left { padding-left: 1em; display: inline-block; width: 150px; }
+.right { width: 150px; }
+.left { padding-left: 1em; display: inline-block; width: 200px; }
