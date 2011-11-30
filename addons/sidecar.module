@@ -1,0 +1,48 @@
+<?php
+
+/* ARI Module to link to the GenSPA500 script. */
+/* Rob Thomas - xrobau@gmail.com */
+/* Licenced under the AGPLv3 */
+
+/**
+ * @file
+ * Functions for the interface to the help page
+ */
+
+class sidecar {
+
+  /*
+   * rank (for prioritizing modules)
+   */
+  function rank() {
+
+    $rank = 21;
+    return $rank;
+  }
+
+  /*
+   * init
+   */
+  function init() {
+  }
+
+  /*
+   * Adds menu item to nav menu
+   *
+   * @param $args
+   *   Common arguments
+   */
+  function navMenu($args) {
+
+    // put if statement in return string, because do not know $logout until page is built
+    $ext = $_SESSION['ari_user']['extension'];
+    $ret .= "
+      <?php if ($logout !='') { ?> <p><small><small><a href=/genspa500.php?ext=$ext>Sidecar Printout</a></small></small></p> <?php } ?>";
+
+    return $ret;
+  }
+
+}
+
+
+?>
