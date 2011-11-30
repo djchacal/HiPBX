@@ -112,3 +112,35 @@ function modext() {
 		action: 'domodify'
 	};
 }	
+
+function blink(sno, cmd) {
+	var query= {
+		sno:  sno,
+		action: cmd 
+	}
+        $.ajax({
+                type: 'POST',
+                url: 'ajax.php',
+                data: query,
+                beforeSend: function() {
+                        $(".ports").hide("fast");
+                        $("#olay").show();
+                        $("#olay").spin("large", "white");
+                },
+                success: function( msg ) {
+                        $("#olay").spin(false);
+			$("#content").overlay({ 
+				top: 160, 
+				load: true, 
+				mask: { color: '#fff', loadSpeed: 200, opacity: 0.5 },
+				onClose: function() { 
+					$("#olay").spin(false);
+					$('#olay').hide(); 
+				}
+			});
+			$("#content").overlay().load();
+			$("#ctext").html(msg);
+		}
+	});
+	return false;
+}

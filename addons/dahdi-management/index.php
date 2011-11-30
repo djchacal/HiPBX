@@ -63,9 +63,9 @@ foreach ($res as $row) {
 	}
 	print "<td style='padding: 0px; border: 0px'>";
 	print "<table class='buttons'><tr><td><input class='mbuttons' type='submit' name='".$row['serial']."' value='Move Up'></td>\n";
-	print "<td><button class='mbuttons'>Blink On</button></td></tr>";
+	print "<td><button class='mbuttons' onClick='return blink(\"".$row['serial']."\", \"blinkon\");'>Blink On</button></td></tr>";
 	print "<tr><td><input class='mbuttons' type='submit' name='".$row['serial']."' value='Move Down'></td>\n";
-	print "<td><button class='mbuttons'>Blink Off</button></td></tr></table>";
+	print "<td><button class='mbuttons' onClick='return blink(\"".$row['serial']."\", \"blinkoff\");'>Blink Off</button></td></tr></table>";
 	print "</td>";
 	print "</tr></table><div class='ports' id='".$row['serial']."'></div>";
 }

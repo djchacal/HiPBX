@@ -37,6 +37,12 @@ switch ($action) {
 	case "doremove":
 		delext($ext);
 		break;
+	case "blinkoff":
+		blinkoff($sno);
+		break;
+	case "blinkon":
+		blinkon($sno);
+		break;
 }
 
 function ajax_ext($sno, $xpd, $port) {
@@ -263,4 +269,29 @@ function delext($ext) {
 
 function r($str) {
 	return rawurlencode($str); 
+}
+
+function blinkoff($ser) {
+	blink($ser, 'off');
+}
+
+function blinkon($ser) {
+	blink($ser, 'on');
+}
+
+function blink($ser, $mode) {
+	if ($mode == 'on') {
+		$cmd = 'Enabling';
+		$action = 'on';
+	} else {
+		$cmd = 'Disabling';
+		$action = 'off';
+	}
+	print "<H2>$cmd 'blink' on $ser</h2>";
+	$r = exec("xpp_blink $action label $ser 2>&1", $output, $retvar);
+	if ($retvar === 127) {
+		print "<p class='warning'>Error: Unable to run 'xpp_blink'. Is it installed?</p>";
+		exit;
+	}
+	print "<p>Done. xpp_blink returned $retvar</p><p><pre>$r</pre></p>";
 }
