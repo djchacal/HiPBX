@@ -254,6 +254,7 @@ function showextpage($ext='', $name='', $tone='au') {
 		}
 		print "<input type='radio' name='tonezone' $selected value='$t'>$v</input>\n";
 	}
+	print "</span>";
 	if (function_exists('rp_get_routes') && file_exists('/etc/hipbx.d/provis.conf')) {
 		# We have routepermissions and hipbx!
 		print_routeperms($ext);
@@ -364,16 +365,17 @@ function modify($ext, $sno, $xpd, $port, $tone, $cidname) {
 	}
 }
 
-function print_routeperms($ext=null) {
+function print_routeperms($ext) {
 	$pconf= @parse_ini_file('/etc/hipbx.d/provis.conf', false, INI_SCANNER_RAW);
-	print "<span class='left'>Route Permissions</span>\n";
+	print "<span class='both'>Route Permissions <a href='#' onClick='rpshowhide()'>(Show/Hide)</a></span>\n";
 	$routes = rp_get_routes();
-	if ($ext === null) {
+	if ($ext === '') {
 		# Do we have default route permissions in from provis?
-		if (isset($pconf['ROUTEPERMISSION']) && is_array($pconf['ROUTEPERMISSION'])) {
+		if (isset($pconf['ROUTEPERMISSIONS']) && is_array($pconf['ROUTEPERMISSIONS'])) {
 			# OK, So our permissions are default!
-			foreach ($pconf['ROUTEPERMISSION'] as $trunk=>$val) {
-				$p[$trunk]=$val;
+			foreach ($pconf['ROUTEPERMISSIONS'] as $trunk=>$val) {
+				$arr=preg_split('/=/', str_replace(array('"', "'"), null, $val));
+				$p[$arr[0]]=$arr[1];
 			}
 			foreach ($routes as $r) {
 				if ($p[$r] == 'NO') {
@@ -398,7 +400,17 @@ function print_routeperms($ext=null) {
 			}
 		}
 	}
-	print "I have routes.<br />";
-	print_r($perms);
-
+	print "<div id='routediv'>";
+	$loc = 'left';
+	foreach ($perms as $key => $val) {
+		# OMG a lot of array iterations in this function..
+		print "<span class='$loc'><input type='checkbox' name='routperms' value='$key' $val>$key</input></span>";
+		if ($loc == 'left') { 
+			$loc = 'right';
+		} else {
+			$loc = 'left';
+		}
+	}
+	print "</div>";
+	
 }
