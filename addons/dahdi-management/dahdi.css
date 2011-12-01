@@ -44,8 +44,8 @@ P#addstat {margin: 0px; text-align: center}
 #content h2 { text-align: center; }
 
 /* For the 'Port x' and $ext table */
-.ext { margin: 0px; position: absolute; z-index: 5; font-size: 14pt; font-weight: bold; text-align: center; }
-.bg { margin: 0px; position: absolute; z-index: 2; top: 1px; font-size: 14pt; color: #333; text-align: center;}
+.ext { margin: 0px; z-index: 5; font-size: 14pt; font-weight: bold; text-align: center; }
+.bg { margin: 0px; z-index: 2; top: 1px; font-size: 14pt; color: #333; text-align: center;}
 
 /* Inside Overlay, for left and right */
 .right { width: 150px; }

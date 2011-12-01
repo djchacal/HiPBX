@@ -26,7 +26,7 @@ function showports(s, x, bounce) {
 			$("#olay").hide();
 			if (bounce) { $(".ports").hide('fast'); }
 			$("#"+s).html(msg);
-			if (bounce) { $("#"+s).show('fast', function() { alert('Flow'); document.body.ClassName = document.body.ClassName; }); }
+			if (bounce) { $("#"+s).show('fast', function() { document.body.ClassName = document.body.ClassName; }); }
 			$(".ext").bind('click', function() { 
 				modport($(this).data('sno'), $(this).attr('data-xpd'), $(this).data('portno'));
 			});
@@ -105,18 +105,23 @@ function doremoveext(ext) {
 
 
 function modext() {
-	var query= {
-		sno:  $('#astribank').data('sno'),
-		xpd:  $('#astribank').attr('data-xpd'),
-		port: $('#astribank').data('port'),
-		ext:  $("#extno").val(),
-		cidname: $("#cidname").val(),
-		tone:  $(this).attr('value'),
-		action: 'modify'
-	};
-	$.post("ajax.php", query, function(data) { 
-		$("#ctext").html(data);
+	$('input:radio').each(function(){
+		if ($(this).attr('checked')) {
+			var query= {
+				sno:  $('#astribank').data('sno'),
+				xpd:  $('#astribank').attr('data-xpd'),
+				port: $('#astribank').data('port'),
+				ext:  $("#extno").val(),
+				cidname: $("#cidname").val(),
+				tone:  $(this).attr('value'),
+				action: 'modify'
+			};
+			$.post("ajax.php", query, function(data) { 
+				$("#ctext").html(data);
+			});
+		};
 	});
+	
 }	
 
 function blink(sno, cmd) {

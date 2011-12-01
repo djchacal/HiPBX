@@ -132,7 +132,7 @@ function show_ports($sno, $xpd) {
 		} else {
 			$str = $res;
 		}
-		print "<td class='extports' id='port_$x'><span class='bg'>Port $x</span><span class='ext' id='port$x' data-sno='$sno' data-xpd='$xpd' data-portno='$x'>$str</span></td>\n";
+		print "<td class='extports' id='port_$x'><div class='bg'>Port $x</div><div class='ext' id='port$x' data-sno='$sno' data-xpd='$xpd' data-portno='$x'>$str</div></td>\n";
 	}
 	print "</tr><tr>\n";
 	# Now the second row
@@ -144,7 +144,7 @@ function show_ports($sno, $xpd) {
 		} else {
 			$str = $res;
 		}
-		print "<td class='extports' id='port_$x'><span class='bg'>Port $x</span><span class='ext' id='port$x' data-sno='$sno' data-xpd='$xpd' data-portno='$x'>$str</span></td>\n";
+		print "<td class='extports' id='port_$x'><div class='bg'>Port $x</div><div class='ext' id='port$x' data-sno='$sno' data-xpd='$xpd' data-portno='$x'>$str</div></td>\n";
 	}
 	print "</tr></table></center></div>\n";
 }
@@ -324,8 +324,8 @@ function modify($ext, $sno, $xpd, $port, $tone, $cidname) {
 	# OK, what's being changed? 
 	# Is it the extension number?
 	$myext = $db->getRow("select ext,tone from provis_dahdi_ports where `serial`='$sno' and `xpd`='$xpd' and `portno`='$port'", DB_FETCHROW_ASSOC);
-	if ($myext['ext'] !== $ext) {
-		print "<span class='left'>Extension Changed:</span><span class='right'>$myext -> $ext</span>\n";
+	if ($myext[0] !== $ext) {
+		print "<span class='left'>Extension Changed:</span><span class='right'>$myext[0] -> $ext</span>\n";
 		$changed = true;
 	} else {
 		print "<span class='left'>Extension unchanged.</span><br />\n";
@@ -344,5 +344,18 @@ function modify($ext, $sno, $xpd, $port, $tone, $cidname) {
 		}
 	}
 	
-		
+	# Dialtone?
+	if ($myext[1] !== $tone) {
+		print "<span class='left'>Dialtone Changed:</span><span class='right'>$myext[1] -> $tone</span>\n";
+		$changed = true;
+	} else {
+		print "<span class='left'>Dialtone unchanged.</span><br />\n";
+	}
+
+	# Now, did anything actually change?
+	if ($changed) {
+		print "Stuff is changed. [button]\n";
+	} else {
+		print "No stuff is changed. [idiot]\n";
+	}
 }
