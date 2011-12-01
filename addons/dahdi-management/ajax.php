@@ -438,3 +438,20 @@ function update_routeperms($ext, $route) {
 		}
 	}
 }
+
+function load_astribanks() {
+	$cmd = "/var/www/html/dahdi/parse.pl 2>&1";
+	$r = exec($cmd, $output, $retvar);
+	if ($r === "sudo: no tty present and no askpass program specified") {
+		print "<h2>System Error</h2>";
+		print "<p class='warning'>Error: SUDO is not set up correctly. Ensure that /usr/sbin/dahdi_hardware is a command available ";
+		print "to the user ".$processUser['name']." in /etc/sudoers</p><p>$r</p>";
+		print "<p></p><p><center><button onClick='$(\"#content\").overlay().close()'>Close</button></center></p>";
+	        exit;
+	}
+
+	print "<h2>Astribanks Imported</h2>";
+	print "<p class='warning'>Astribanks have been imported. The output of the import program is below</p>";
+	print "<pre>$r</pre>\n";
+	print "<p></p><p><center><button onClick='$(\"#content\").overlay().close()'>Close</button></center></p>";
+}

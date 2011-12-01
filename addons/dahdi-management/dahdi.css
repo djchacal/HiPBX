@@ -28,6 +28,11 @@ P#addstat {margin: 0px; text-align: center}
 /* TD for all the Ports/Exts */
 .extports { width: 80px; height: 50px; text-align: center;}
 
+/* Buttons on the right */
+.bbox { width: 84px; padding: 0px; border: 0px }
+
+/* Move buttons - Hide by default */
+.mleft { display: none; }
 /* Mark 9-14 as gray */
 #port_9,#port_10,#port_11,#port_12,#port_13,#port_14 {background-color: LightGray; border-width: 1px; border-style: solid;}
 

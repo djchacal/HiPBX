@@ -41,6 +41,18 @@ $res = $db->getAll($sql, array(), DB_FETCHMODE_ASSOC);
 <div id="olay" style="display: none"></div>
 <div id="content" style="display: none"><span id="ctext"></span></div>
 
+<table class='astribank' cellspacing=0>
+<tr>
+ <td>
+  <center>Managment Functions</center>
+  <center>
+   <button class='tbutton' onClick='return false;'>Resync</button>  &nbsp;
+   <button class='tbutton' onClick='return false;'>Move</button> &nbsp;
+   <button class='tbutton' onClick='return false;'>Find Missing</button> &nbsp;
+   <button class='tbutton' onclick='return false;'>Reassign</button>
+ </td>
+</tr>
+</table>
 
 <form method='post'>
 
@@ -61,10 +73,10 @@ foreach ($res as $row) {
 		print display_ports($row['serial'], $span['xpd'], $span['span']);
 		print "</td>";
 	}
-	print "<td style='width: 167px; padding: 0px; border: 0px'>";
-	print "<table class='buttons'><tr><td><input class='mbuttons' type='submit' name='".$row['serial']."' value='Move Up'></td>\n";
+	print "<td class='bbox'>";
+	print "<table class='buttons'><tr><td class='mleft'><input class='mbuttons' type='submit' name='".$row['serial']."' value='Move Up'></td>\n";
 	print "<td><button class='mbuttons' onClick='return blink(\"".$row['serial']."\", \"blinkon\");'>Blink On</button></td></tr>";
-	print "<tr><td><input class='mbuttons' type='submit' name='".$row['serial']."' value='Move Down'></td>\n";
+	print "<tr><td class='mleft'><input class='mbuttons' type='submit' name='".$row['serial']."' value='Move Down'></td>\n";
 	print "<td><button class='mbuttons' onClick='return blink(\"".$row['serial']."\", \"blinkoff\");'>Blink Off</button></td></tr></table>";
 	print "</td>";
 	print "</tr></table><div class='ports' id='".$row['serial']."'></div>";
@@ -72,4 +84,5 @@ foreach ($res as $row) {
 
 ?>
 <script> bindall(); </script>
+</form>
 

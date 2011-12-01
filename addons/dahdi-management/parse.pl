@@ -16,7 +16,7 @@ close FH;
 my $dbh = DBI->connect("DBI:mysql:$mdb", $muser, $mpass) 
 	|| die "Could not connect to DB: $DBI::errstr";
 
-open (FH, "/tmp/a");
+open (FH, "sudo /usr/sbin/dahdi_hardware -v|") or die "Cannot run sudo /usr/sbin/dahdi_hardware -v $!";
 
 # Grab all of the file and stick it in an array.
 @astribanks = <FH>;
@@ -26,11 +26,13 @@ open (FH, "/tmp/a");
 
 # Nuke all the existing spans. 
 $dbh->do('delete from provis_dahdi_spans');
+my $count=0;
 
 while (my $line = shift @astribanks) {
 	chomp($line);
 	# usb:003/005          xpp_usb+     e4e4:1162 Astribank-modular FPGA-firmware
 	if ($line =~ /^usb:(\d\d\d\/\d\d\d)/) {
+		$count++;
 		# Start of an Astribank. 
 		$usb = $1;
 		# Grab the next 4 lines:
@@ -85,7 +87,8 @@ while (my $line = shift @astribanks) {
 		}
 	}
 }
-		
+
+print "Imported $count Astribanks";
 
 sub load_astribank($$$$) {
 	my ($sno, $usb, $p1, $p2) = @_;
