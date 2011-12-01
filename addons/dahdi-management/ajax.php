@@ -88,7 +88,7 @@ function ajax_ext($sno, $xpd, $port) {
 	$ext = $db->getRow("select ext,tone from provis_dahdi_ports where `serial`='$sno' and `xpd`='$xpd' and `portno`='$port'", DB_FETCHROW_ASSOC);
 	if ($ext[0] == "") {
 		showextpage('', 'Plant Phone');
-		print "<center><button id='addextbutton' onClick='addext()'>Add Ext</button></center>";
+		print "<center><button id='addextbutton' onClick='addext()'>Add Ext</button></center><p></p>";
 	} else {
 		$res=core_users_get($ext[0]);
 		if (!isset($res['name'])) { ?>
@@ -105,7 +105,7 @@ function ajax_ext($sno, $xpd, $port) {
 	showextpage($ext[0], $res['name'], $ext[1]);
 	print "<center><button id='modext_button' onClick='modext()'>Modify</button>&nbsp;&nbsp;";
 	print "<button id='remove_button' onClick='removeext()'>Remove</button></center>";
-	print '<script>$("#cidname").focus();</script>';
+	print '<script>$("#cidname").focus();</script><p></p>';
 	}
 }
 
@@ -254,6 +254,10 @@ function showextpage($ext='', $name='', $tone='au') {
 		}
 		print "<input type='radio' name='tonezone' $selected value='$t'>$v</input>\n";
 	}
+	if (function_exists('rp_get_routes') && file_exists('/etc/hipbx.d/provis.conf')) {
+		# We have routepermissions and hipbx!
+		print_routeperms($ext);
+	}
 	print "</span><p id='addstat'>&nbsp;</p>\n";
 }
 
@@ -358,4 +362,43 @@ function modify($ext, $sno, $xpd, $port, $tone, $cidname) {
 	} else {
 		print "No stuff is changed. [idiot]\n";
 	}
+}
+
+function print_routeperms($ext=null) {
+	$pconf= @parse_ini_file('/etc/hipbx.d/provis.conf', false, INI_SCANNER_RAW);
+	print "<span class='left'>Route Permissions</span>\n";
+	$routes = rp_get_routes();
+	if ($ext === null) {
+		# Do we have default route permissions in from provis?
+		if (isset($pconf['ROUTEPERMISSION']) && is_array($pconf['ROUTEPERMISSION'])) {
+			# OK, So our permissions are default!
+			foreach ($pconf['ROUTEPERMISSION'] as $trunk=>$val) {
+				$p[$trunk]=$val;
+			}
+			foreach ($routes as $r) {
+				if ($p[$r] == 'NO') {
+					$perms[$r]='';
+				} else {
+					$perms[$r]='checked';
+				}
+			}
+		} else {
+			# No Defaults. Everything OK!
+			foreach ($routes as $r) {
+				$perms[$r]='checked';
+			}
+		}
+	} else {
+		# We have an extension. Lets see what this baby's got.
+		foreach ($routes as $r) {
+			if (rp_get_perm($ext, $r) == 'NO') {
+				$perms[$r]='';
+			} else {
+				$perms[$r]='checked';
+			}
+		}
+	}
+	print "I have routes.<br />";
+	print_r($perms);
+
 }
