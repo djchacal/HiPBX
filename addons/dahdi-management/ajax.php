@@ -367,7 +367,7 @@ function modify($ext, $sno, $xpd, $port, $tone, $cidname) {
 
 function print_routeperms($ext) {
 	$pconf= @parse_ini_file('/etc/hipbx.d/provis.conf', false, INI_SCANNER_RAW);
-	print "<span class='both'>Route Permissions <a href='#' onClick='rpshowhide()'>(Show/Hide)</a></span>\n";
+	print "<span class='both'>Route Permissions (<a href='#' onClick='rpshowhide()'>Show/Hide</a>)</span>\n";
 	$routes = rp_get_routes();
 	if ($ext === '') {
 		# Do we have default route permissions in from provis?

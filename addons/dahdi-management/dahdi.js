@@ -155,3 +155,13 @@ function blink(sno, cmd) {
 	});
 	return false;
 }
+
+function rpshowhide() {
+	if ($('#routediv').is(":visible")) {
+		$('#routediv').hide();
+	} else {
+		$('#routediv').show();
+	}
+	return false;
+}
+		

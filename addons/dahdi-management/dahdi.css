@@ -52,4 +52,4 @@ P#addstat {margin: 0px; text-align: center}
 .left { padding-left: 1em; display: inline-block; width: 200px; }
 .both { width: 350px; margin: 0 1em; text-align: center }
 
-#routediv { margin: 0 1em; border: 2px solid #000 }
+#routediv { margin: 0 1em; border: 2px solid #000; display: none }
