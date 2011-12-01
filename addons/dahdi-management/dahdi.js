@@ -70,8 +70,12 @@ function addext() {
 				ext:  $("#extno").val(),
 				cidname: $("#cidname").val(),
 				tone:  $(this).attr('value'),
+				'routes[]': [],
 				action: 'addext'
 			};
+			$(":checked").each(function() {
+  				query['routes[]'].push($(this).val());
+			});
 		$.post("ajax.php", query, function(data) { $("#addstat").html(data); });
 		}
 	});
@@ -114,8 +118,12 @@ function modext() {
 				ext:  $("#extno").val(),
 				cidname: $("#cidname").val(),
 				tone:  $(this).attr('value'),
+				'routes[]': [],
 				action: 'modify'
 			};
+			$(":checked").each(function() {
+  				query['routes[]'].push($(this).val());
+			});
 			$.post("ajax.php", query, function(data) { 
 				$("#ctext").html(data);
 			});

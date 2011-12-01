@@ -50,6 +50,6 @@ P#addstat {margin: 0px; text-align: center}
 /* Inside Overlay, for left and right */
 .right { width: 150px; }
 .left { padding-left: 1em; display: inline-block; width: 200px; }
-.both { width: 350px; margin: 0 1em; text-align: center }
+.both { width: 350px; margin: 0 1em; }
 
 #routediv { margin: 0 1em; border: 2px solid #000; display: none }

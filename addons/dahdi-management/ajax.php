@@ -17,6 +17,7 @@ $ext = mysql_real_escape_string($_REQUEST['ext']);
 $cidname = mysql_real_escape_string($_REQUEST['cidname']);
 $tone = mysql_real_escape_string($_REQUEST['tone']);
 $action = mysql_real_escape_string($_REQUEST['action']);
+$routes = $_REQUEST['routes']; /* Is an array */
 
 # Dump everything we need to care about.
 print "<input type='hidden' id='astribank' data-sno='$sno' data-xpd='$xpd' data-port='$port'></input>\n";
@@ -31,7 +32,7 @@ switch ($action) {
 		show_ports($sno, $xpd);
 		break;
 	case "addext":
-		addext($ext, $sno, $xpd, $port, $tone, $cidname);
+		addext($ext, $sno, $xpd, $port, $tone, $cidname, $routes);
 		break;
 	case "remove":
 		removeext($sno, $xpd, $port);
@@ -46,7 +47,7 @@ switch ($action) {
 		blinkon($sno);
 		break;
 	case "modify":
-		modify($ext, $sno, $xpd, $port, $tone, $cidname);
+		modify($ext, $sno, $xpd, $port, $tone, $cidname, $routes);
 		break;
 }
 
@@ -149,7 +150,7 @@ function show_ports($sno, $xpd) {
 	print "</tr></table></center></div>\n";
 }
 
-function addext($ext, $sno, $xpd, $port, $tone, $cidname) {
+function addext($ext, $sno, $xpd, $port, $tone, $cidname, $routes) {
 	global $db;
 
 	# Adding an Extension. Yay. 
@@ -220,6 +221,9 @@ function addext($ext, $sno, $xpd, $port, $tone, $cidname) {
 	core_users_add($vars);
 	core_devices_add($ext, 'dahdi', $vars['devinfo_dial'], 'fixed', $ext, $cidname);
 	print "Sucessfully Assigned $ext to DAHDI/$dahdi<br />\n";
+	if (function_exists('rp_get_routes') && is_array($routes)) {
+		update_routeperms($ext, $routes);
+	}
 	#print '<script>${"#addext").html("Close");${"#addext").unbind();$("#addext").bind("click", function() { ${"#overlay").close() });</script>';
 	print '<script>$("#addextbutton").html("Close"); $("#addextbutton").attr({onClick: ""});$("#addextbutton").bind("click", function() {$("#content").overlay().close();});</script>';
 } 
@@ -273,6 +277,7 @@ function delext($ext) {
 		print "Unable to update database:<br />SQL: $sql<br /><pre>".$res->getMessage()."</pre>";
 		exit;
 	}
+	rp_purge_ext($ext);
 	print "<script>$('#content').overlay().close();</script>";
 }
 
@@ -319,10 +324,8 @@ function blink($ser, $mode) {
 	print "<p></p><p><center><button onClick='$(\"#content\").overlay().close()'>Close</button></center></p>";
 }
 
-function modify($ext, $sno, $xpd, $port, $tone, $cidname) {
+function modify($ext, $sno, $xpd, $port, $tone, $cidname, $routes) {
 	global $db;
-
-	$changed = false;
 
 	print "<input type='hidden' id='modifydata' data-ext='$ext' data-cidname='$cidname' data-tone='$tone'></input>\n";
 	print "<H2>Modifying $sno/$xpd/$port</h2>";
@@ -331,7 +334,6 @@ function modify($ext, $sno, $xpd, $port, $tone, $cidname) {
 	$myext = $db->getRow("select ext,tone from provis_dahdi_ports where `serial`='$sno' and `xpd`='$xpd' and `portno`='$port'", DB_FETCHROW_ASSOC);
 	if ($myext[0] !== $ext) {
 		print "<span class='left'>Extension Changed:</span><span class='right'>$myext[0] -> $ext</span>\n";
-		$changed = true;
 	} else {
 		print "<span class='left'>Extension unchanged.</span><br />\n";
 	}
@@ -339,11 +341,9 @@ function modify($ext, $sno, $xpd, $port, $tone, $cidname) {
 	$res=core_users_get($ext);
 	if (!isset($res['name'])) {
 		print "<span class='left'>User missing from FreePBX</span>\n";
-		$changed = true;
 	} else {
 		if ($res['name'] != $cidname) {
 			print "<span class='left'>Name Changed:</span><span class='right'>".$res['name']." -> $cidname</span><br />\n";
-			$changed = true;
 		} else {
 			print "<span class='left'>CID Name unchanged.</span>\n";
 		}
@@ -352,17 +352,17 @@ function modify($ext, $sno, $xpd, $port, $tone, $cidname) {
 	# Dialtone?
 	if ($myext[1] !== $tone) {
 		print "<span class='left'>Dialtone Changed:</span><span class='right'>$myext[1] -> $tone</span>\n";
-		$changed = true;
 	} else {
 		print "<span class='left'>Dialtone unchanged.</span><br />\n";
 	}
 
-	# Now, did anything actually change?
-	if ($changed) {
-		print "Stuff is changed. [button]\n";
-	} else {
-		print "No stuff is changed. [idiot]\n";
+	# Route Permissions..
+	if (function_exists('rp_get_routes') && is_array($routes)) {
+		update_routeperms($ext, $routes);
+		print "<span class='left'>Routes Updated</span><br />";
 	}
+		
+	print "<center><button id='modext' onClick=\"$('#content').overlay().close()\">Done</button>&nbsp;&nbsp;";
 }
 
 function print_routeperms($ext) {
@@ -413,4 +413,28 @@ function print_routeperms($ext) {
 	}
 	print "</div>";
 	
+}
+
+function update_routeperms($ext, $route) {
+	global $db;
+	
+	# Everything that's present in $route is ENABLED, everything that's NOT present is DISABLED.
+	foreach ($route as $id => $val) {
+		$allowed[$val]=true;
+	}
+
+	# Grab all the routes on the system
+	$routes = rp_get_routes();
+
+	# Purge the current permissions..
+	rp_purge_ext($ext);
+
+	# And insert them back in.
+	foreach ($routes as $r) {
+		if ($allowed[$r]) {
+			$db->query("INSERT INTO routepermissions (exten, routename, allowed) VALUES ('$ext', '$r', 'YES')");
+		} else {
+			$db->query("INSERT INTO routepermissions (exten, routename, allowed) VALUES ('$ext', '$r', 'NO')");
+		}
+	}
 }
