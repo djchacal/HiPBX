@@ -61,3 +61,26 @@ function display_ports($ser, $xpd, $span) {
 	print "</div>\n";
 }
 
+
+function astribank_header($ser) {
+	global $db;
+
+	$sql = "select serial, power1, power2 from provis_dahdi_astribanks where serial='$ser'";
+	$row=$db->getRow($sql, DB_FETCHROW_ASSOC);
+
+        print "<table class='astribank' cellspacing=0>\n";
+        print "<caption> ".$ser;
+        if ($row[1] == 1) {
+                print " <span class='powergood'>USB1 OK</span> ";
+        } else {
+                print " <span class='powerbad'>USB1 BAD</span> ";
+        }
+        if ($row[2] == 1) {
+                print " <span class='powergood'>USB2 OK</span> ";
+        } else {
+                print " <span class='powerbad'>USB2 BAD</span> ";
+        }
+
+        print "</caption>\n";
+
+}

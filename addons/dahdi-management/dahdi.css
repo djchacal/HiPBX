@@ -13,7 +13,13 @@ TD {text-align: center; position: relative; border-width: 1px; border-style: sol
 /* Table with buttons in it... */
 TABLE .buttons {border-collapse: collapse; border-width: 0px}
 
+/* If the span is a PRI */
 H3.pri { margin: 0 }
+
+/* Caption span for powergood and powerbad */
+.powergood { color: green; }
+.powerbad { color: red; }
+
 
 /* Our 'move' buttons should be the same size */
 .mbuttons {width: 6em} 

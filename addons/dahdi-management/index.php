@@ -23,9 +23,6 @@ foreach($_REQUEST as $key => $val) {
 }
 	
 
-$sql = "select serial from provis_dahdi_astribanks_layout order by disporder";
-$res = $db->getAll($sql, array(), DB_FETCHMODE_ASSOC);
-# Each Astribank's serial number
 ?>
 
 <html>
@@ -46,8 +43,8 @@ $res = $db->getAll($sql, array(), DB_FETCHMODE_ASSOC);
  <td>
   <center>Managment Functions</center>
   <center>
-   <button class='tbutton' onClick='return false;'>Resync</button>  &nbsp;
-   <button class='tbutton' onClick='return false;'>Move</button> &nbsp;
+   <button class='tbutton' onClick='resync()'>Resync</button>  &nbsp;
+   <button class='tbutton' onClick='moveshowhide()'>Move</button> &nbsp;
    <button class='tbutton' onClick='return false;'>Find Missing</button> &nbsp;
    <button class='tbutton' onclick='return false;'>Reassign</button>
  </td>
@@ -57,9 +54,12 @@ $res = $db->getAll($sql, array(), DB_FETCHMODE_ASSOC);
 <form method='post'>
 
 <?php
+$sql = "select * from provis_dahdi_astribanks_layout order by disporder";
+$res = $db->getAll($sql, array(), DB_FETCHMODE_ASSOC);
+# Each Astribank's serial number
 foreach ($res as $row) {
-	print "<table class='astribank' cellspacing=0>\n";
-	print "<caption> ".$row['serial']."</caption>\n";
+	astribank_header($row['serial']);
+
 	print "<tr>\n";
 	# Each Astribank has a number of spans
 	$sql = "select * from provis_dahdi_spans where serial='".$row['serial']."' and span > 0 order by xpd";

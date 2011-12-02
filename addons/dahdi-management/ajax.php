@@ -49,6 +49,12 @@ switch ($action) {
 	case "modify":
 		modify($ext, $sno, $xpd, $port, $tone, $cidname, $routes);
 		break;
+	case "resync":
+		resync();
+		break;
+	case "doresync":
+		doresync();
+		break;
 }
 
 function ajax_ext($sno, $xpd, $port) {
@@ -439,7 +445,7 @@ function update_routeperms($ext, $route) {
 	}
 }
 
-function load_astribanks() {
+function doresync() {
 	$cmd = "/var/www/html/dahdi/parse.pl 2>&1";
 	$r = exec($cmd, $output, $retvar);
 	if ($r === "sudo: no tty present and no askpass program specified") {
@@ -453,5 +459,18 @@ function load_astribanks() {
 	print "<h2>Astribanks Imported</h2>";
 	print "<p class='warning'>Astribanks have been imported. The output of the import program is below</p>";
 	print "<pre>$r</pre>\n";
-	print "<p></p><p><center><button onClick='$(\"#content\").overlay().close()'>Close</button></center></p>";
+	print "<p></p><p><center><button onClick='location.reload(true)'>Close</button></center></p>";
+}
+
+function resync() {
+	print "<h2>Resync Astribanks</h2>\n";
+	print "<p class='warning'>This command will update the database with the current status of the \n";
+	print "hardware connected to this machine. You would use this after a hardware change, or in \n";
+	print " case of a failover to the other node that is not automatically detected. This takes \n";
+	print "approx 2-3 seconds per Astribank that's connected. Please be patient.\n";
+	print "</p>";
+	print "<p></p><p><center>";
+	print "<button onClick='doresync()'>Resync</button>";
+	print "<button onClick='$(\"#content\").overlay().close()'>Close</button>";
+	print "</center></p>";
 }

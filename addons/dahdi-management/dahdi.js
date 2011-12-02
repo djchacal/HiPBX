@@ -172,4 +172,40 @@ function rpshowhide() {
 	}
 	return false;
 }
-		
+
+function moveshowhide() {
+	if ($('.mleft').is(":visible")) {
+		$('.mleft').each(function() { $(this).hide(); });
+	} else {
+		$('.mleft').each(function() { $(this).show(); });
+	}
+	return false;
+}
+
+function resync() {
+	$("#olay").show();
+	$.get("ajax.php", 'action=resync', function(data) { 
+		$("#ctext").html(data); 
+		$("#content").overlay({ 
+			top: 160, 
+			load: true, 
+			mask: { color: '#fff', loadSpeed: 200, opacity: 0.5 },
+			onClose: function() { 
+				$("#olay").hide(); 
+			}
+		});
+		$("#content").overlay().load();
+	});
+	return false;
+}
+
+function doresync() {
+	$(":button").each( function() { $(this).attr("disabled", true); });
+	$("#content").spin("large", "black");
+	$.get("ajax.php", 'action=doresync', function(data) { 
+		$("#content").spin(false);
+		$("#ctext").html(data); 
+	});
+
+}
+	
