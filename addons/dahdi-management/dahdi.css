@@ -20,6 +20,9 @@ H3.pri { margin: 0 }
 .powergood { color: green; }
 .powerbad { color: red; }
 
+/* Span Types */
+.ECHO { display: none }
+
 
 /* Our 'move' buttons should be the same size */
 .mbuttons {width: 6em} 

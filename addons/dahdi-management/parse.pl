@@ -17,6 +17,7 @@ my $dbh = DBI->connect("DBI:mysql:$mdb", $muser, $mpass)
 	|| die "Could not connect to DB: $DBI::errstr";
 
 open (FH, "sudo /usr/sbin/dahdi_hardware -v|") or die "Cannot run sudo /usr/sbin/dahdi_hardware -v $!";
+#open (FH, "/tmp/a");
 
 # Grab all of the file and stick it in an array.
 @astribanks = <FH>;
@@ -70,19 +71,20 @@ while (my $line = shift @astribanks) {
 		# Finally, lets grab all the XPDs
 		while (1) {
 			my $xpd = shift @astribanks;
-			if ($xpd !~ /XBUS-\d\d\/XPD-(\d\d).+\((\d+)\)/) {
+			if ($xpd !~ /XBUS-\d\d\/XPD-(\d\d): (.+) .+\((\d+)\)/) {
 				unshift @astribanks, $xpd;
 				last;	
 			} else {
 				# This is an XBUS Line, we want to care about the span
+				# ports, and type
 				$xpd_number=$1;
-				$ports=$2;
+				$type=$2;
+				$ports=$3;
 				if ($xpd =~ /.+Span (\d+)/) {
-					&load_span($1, $xpd_number, $ports, $serial);
+					&load_span($1, $xpd_number, $ports, $serial, $type);
 				} else {
-					&load_span(-1, $xpd_number, $ports, $serial);
+					&load_span(-1, $xpd_number, $ports, $serial, $type);
 				}
-				
 			}
 		}
 	}
@@ -109,15 +111,15 @@ sub load_astribank($$$$) {
 	
 }
 
-sub load_span($$$$) {
-	my ($span, $xpd, $ports, $serial) = @_;
-	my $sth = $dbh->prepare('insert into provis_dahdi_spans(xpd, span, serial, ports) values (?, ?, ?, ?)');
-	$sth->execute($xpd, $span, $serial, $ports);
+sub load_span($$$$$) {
+	my ($span, $xpd, $ports, $serial, $type) = @_;
+	my $sth = $dbh->prepare('insert into provis_dahdi_spans(xpd, span, serial, ports, type) values (?, ?, ?, ?, ?)');
+	$sth->execute($xpd, $span, $serial, $ports, $type);
 }
 
 
 sub create_tables() {
-	$dbh->do('CREATE TABLE IF NOT EXISTS `provis_dahdi_spans` ( `serial` char(15) DEFAULT NULL, `span` int(11) DEFAULT NULL, `ports` int(11) DEFAULT NULL, `xpd` char(5) DEFAULT NULL)'); 
+	$dbh->do('CREATE TABLE IF NOT EXISTS `provis_dahdi_spans` ( `serial` char(15) DEFAULT NULL, `span` int(11) DEFAULT NULL, `ports` int(11) DEFAULT NULL, `xpd` char(5) DEFAULT NULL, `type` char(10) default NULL)'); 
 	$dbh->do('CREATE TABLE IF NOT EXISTS `provis_dahdi_astribanks` ( `serial` char(15) DEFAULT NULL, `usbport` char(15) DEFAULT NULL, `power1` int(11) DEFAULT NULL, `power2` int(11) DEFAULT NULL)');
 	$dbh->do('CREATE TABLE IF NOT EXISTS `provis_dahdi_astribanks_layout` ( `serial` char(15) DEFAULT NULL, disporder int(11) DEFAULT NULL )');
 	$dbh->do('CREATE TABLE IF NOT EXISTS `provis_dahdi_ports` ( `serial` char(15) DEFAULT NULL, `xpd` int(11) DEFAULT NULL, `portno` int(11) DEFAULT NULL, `ext` char(10) DEFAULT NULL, `tone` char(5) DEFAULT "AU")');

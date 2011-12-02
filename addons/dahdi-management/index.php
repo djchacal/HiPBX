@@ -62,14 +62,14 @@ foreach ($res as $row) {
 
 	print "<tr>\n";
 	# Each Astribank has a number of spans
-	$sql = "select * from provis_dahdi_spans where serial='".$row['serial']."' and span > 0 order by xpd";
+	$sql = "select * from provis_dahdi_spans where serial='".$row['serial']."' order by xpd";
 	$spans = $db->getAll($sql, array(), DB_FETCHMODE_ASSOC);
 	foreach ($spans as $span) {
 		if ($span['ports'] > 14) {
 			print "<td><h3 class='pri'>PRI Not Available</h3>&nbsp;Use FreePBX to manage this PRI&nbsp;</td>";
 			continue;
 		}
-		print "<td class='spans' id='".$row['serial']."_".$span['xpd']."'>";
+		print "<td class='".$span['type']."' id='".$row['serial']."_".$span['xpd']."'>";
 		print display_ports($row['serial'], $span['xpd'], $span['span']);
 		print "</td>";
 	}
