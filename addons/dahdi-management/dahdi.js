@@ -67,7 +67,9 @@ function addext() {
 				sno:  $('#astribank').data('sno'),
 				xpd:  $('#astribank').attr('data-xpd'),
 			  	port: $('#astribank').data('port'),
-				ext:  $("#extno").val(),
+				ext:  $('#extno').val(),
+				did:  $('#didnum').val(),
+				cid:  $('#cidnum').val(),
 				cidname: $("#cidname").val(),
 				tone:  $(this).attr('value'),
 				'routes[]': [],
@@ -209,3 +211,10 @@ function doresync() {
 
 }
 	
+
+function updatedid() {
+	$("#didnum").val($("#didnum").attr('data-did')+$("#extno").val());
+}
+function updatecid() {
+	$("#cidnum").val($("#cidnum").attr('data-cid')+$("#extno").val());
+}

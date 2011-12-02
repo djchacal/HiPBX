@@ -254,6 +254,8 @@ function showextpage($ext='', $name='', $tone='au') {
 	print "<span class='right'><input id='cidname' type=text size=15 value='$name'></span><br />\n";
 	print "<span class='left'>Extension</span>\n";
 	print "<span class='right'><input id='extno' type=text size=4 value='$ext'></span><br />\n";
+	showdid($ext);
+	showcid($ext);
 	print "<span class='left'>Dial Tone</span>\n";
 	print "<span class='right'>\n";
 	foreach (array('au' => 'Au', 'xx' => 'Loud', 'yy' => 'Fax') as $t => $v) {
@@ -474,3 +476,45 @@ function resync() {
 	print "<button onClick='$(\"#content\").overlay().close()'>Close</button>";
 	print "</center></p>";
 }
+
+function showdid($ext) {
+	# Is this a HiPBX machine?
+	if (!file_exists('/etc/hipbx.d/provis.conf')) { return; }
+
+	# Cool. Lets grab the provisioner...
+	$pconf= @parse_ini_file('/etc/hipbx.d/provis.conf', false, INI_SCANNER_RAW);
+
+	# Is there a DID prefix?
+	if (!isset($pconf['DIDPREFIX'])) { return; }
+
+	# Awesome. Hooks into extno
+	print "<script>$('#extno').keyup(function(){updatedid()});</script>";
+
+	# Print our DID stuff
+	print "<span class='left'>DID Number</span>\n";
+	print "<span class='right'><input id='didnum' type=text size=10 data-did='".$pconf['DIDPREFIX']."' value='".$pconf['DIDPREFIX']."' ></span><br />\n";
+}
+
+function showcid($ext) {
+	# Is this a HiPBX machine?
+	if (!file_exists('/etc/hipbx.d/provis.conf')) { return; }
+
+	# Cool. Lets grab the provisioner...
+	$pconf= @parse_ini_file('/etc/hipbx.d/provis.conf', false, INI_SCANNER_RAW);
+
+	# Is there a CID prefix or CIDSET??
+	if (!isset($pconf['CIDPREFIX']) && !isset($pconf['CIDSET'])) { return; }
+
+	# If we're a SET, then we don't need to hook. Just display.
+	if (isset($pconf['CIDSET'])) {
+		print "<span class='left'>CID Number</span>\n";
+		print "<span class='right'><input id='cidnum' type=text size=10 value='".$pconf['CIDSET']."' ></span><br />\n";
+	} else {
+		# We're a prefix. Need to update.
+		print "<script>$('#extno').keyup(function(){updatecid()});</script>";
+
+		print "<span class='left'>CID Number</span>\n";
+		print "<span class='right'><input id='cidnum' type=text size=10 data-cid='".$pconf['CIDPREFIX']."' value='".$pconf['CIDPREFIX']."' ></span><br />\n";
+	}
+}
+
