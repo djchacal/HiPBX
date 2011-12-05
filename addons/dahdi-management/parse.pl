@@ -100,7 +100,11 @@ sub load_astribank($$$$) {
 	if ($sth->rows == 0) {
 		$sth = $dbh->prepare('insert into provis_dahdi_astribanks(serial, usbport, power1, power2) values (?, ?, ?, ?)');
 		$sth->execute($sno, $usb, $p1, $p2);
+	} else {
+		$sth = $dbh->prepare('update provis_dahdi_astribanks set usbport=?, power1=?, power2=? where serial=?');
+		$sth->execute($usb, $p1, $p2, $sno);
 	}
+		
 	# Need to give it an ordering, too
 	$sth = $dbh->prepare('SELECT * from provis_dahdi_astribanks_layout where serial=?');
 	$sth->execute($sno);
