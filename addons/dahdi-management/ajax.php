@@ -17,7 +17,9 @@ $ext = mysql_real_escape_string($_REQUEST['ext']);
 $cidname = mysql_real_escape_string($_REQUEST['cidname']);
 $tone = mysql_real_escape_string($_REQUEST['tone']);
 $action = mysql_real_escape_string($_REQUEST['action']);
-$routes = $_REQUEST['routes']; /* Is an array */
+$routes = $_REQUEST['routes']; /* Is an array, escaped in update_route_perms */
+$cidnum = mysql_real_escape_string($_REQUEST['cid']);
+$didnum = mysql_real_escape_string($_REQUEST['did']);
 
 # Dump everything we need to care about.
 print "<input type='hidden' id='astribank' data-sno='$sno' data-xpd='$xpd' data-port='$port'></input>\n";
@@ -32,7 +34,7 @@ switch ($action) {
 		show_ports($sno, $xpd);
 		break;
 	case "addext":
-		addext($ext, $sno, $xpd, $port, $tone, $cidname, $routes);
+		addext($ext, $sno, $xpd, $port, $tone, $cidname, $routes, $cidnum, $didnum);
 		break;
 	case "remove":
 		removeext($sno, $xpd, $port);
@@ -47,7 +49,7 @@ switch ($action) {
 		blinkon($sno);
 		break;
 	case "modify":
-		modify($ext, $sno, $xpd, $port, $tone, $cidname, $routes);
+		modify($ext, $sno, $xpd, $port, $tone, $cidname, $routes, $cidnum, $didnum);
 		break;
 	case "resync":
 		resync();
@@ -57,7 +59,7 @@ switch ($action) {
 		break;
 }
 
-function ajax_ext($sno, $xpd, $port) {
+function ajax_ext($sno, $xpd, $port, $msg='') {
 	global $db;
 
 
@@ -94,7 +96,7 @@ function ajax_ext($sno, $xpd, $port) {
 	
 	$ext = $db->getRow("select ext,tone from provis_dahdi_ports where `serial`='$sno' and `xpd`='$xpd' and `portno`='$port'", DB_FETCHROW_ASSOC);
 	if ($ext[0] == "") {
-		showextpage('', 'Plant Phone');
+		showextpage('', 'Plant Phone', 'au', $msg);
 		print "<center><button id='addextbutton' onClick='addext()'>Add Ext</button></center><p></p>";
 	} else {
 		$res=core_users_get($ext[0]);
@@ -109,7 +111,7 @@ function ajax_ext($sno, $xpd, $port) {
 		}
 	# We're here because we've clicked on an Exten that exists, and is valid in 
 	# FreePBX. Lets do some stuff.
-	showextpage($ext[0], $res['name'], $ext[1]);
+	showextpage($ext[0], $res['name'], $ext[1], $msg);
 	print "<center><button id='modext_button' onClick='modext()'>Modify</button>&nbsp;&nbsp;";
 	print "<button id='remove_button' onClick='removeext()'>Remove</button></center>";
 	print '<script>$("#cidname").focus();</script><p></p>';
@@ -156,7 +158,7 @@ function show_ports($sno, $xpd) {
 	print "</tr></table></center></div>\n";
 }
 
-function addext($ext, $sno, $xpd, $port, $tone, $cidname, $routes) {
+function addext($ext, $sno, $xpd, $port, $tone, $cidname, $routes, $cidnum, $didnum) {
 	global $db;
 
 	# Adding an Extension. Yay. 
@@ -169,6 +171,16 @@ function addext($ext, $sno, $xpd, $port, $tone, $cidname, $routes) {
 	if (!is_numeric($ext)) {
 		print "Extension '$ext' is not numeric\n";
 		print '<script>$("#extno").focus();$("#extno").select();</script>';
+		exit;
+	}
+	if (!is_numeric($cidnum)) {
+		print "CID Number '$cidnum' is not numeric\n";
+		print '<script>$("#cidnum").focus();$("#cidnum").select();</script>';
+		exit;
+	}
+	if (!is_numeric($didnum)) {
+		print "DID Number '$didnum' is not numeric\n";
+		print '<script>$("#didnum").focus();$("#didnum").select();</script>';
 		exit;
 	}
 	if ($ext > 9999) {
@@ -209,9 +221,9 @@ function addext($ext, $sno, $xpd, $port, $tone, $cidname, $routes) {
 	# Big array of vars that FreePBX cares about. Half of this stuff probably isn't needed.
 	$vars = array (
 		'display' => 'extensions', 'type' => 'setup', 'action' => 'add', 'extdisplay' => '', 'extension' => $ext, 'name' => $cidname,
-		'cid_masquerade' => '', 'sipname' => '', 'outboundcid' => '', 'ringtimer' => 0, 'cfringtimer' => 0, 'concurrency_limit' => 0,
+		'cid_masquerade' => '', 'sipname' => '', 'ringtimer' => 0, 'cfringtimer' => 0, 'concurrency_limit' => 0,
 		'callwaiting' => 'enabled', 'answermode' => 'disabled', 'call_screen' => 0, 'pinless' => 'disabled', 'emergency_cid' => '', 
-		'tech' => 'dahdi', 'hardware' => 'generic', 'qnostate' => 'usestate', 'newdid_name' => '', 'newdid' => '', 'newdidcid' => '',
+		'tech' => 'dahdi', 'hardware' => 'generic', 'qnostate' => 'usestate', 'newdidcid' => '',
 		'devinfo_secret_origional' => '', 'devinfo_dtmfmode' => 'rfc2833', 'devinfo_canreinvite' => 'no',
 		'devinfo_context' => 'from-internal', 'devinfo_host' => 'dynamic', 'devinfo_trustrpid' => 'yes', 'devinfo_sendrpid' => 'no', 
 		'devinfo_type' => 'peer', 'devinfo_nat' => 'no', 'devinfo_port' => '5060', 'devinfo_qualify' => 'yes', 'devinfo_qualifyfreq' => '60',
@@ -222,6 +234,9 @@ function addext($ext, $sno, $xpd, $port, $tone, $cidname, $routes) {
 		'langcode' => '', 'record_in' => 'Adhoc', 'record_out' => 'Adhoc', 'email' => $email, 'vm' => 'disabled', 
 	);
 	$vars['devinfo_dial']="DAHDI/$dahdi";
+	$vars['outboundcid']=$cidnum;
+	$vars['newdid']=$didnum;
+	$vars['newdid_name']="$ext DID";
 	# And FreePBX Also wants them to be in $_REQUEST, too.
 	$_REQUEST=$vars;
 	core_users_add($vars);
@@ -249,7 +264,7 @@ function removeext($sno, $xpd, $port) {
 
 
 
-function showextpage($ext='', $name='', $tone='au') {
+function showextpage($ext='', $name='', $tone='au', $msg) {
 	print "<span class='left'>CallerID Name</span>\n";
 	print "<span class='right'><input id='cidname' type=text size=15 value='$name'></span><br />\n";
 	print "<span class='left'>Extension</span>\n";
@@ -271,11 +286,12 @@ function showextpage($ext='', $name='', $tone='au') {
 		# We have routepermissions and hipbx!
 		print_routeperms($ext);
 	}
-	print "</span><p id='addstat'>&nbsp;</p>\n";
+	print "</span><p id='addstat'>$msg</p>\n";
 }
 
 function delext($ext) {
 	global $db;
+        global $active_modules;
 
 	core_users_del($ext);
 	core_devices_del($ext);
@@ -286,6 +302,20 @@ function delext($ext) {
 		exit;
 	}
 	rp_purge_ext($ext);
+
+	# Remove DID if there is one
+	$arr=framework_check_destination_usage(true, $active_modules);
+
+	foreach (array_keys($arr['core']) as $did) {
+		if ($arr['core'][$did]['dest'] == "from-did-direct,$ext,1") {
+			preg_match('/Inbound.+\((\d+)\/(.*)\)/', $arr['core'][$did]['description'], $matches);
+			core_did_del($matches[1],$matches[2]);
+			fax_delete_incoming($matches[1]);
+			break;
+		}
+	}
+
+
 	print "<script>$('#content').overlay().close();</script>";
 }
 
@@ -332,19 +362,18 @@ function blink($ser, $mode) {
 	print "<p></p><p><center><button onClick='$(\"#content\").overlay().close()'>Close</button></center></p>";
 }
 
-function modify($ext, $sno, $xpd, $port, $tone, $cidname, $routes) {
+function modify($ext, $sno, $xpd, $port, $tone, $cidname, $routes, $cidnum, $didnum) {
 	global $db;
+
+	# OK, what's being changed? Is someone trying to be clever and change the Ext?
+	$myext = $db->getRow("select ext,tone from provis_dahdi_ports where `serial`='$sno' and `xpd`='$xpd' and `portno`='$port'", DB_FETCHROW_ASSOC);
+	if ($myext[0] !== $ext) {
+		ajax_ext($sno, $xpd, $port, 'You can not change Extension numbers.');
+		exit;
+	} 
 
 	print "<input type='hidden' id='modifydata' data-ext='$ext' data-cidname='$cidname' data-tone='$tone'></input>\n";
 	print "<H2>Modifying $sno/$xpd/$port</h2>";
-	# OK, what's being changed? 
-	# Is it the extension number?
-	$myext = $db->getRow("select ext,tone from provis_dahdi_ports where `serial`='$sno' and `xpd`='$xpd' and `portno`='$port'", DB_FETCHROW_ASSOC);
-	if ($myext[0] !== $ext) {
-		print "<span class='left'>Extension Changed:</span><span class='right'>$myext[0] -> $ext</span>\n";
-	} else {
-		print "<span class='left'>Extension unchanged.</span><br />\n";
-	}
 	# How about the name, is that being changed?
 	$res=core_users_get($ext);
 	if (!isset($res['name'])) {
@@ -439,6 +468,9 @@ function update_routeperms($ext, $route) {
 
 	# And insert them back in.
 	foreach ($routes as $r) {
+		
+		$r = mysql_real_escape_string($r);
+
 		if ($allowed[$r]) {
 			$db->query("INSERT INTO routepermissions (exten, routename, allowed) VALUES ('$ext', '$r', 'YES')");
 		} else {
@@ -455,7 +487,7 @@ function doresync() {
 		print "<p class='warning'>Error: SUDO is not set up correctly. Ensure that /usr/sbin/dahdi_hardware is a command available ";
 		print "to the user ".$processUser['name']." in /etc/sudoers</p><p>$r</p>";
 		print "<p></p><p><center><button onClick='$(\"#content\").overlay().close()'>Close</button></center></p>";
-	        exit;
+		exit;
 	}
 
 	print "<h2>Astribanks Imported</h2>";
@@ -478,43 +510,82 @@ function resync() {
 }
 
 function showdid($ext) {
+	global $db;
+
 	# Is this a HiPBX machine?
-	if (!file_exists('/etc/hipbx.d/provis.conf')) { return; }
+	if (file_exists('/etc/hipbx.d/provis.conf')) { 
+		# Cool. Lets grab the provisioner...
+		$pconf= @parse_ini_file('/etc/hipbx.d/provis.conf', false, INI_SCANNER_RAW);
+		# Is there a DID prefix?
+		if (isset($pconf['DIDPREFIX'])) { 
+			# Awesome. Hooks into extno
+			print "<script>$('#extno').keyup(function(){updatedid()});</script>";
+			$prefix=$pconf['DIDPREFIX'];
+		} else {
+			$prefix="";
+		}
+	} else {
+		$prefix="";
+	}
 
-	# Cool. Lets grab the provisioner...
-	$pconf= @parse_ini_file('/etc/hipbx.d/provis.conf', false, INI_SCANNER_RAW);
+	$did = getdid($ext);
 
-	# Is there a DID prefix?
-	if (!isset($pconf['DIDPREFIX'])) { return; }
-
-	# Awesome. Hooks into extno
-	print "<script>$('#extno').keyup(function(){updatedid()});</script>";
+	# If this is a new ext, set the default now.
+	if ($ext == '') { $did = $prefix; }
 
 	# Print our DID stuff
 	print "<span class='left'>DID Number</span>\n";
-	print "<span class='right'><input id='didnum' type=text size=10 data-did='".$pconf['DIDPREFIX']."' value='".$pconf['DIDPREFIX']."' ></span><br />\n";
+	print "<span class='right'><input id='didnum' type=text size=10 data-did='$prefix' value='$did' ></span><br />\n";
 }
 
 function showcid($ext) {
+	global $db;
+
 	# Is this a HiPBX machine?
-	if (!file_exists('/etc/hipbx.d/provis.conf')) { return; }
-
-	# Cool. Lets grab the provisioner...
-	$pconf= @parse_ini_file('/etc/hipbx.d/provis.conf', false, INI_SCANNER_RAW);
-
-	# Is there a CID prefix or CIDSET??
-	if (!isset($pconf['CIDPREFIX']) && !isset($pconf['CIDSET'])) { return; }
-
-	# If we're a SET, then we don't need to hook. Just display.
-	if (isset($pconf['CIDSET'])) {
-		print "<span class='left'>CID Number</span>\n";
-		print "<span class='right'><input id='cidnum' type=text size=10 value='".$pconf['CIDSET']."' ></span><br />\n";
+	if (file_exists('/etc/hipbx.d/provis.conf')) { 
+		# Cool. Lets grab the provisioner...
+		$pconf= @parse_ini_file('/etc/hipbx.d/provis.conf', false, INI_SCANNER_RAW);
+		# Is there a CID prefix or CIDSET??
+		if (isset($pconf['CIDPREFIX']) || isset($pconf['CIDSET'])) { 
+			# If we're a SET, then we don't need to hook. Just display.
+			if (isset($pconf['CIDSET'])) {
+				$defaultcid=$pconf['CIDSET'];
+			} else {
+				# We're a prefix. Need to hook.
+				print "<script>$('#extno').keyup(function(){updatecid()});</script>";
+				$defaultcid=$pconf['CIDPREFIX'];
+			}
+		}
 	} else {
-		# We're a prefix. Need to update.
-		print "<script>$('#extno').keyup(function(){updatecid()});</script>";
-
-		print "<span class='left'>CID Number</span>\n";
-		print "<span class='right'><input id='cidnum' type=text size=10 data-cid='".$pconf['CIDPREFIX']."' value='".$pconf['CIDPREFIX']."' ></span><br />\n";
+		$defaultcid="";
 	}
+	
+
+	# Grab our current CID.
+	$cid = getcid($ext);
+
+	# If this is a new ext, set the default now.
+	if ($ext == '') { $cid = $defaultcid; }
+
+	print "<span class='left'>CID Number</span>\n";
+	print "<span class='right'><input id='cidnum' type=text size=10 data-cid='$defaultcid' value='$cid'></span><br />\n";
+
+
+}
+
+function getcid($ext) {
+	global $db;
+
+	# What's our current CID?
+	$cid = $db->getOne("select outboundcid from users where extension='$ext'");
+	return $cid;
+}
+
+function getdid($ext) {
+	global $db;
+
+	# What's our existing DID?
+	$did = $db->getOne("select extension from incoming where destination='from-did-direct,$ext,1'");
+	return $did;
 }
 

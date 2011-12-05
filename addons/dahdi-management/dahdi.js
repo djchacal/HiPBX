@@ -61,8 +61,10 @@ function modport(ser, xpd, no) {
 
 function addext() {
 	$("#addstat").html("<i>Processing...</i>");
+	var checked=false;
 	$('input:radio').each(function(){
 		if ($(this).attr('checked')) {
+			checked=true;
 			var query= {
 				sno:  $('#astribank').data('sno'),
 				xpd:  $('#astribank').attr('data-xpd'),
@@ -81,6 +83,9 @@ function addext() {
 		$.post("ajax.php", query, function(data) { $("#addstat").html(data); });
 		}
 	});
+	if (checked == false) {
+		$("#addstat").html('<i>Please select a Dial Tone</i>');
+	}
 } 
 
 function removeext() {
@@ -120,6 +125,8 @@ function modext() {
 				ext:  $("#extno").val(),
 				cidname: $("#cidname").val(),
 				tone:  $(this).attr('value'),
+				did:  $('#didnum').val(),
+				cid:  $('#cidnum').val(),
 				'routes[]': [],
 				action: 'modify'
 			};
