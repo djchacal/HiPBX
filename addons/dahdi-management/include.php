@@ -321,6 +321,7 @@ function delext($ext) {
 
 	core_users_del($ext);
 	core_devices_del($ext);
+	deldid($ext);
 	$sql = "delete from provis_dahdi_ports where `ext`='$ext'";
 	$res = $db->query($sql);
 	if (PEAR::isError($res)) {
@@ -328,19 +329,6 @@ function delext($ext) {
 		exit;
 	}
 	rp_purge_ext($ext);
-
-	# Remove DID if there is one
-	$arr=framework_check_destination_usage(true, $active_modules);
-
-	foreach (array_keys($arr['core']) as $did) {
-		if ($arr['core'][$did]['dest'] == "from-did-direct,$ext,1") {
-			preg_match('/Inbound.+\((\d+)\/(.*)\)/', $arr['core'][$did]['description'], $matches);
-			core_did_del($matches[1],$matches[2]);
-			fax_delete_incoming($matches[1]);
-			break;
-		}
-	}
-
 
 	print "<script>$('#content').overlay().close();</script>";
 }
@@ -404,8 +392,10 @@ function modify($ext, $sno, $xpd, $port, $tone, $cidname, $routes, $cidnum, $did
 	$res=core_users_get($ext);
 	if (!isset($res['name'])) {
 		print "<span class='left'>User missing from FreePBX</span>\n";
+		exit;
 	} else {
 		if ($res['name'] != $cidname) {
+			$db->query("update users set name='$cidname' where extension='$ext'");
 			print "<span class='left'>Name Changed:</span><span class='right'>".$res['name']." -> $cidname</span><br />\n";
 		} else {
 			print "<span class='left'>CID Name unchanged.</span>\n";
@@ -414,9 +404,33 @@ function modify($ext, $sno, $xpd, $port, $tone, $cidname, $routes, $cidnum, $did
 	
 	# Dialtone?
 	if ($myext[1] !== $tone) {
-		print "<span class='left'>Dialtone Changed:</span><span class='right'>$myext[1] -> $tone</span>\n";
+		print "<span class='left'>TODO: Dialtone Changed:</span><span class='right'>$myext[1] -> $tone</span>\n";
 	} else {
-		print "<span class='left'>Dialtone unchanged.</span><br />\n";
+		print "<span class='left'>TODO: Dialtone unchanged.</span><br />\n";
+	}
+
+	# CID?
+	if ($res['outboundcid'] != $cidnum) {
+		$db->query("update users set outboundcid='$cidnum' where extension='$ext'");
+		print "<span class='left'>CID Number Changed:</span><span class='right'>".$res['outboundcid']." -> $cidnum</span><br />\n";
+	} else {
+		print "<span class='left'>CID Number unchanged.</span><br />\n";
+	}
+
+	# DID
+	# Has it been blanked?
+	if ($didnum == '') {
+		# Delete that DID. You DIE!
+		deldid($ext);
+	} else {
+		# Does it already HAVE a did?
+		if (getdid($ext) != '') {
+			# Just update the did number.
+			$db->query("update incoming set extension='$didnum' where destination='from-did-direct,$ext,1'");
+		} else {
+			# OK, we need to CREATE the did. Lets cheat.
+			$db->query("insert into incoming (extension, destination, description, cidnum) values ($didnum, 'from-did-direct,$ext,1', '$cidname', '')");
+		}
 	}
 
 	# Route Permissions..
@@ -615,3 +629,8 @@ function getdid($ext) {
 	return $did;
 }
 
+function deldid($ext) {
+	global $db;
+
+	$db->query("delete from incoming where destination='from-did-direct,$ext,1'");
+}
