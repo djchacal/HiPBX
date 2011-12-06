@@ -259,6 +259,7 @@ function addext($ext, $sno, $xpd, $port, $tone, $cidname, $routes, $cidnum, $did
 		'busy_dest' => 'goto1', 'chanunavail_dest' => 'goto2', 'dictenabled' => 'disabled', 'dictformat' => 'ogg', 'dictemail' => '',
 		'langcode' => '', 'record_in' => 'Adhoc', 'record_out' => 'Adhoc', 'email' => $email, 'vm' => 'disabled', 
 	);
+	$vars['channel']=$dahdi;
 	$vars['devinfo_dial']="DAHDI/$dahdi";
 	$vars['outboundcid']=$cidnum;
 	$vars['newdid']=$didnum;

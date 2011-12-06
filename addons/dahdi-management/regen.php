@@ -57,6 +57,7 @@ function update_port($sno, $xpd, $portno, $ext) {
 	$astman->database_put("DEVICE",$ext."/dial",$dial);
 	# Now, update the dahdi table..
 	$db->query("update dahdi set data='$dial' where id='$ext' and keyworld='dial'");
+	$db->query("update dahdi set data='$dahdi' where id='$ext' and keyworld='channel'");
 	# And the devices table.
 	$db->query("update devices set dial='$dial' where id='$ext' and tech='dahdi'");
 	return true;
