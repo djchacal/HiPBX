@@ -3,7 +3,8 @@ function bindall() {
 	$('.click').bind('click', function() {
 		var s=$(this).data('sno');
 		var x=$(this).attr('data-xpd'); // 00 = 0 if you use '.data'
-		$('.spans').each( function() { $(this).css({"background-color": ''}); });
+		$('.FXS').each( function() { $(this).css({"background-color": ''}); });
+		$('.FXO').each( function() { $(this).css({"background-color": ''}); });
 		$('#'+s+"_"+x).css({ "background-color": 'pink'});
 		showports(s, x, true);
 	});
