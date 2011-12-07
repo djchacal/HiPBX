@@ -43,10 +43,10 @@ foreach($_REQUEST as $key => $val) {
  <td>
   <center>Managment Functions</center>
   <center>
-   <button class='tbutton' onClick='resync()'>Sync A/Bank</button>  &nbsp;
-   <button class='tbutton' onClick='moveshowhide()'>Move</button> &nbsp;
    <button class='tbutton' onClick='updatefpbx()'>Sync FreePBX</button> &nbsp;
+   <button class='tbutton' onClick='resync()'>Sync A/Bank</button>  &nbsp;
    <button class='tbutton' onclick='return false;'>Reassign</button>
+   <button class='tbutton' onClick='moveshowhide()'>Move</button> &nbsp;
  </td>
 </tr>
 </table>
