@@ -406,7 +406,10 @@ function modify($ext, $sno, $xpd, $port, $tone, $cidname, $routes, $cidnum, $did
 	
 	# Dialtone?
 	if ($myext[1] !== $tone) {
+		$db->query("update provis_dahdi_ports set tone='$tone' where ext='$ext'");
+		update_tonezone($ext);
 		print "<span class='left'>TODO: Dialtone Changed:</span><span class='right'>$myext[1] -> $tone</span>\n";
+		
 	} else {
 		print "<span class='left'>TODO: Dialtone unchanged.</span><br />\n";
 	}
@@ -659,3 +662,21 @@ function dofpbxreload() {
 	print "<button onClick='$(\"#content\").overlay().close()'>Close</button>";
 	print "</center></p>";
 }
+
+function update_tonezone($ext) {
+	global $db;
+
+	$tones['au'] = array( 'tonezone' => 1, 'txgain' => 0, 'rxgain' => 0);
+	$tones['xx'] = array( 'tonezone' => 4, 'txgain' => 3, 'rxgain' => 0);
+	$tones['yy'] = array( 'tonezone' => 1, 'txgain' => 0, 'rxgain' => 0);
+
+	# What is the tonezone for this ext?
+	$sql = "select tone from provis_dahdi_ports where ext='$ext'";
+	$tone = $db->getOne($sql);
+	
+	foreach ($tones[$tone] as $key => $val) {
+		$db->query("delete from dahdi where id='$ext' and keyword='$key'");
+		$db->query("insert into dahdi (id, keyword, data) values('$ext', '$key', '$val')");
+	}
+}
+
