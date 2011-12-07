@@ -666,7 +666,7 @@ function dofpbxreload() {
 function update_tonezone($ext) {
 	global $db;
 
-	$tones['au'] = array( 'tonezone' => 1, 'txgain' => 0, 'rxgain' => 0);
+	$tones['au'] = array( 'tonezone' => 1, 'txgain' => -3, 'rxgain' => 0);
 	$tones['xx'] = array( 'tonezone' => 4, 'txgain' => 3, 'rxgain' => 0);
 	$tones['yy'] = array( 'tonezone' => 1, 'txgain' => 0, 'rxgain' => 0);
 
