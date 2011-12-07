@@ -636,3 +636,26 @@ function deldid($ext) {
 
 	$db->query("delete from incoming where destination='from-did-direct,$ext,1'");
 }
+
+function freepbx() {
+	print "<h2>Reload FreePBX</h2>\n";
+	print "<p class='warning'>This command will run a FreePBX reconfiguration.\n";
+	print "Use this button after you've finished adding, removing or modifying extensions.\n";
+	print "Note that Route Permissions are updated <b>immediately</b> and do not require a reload.\n";
+	print "</p>";
+	print "<p></p><p><center>";
+	print "<button onClick='doreload()'>Reload</button>";
+	print "<button onClick='$(\"#content\").overlay().close()'>Close</button>";
+	print "</center></p>";
+}
+
+
+function dofpbxreload() {
+	$r = do_reload();
+	print "<h2>FreePBX Reloaded</h2>\n";
+	print "<p class='warning'>FreePBX Return Code: ".$r['status']."</p>\n";
+	print "<p class='warning'>FreePBX Status: ".$r['message']."</p>\n";
+	print "<p></p><p><center>";
+	print "<button onClick='$(\"#content\").overlay().close()'>Close</button>";
+	print "</center></p>";
+}

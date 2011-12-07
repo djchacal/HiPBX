@@ -57,4 +57,10 @@ switch ($action) {
 	case "doresync":
 		doresync();
 		break;
+	case "freepbx":
+		freepbx();
+		break;
+	case "doreload":
+		dofpbxreload();
+		break;
 }

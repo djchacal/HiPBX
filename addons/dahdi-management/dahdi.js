@@ -226,3 +226,31 @@ function updatedid() {
 function updatecid() {
 	$("#cidnum").val($("#cidnum").attr('data-cid')+$("#extno").val());
 }
+
+function updatefpbx() {
+	$("#olay").show();
+	$.get("ajax.php", 'action=freepbx', function(data) { 
+		$("#ctext").html(data); 
+		$("#content").overlay({ 
+			top: 160, 
+			load: true, 
+			mask: { color: '#fff', loadSpeed: 200, opacity: 0.5 },
+			onClose: function() { 
+				$("#olay").hide(); 
+			}
+		});
+		$("#content").overlay().load();
+	});
+	return false;
+}
+function doreload() {
+	$(":button").each( function() { $(this).attr("disabled", true); });
+	$("#content").spin("large", "black");
+	$.get("ajax.php", 'action=doreload', function(data) { 
+		$("#content").spin(false);
+		$("#ctext").html(data); 
+		$(":button").each( function() { $(this).attr("disabled", false); });
+	});
+
+}
+	

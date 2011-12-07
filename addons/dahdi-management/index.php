@@ -43,9 +43,9 @@ foreach($_REQUEST as $key => $val) {
  <td>
   <center>Managment Functions</center>
   <center>
-   <button class='tbutton' onClick='resync()'>Resync</button>  &nbsp;
+   <button class='tbutton' onClick='resync()'>Sync A/Bank</button>  &nbsp;
    <button class='tbutton' onClick='moveshowhide()'>Move</button> &nbsp;
-   <button class='tbutton' onClick='return false;'>Find Missing</button> &nbsp;
+   <button class='tbutton' onClick='updatefpbx()'>Sync FreePBX</button> &nbsp;
    <button class='tbutton' onclick='return false;'>Reassign</button>
  </td>
 </tr>
