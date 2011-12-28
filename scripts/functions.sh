@@ -781,7 +781,7 @@ function get_peer_addr {
 			PEER_IP=$pip
 		else
 			echo -e "\tMachine is down. I can continue if you're sure that's the right address,"
-			echo -e "\tbut for sanity checking, it's a good idea to have the slave machine up"
+			echo -e "\tbut for sanity checking, it's a good idea to have the other machine up"
 			echo -e "\twhile you're installing."
 			echo -en "Are you sure you want to continue with \"$pip\" as the address? [yN]: "
 			read sure
