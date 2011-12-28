@@ -1082,14 +1082,9 @@ function add_repos {
 }
 
 function add_elrepo_repo {
-	# Is elrepo-release already installed?
+	yum -y install elrepo-release > /dev/null 2>&1
+	# Installed?
 	if [ -e /etc/yum.repos.d/elrepo.repo ] ; then
-		return;
-	fi
-
-	# Lets try for a package.
-	if [ yum install elrepo-release > /dev/null 2>&1 ] ; then
-		# All done. Yay SL.
 		return;
 	fi
 
@@ -1103,8 +1098,7 @@ name=ELRepo.org Community Enterprise Linux Repository - el6
 baseurl=http://elrepo.org/linux/elrepo/el6/\$basearch/
 mirrorlist=http://elrepo.org/mirrors-elrepo.el6
 enabled=1
-gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-elrepo.org
+gpgcheck=0
 protect=0
 
 [elrepo-testing]
@@ -1112,8 +1106,7 @@ name=ELRepo.org Community Enterprise Linux Testing Repository - el6
 baseurl=http://elrepo.org/linux/testing/el6/\$basearch/
 mirrorlist=http://elrepo.org/mirrors-elrepo-testing.el6
 enabled=0
-gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-elrepo.org
+gpgcheck=0
 protect=0
 
 [elrepo-kernel]
@@ -1121,8 +1114,7 @@ name=ELRepo.org Community Enterprise Linux Kernel Repository - el6
 baseurl=http://elrepo.org/linux/kernel/el6/\$basearch/
 mirrorlist=http://elrepo.org/mirrors-elrepo-kernel.el6
 enabled=0
-gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-elrepo.org
+gpgcheck=0
 protect=0
 
 [elrepo-extras]
@@ -1130,22 +1122,16 @@ name=ELRepo.org Community Enterprise Linux Repository - el6
 baseurl=http://elrepo.org/linux/extras/el6/\$basearch/
 mirrorlist=http://elrepo.org/mirrors-elrepo-extras.el6
 enabled=0
-gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-elrepo.org
+gpgcheck=0
 protect=0
 EOF
 
 }
 
 function add_epel_repo {
-	# Is epel-release already installed?
+	yum -y install epel-release > /dev/null 2>&1
+	# Is it installed?
 	if [ -e /etc/yum.repos.d/epel.repo ] ; then
-		return;
-	fi
-
-	# Lets try for a package.
-	if [ yum install epel-release > /dev/null 2>&1 ] ; then
-		# All done. Yay SL.
 		return;
 	fi
 
@@ -1157,8 +1143,7 @@ name=Extra Packages for Enterprise Linux 6 - \$basearch
 mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=epel-6&arch=\$basearch
 failovermethod=priority
 enabled=1
-gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-6
+gpgcheck=0
 
 [epel-debuginfo]
 name=Extra Packages for Enterprise Linux 6 - \$basearch - Debug
@@ -1166,8 +1151,7 @@ name=Extra Packages for Enterprise Linux 6 - \$basearch - Debug
 mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=epel-debug-6&arch=\$basearch
 failovermethod=priority
 enabled=0
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-6
-gpgcheck=1
+gpgcheck=0
 
 [epel-source]
 name=Extra Packages for Enterprise Linux 6 - \$basearch - Source
@@ -1175,23 +1159,17 @@ name=Extra Packages for Enterprise Linux 6 - \$basearch - Source
 mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=epel-source-6&arch=\$basearch
 failovermethod=priority
 enabled=0
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-6
-gpgcheck=1
+gpgcheck=0
 EOF
 
 }
 
 function add_atrpms_repo {
-	# Is atrpms-release already installed?
+	yum -y install atrpms-repo > /dev/null 2>&1
+
+	# Is it installed?
 	if [ -e /etc/yum.repos.d/atrpms.repo ] ; then
 		# Ensure it's turned off by default.
-		sed -i 's/enabled=./enabled=0/' /etc/yum.repos.d/atrpms*
-		return;
-	fi
-
-	# Lets try for a package.
-	if [ yum install atrpms-repo > /dev/null 2>&1 ] ; then
-		# Yay. Now turn it off.
 		sed -i 's/enabled=./enabled=0/' /etc/yum.repos.d/atrpms*
 		return;
 	fi
@@ -1203,24 +1181,21 @@ name=Red Hat Enterprise Linux 6 - \$basearch - ATrpms
 failovermethod=priority
 baseurl=http://dl.atrpms.net/el6-\$basearch/atrpms/stable
 enabled=0
-gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-atrpms
+gpgcheck=0
 
 [atrpms-debuginfo]
 name=Red Hat Enterprise Linux 6 - \$basearch - ATrpms - Debug
 failovermethod=priority
 baseurl=http://dl.atrpms.net/debug/el6-\$basearch/atrpms/stable
 enabled=0
-gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-atrpms
+gpgcheck=0
 
 [atrpms-source]
 name=Red Hat Enterprise Linux 6 - \$basearch - ATrpms - Source
 failovermethod=priority
 baseurl=http://dl.atrpms.net/src/el6-\$basearch/atrpms/stable
 enabled=0
-gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-atrpms
+gpgcheck=0
 EOF
 
 }
