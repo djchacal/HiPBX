@@ -64,12 +64,12 @@ function installpackages {
 	done
 	if [ "$INSTALL" != "" ] ; then
 		echo -e "\tInstalling missing yum packages."
-		echo yum -y install $INSTALL
-		echo yum -y --enablerepo atrpms install dahdi-linux
+		yum -y install $INSTALL
 		exit;
 	else
 		echo -e "\tNo yum packages required"
 	fi
+	yum -y --enablerepo atrpms install dahdi-linux
 }
 
 function disableall {
