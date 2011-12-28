@@ -68,7 +68,10 @@ function installpackages {
 	else
 		echo -e "\tNo yum packages required"
 	fi
-	yum -y --enablerepo atrpms install dahdi-linux
+	if rpm -q dahdi-linux > /dev/null ; then
+		echo -e "\tInstalling DAHDI Kernel module"
+		yum -y --enablerepo atrpms install dahdi-linux
+	fi
 }
 
 function disableall {
@@ -1086,9 +1089,11 @@ function freepbx_create_symlinks {
 
 
 function add_repos {
+	echo -n 'Ensureing all repos are added...'
 	add_elrepo_repo
 	add_epel_repo
 	add_atrpms_repo
+	echo 'Done'
 }
 
 function add_elrepo_repo {
