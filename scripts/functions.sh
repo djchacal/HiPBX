@@ -56,7 +56,7 @@ function installpackages {
 	# RPMs from yum.
 	YUMPACKS="bc vim-enhanced sox libusb-devel httpd php php-gd php-pear php-mysql mysql-server curl mysql mysql-devel php-process libxml2-devel ncurses-devel libtiff-devel libogg-devel libvorbis vorbis-tools pacemaker unixODBC bluez-libs postgresql-libs festival ImageMagick"
 	# Update. Now using epel and elrepo repositories
-	YUMPACKS="$YUMPACKS asterisk asterisk-dahdi dahdi-tools dahdi-linux libpri asterisk-sounds-core-en_AU asterisk-sounds-core-en asterisk-sqlite asterisk-voicemail-plain asterisk-mysql asterisk-mobile asterisk-ldap asterisk-jabber asterisk-festival asterisk-fax asterisk-curl asterisk-calendar asterisk-jack spandsp iksemel-utils php-fpdf libsrtp php-pear-DB libresample kmod-drbd84 drbd84-utils"
+	YUMPACKS="$YUMPACKS asterisk asterisk-dahdi dahdi-tools asterisk-sounds-core-en_AU asterisk-sounds-core-en asterisk-sqlite asterisk-voicemail-plain asterisk-mysql asterisk-mobile asterisk-ldap asterisk-jabber asterisk-festival asterisk-fax asterisk-curl asterisk-calendar asterisk-jack spandsp iksemel-utils php-fpdf libsrtp php-pear-DB libresample kmod-drbd84 drbd84-utils"
 	for x in $YUMPACKS ; do 
 		if ! (grep "^${x}$" /tmp/rpms.$$ > /dev/null) ; then 
 			INSTALL="$INSTALL $x"
@@ -64,7 +64,9 @@ function installpackages {
 	done
 	if [ "$INSTALL" != "" ] ; then
 		echo -e "\tInstalling missing yum packages."
-		yum -y install $INSTALL
+		echo yum -y install $INSTALL
+		echo yum -y --enablerepo atrpms install dahdi-linux
+		exit;
 	else
 		echo -e "\tNo yum packages required"
 	fi
@@ -1182,12 +1184,15 @@ EOF
 function add_atrpms_repo {
 	# Is atrpms-release already installed?
 	if [ -e /etc/yum.repos.d/atrpms.repo ] ; then
+		# Ensure it's turned off by default.
+		sed -i 's/enabled=./enabled=0/' /etc/yum.repos.d/atrpms*
 		return;
 	fi
 
 	# Lets try for a package.
 	if [ yum install atrpms-repo > /dev/null 2>&1 ] ; then
-		# All done. Yay SL.
+		# Yay. Now turn it off.
+		sed -i 's/enabled=./enabled=0/' /etc/yum.repos.d/atrpms*
 		return;
 	fi
 
@@ -1197,7 +1202,7 @@ function add_atrpms_repo {
 name=Red Hat Enterprise Linux 6 - \$basearch - ATrpms
 failovermethod=priority
 baseurl=http://dl.atrpms.net/el6-\$basearch/atrpms/stable
-enabled=1
+enabled=0
 gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-atrpms
 
