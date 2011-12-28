@@ -65,7 +65,6 @@ function installpackages {
 	if [ "$INSTALL" != "" ] ; then
 		echo -e "\tInstalling missing yum packages."
 		yum -y install $INSTALL
-		exit;
 	else
 		echo -e "\tNo yum packages required"
 	fi
