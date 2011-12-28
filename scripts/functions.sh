@@ -660,8 +660,7 @@ function setup_drbd {
 				echo "Done"
 			fi
 			crm configure primitive drbd_${SERVICENAME[$x]} ocf:linbit:drbd \
-				params drbd_resource="${SERVICENAME[$x]}" \
-				op monitor interval="15s" notify="true"
+				params drbd_resource="${SERVICENAME[$x]}" 
 			crm configure ms ms_drbd_${SERVICENAME[$x]} drbd_${SERVICENAME[$x]} \
 				meta master-max="1" master-node-max="1" clone-max="2" target-role="Stopped"\
 				clone-node-max="1" notify="true"
