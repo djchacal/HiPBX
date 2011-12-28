@@ -611,6 +611,7 @@ function setup_drbd {
 		echo "resource ${SERVICENAME[$x]} {
 	device /dev/drbd${x};
 	meta-disk internal;
+	protocol C;
 	on master {
 		disk /dev/mapper/${MASTER_VGNAME}-drbd_${SERVICENAME[$x]};
 		address ${MASTER_INTERNAL_IP}:400${x};
