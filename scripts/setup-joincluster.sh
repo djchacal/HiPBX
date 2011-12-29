@@ -87,3 +87,6 @@ rm -rf /etc/dahdi
 ln -sf /drbd/asterisk/dahdi /etc/dahdi
 
 usermod -G haclient apache
+
+# Don't forget to enable me!
+this_node_online
