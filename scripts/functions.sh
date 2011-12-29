@@ -611,7 +611,14 @@ function setup_drbd {
 		echo "resource ${SERVICENAME[$x]} {
 	device /dev/drbd${x};
 	meta-disk internal;
-	protocol C;
+	net {
+		protocol C;
+		after-sb-0pri	discard-least-changes;
+		after-sb-1pri	discard-secondary;
+	}
+	disk {
+		resync-rate 50M;
+	}
 	on master {
 		disk /dev/mapper/${MASTER_VGNAME}-drbd_${SERVICENAME[$x]};
 		address ${MASTER_INTERNAL_IP}:400${x};
