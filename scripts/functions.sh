@@ -1115,3 +1115,107 @@ function freepbx_create_symlinks {
 }
 
 
+function add_repos {
+	add_elrepo_repo
+	add_epel_repo
+}
+
+function add_elrepo_repo {
+	# Is elrepo-release already installed?
+	if [ -e /etc/yum.repos.d/elrepo.repo ] ; then
+		return;
+	fi
+
+	# Lets try for a package.
+	if [ yum install elrepo-release > /dev/null 2>&1 ] ; then
+		# All done. Yay SL.
+		return;
+	fi
+
+	# Dammit. Someone's running this on CentOS. Lets just throw it in
+	cat > /etc/yum.repos.d/elrepo.repo << EOF
+### Name: ELRepo.org Community Enterprise Linux Repository for el6
+### URL: http://elrepo.org/
+
+[elrepo]
+name=ELRepo.org Community Enterprise Linux Repository - el6
+baseurl=http://elrepo.org/linux/elrepo/el6/\$basearch/
+mirrorlist=http://elrepo.org/mirrors-elrepo.el6
+enabled=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-elrepo.org
+protect=0
+
+[elrepo-testing]
+name=ELRepo.org Community Enterprise Linux Testing Repository - el6
+baseurl=http://elrepo.org/linux/testing/el6/\$basearch/
+mirrorlist=http://elrepo.org/mirrors-elrepo-testing.el6
+enabled=0
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-elrepo.org
+protect=0
+
+[elrepo-kernel]
+name=ELRepo.org Community Enterprise Linux Kernel Repository - el6
+baseurl=http://elrepo.org/linux/kernel/el6/\$basearch/
+mirrorlist=http://elrepo.org/mirrors-elrepo-kernel.el6
+enabled=0
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-elrepo.org
+protect=0
+
+[elrepo-extras]
+name=ELRepo.org Community Enterprise Linux Repository - el6
+baseurl=http://elrepo.org/linux/extras/el6/\$basearch/
+mirrorlist=http://elrepo.org/mirrors-elrepo-extras.el6
+enabled=0
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-elrepo.org
+protect=0
+EOF
+
+}
+
+function add_epel_repo {
+	# Is epel-release already installed?
+	if [ -e /etc/yum.repos.d/epel.repo ] ; then
+		return;
+	fi
+
+	# Lets try for a package.
+	if [ yum install epel-release > /dev/null 2>&1 ] ; then
+		# All done. Yay SL.
+		return;
+	fi
+
+	# Dammit. Someone's running this on CentOS. Lets just throw it in
+	cat > /etc/yum.repos.d/epel.repo << EOF
+[epel]
+name=Extra Packages for Enterprise Linux 6 - \$basearch
+#baseurl=http://download.fedoraproject.org/pub/epel/6/\$basearch
+mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=epel-6&arch=\$basearch
+failovermethod=priority
+enabled=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-6
+
+[epel-debuginfo]
+name=Extra Packages for Enterprise Linux 6 - \$basearch - Debug
+#baseurl=http://download.fedoraproject.org/pub/epel/6/\$basearch/debug
+mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=epel-debug-6&arch=\$basearch
+failovermethod=priority
+enabled=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-6
+gpgcheck=1
+
+[epel-source]
+name=Extra Packages for Enterprise Linux 6 - \$basearch - Source
+#baseurl=http://download.fedoraproject.org/pub/epel/6/SRPMS
+mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=epel-source-6&arch=\$basearch
+failovermethod=priority
+enabled=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-6
+gpgcheck=1
+EOF
+
+}
