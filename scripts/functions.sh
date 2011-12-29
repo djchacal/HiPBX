@@ -618,6 +618,9 @@ function setup_drbd {
 	}
 	disk {
 		resync-rate 50M;
+		disk-drain no;
+		disk-flushes no;
+		md-flushes no;
 	}
 	on master {
 		disk /dev/mapper/${MASTER_VGNAME}-drbd_${SERVICENAME[$x]};
