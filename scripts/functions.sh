@@ -68,7 +68,7 @@ function installpackages {
 	else
 		echo -e "\tNo yum packages required"
 	fi
-	if rpm -q dahdi-linux > /dev/null ; then
+	if ! rpm -q dahdi-linux > /dev/null ; then
 		echo -e "\tInstalling DAHDI Kernel module"
 		yum -y --enablerepo atrpms install dahdi-linux
 	fi
