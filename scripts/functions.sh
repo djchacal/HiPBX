@@ -47,30 +47,30 @@ function selinux {
 }
 
 function installpackages {
+	add_repos
 	echo "Required Packages:"
 	echo -en "\tGenerating list of all RPMs installed on this machine..."
 	rpm -qa --queryformat '%{NAME}\n' > /tmp/rpms.$$
 	echo "Done"
 	INSTALL=""
-	# CentOS 6 RPMs from yum.
+	# RPMs from yum.
 	YUMPACKS="bc vim-enhanced sox libusb-devel httpd php php-gd php-pear php-mysql mysql-server curl mysql mysql-devel php-process libxml2-devel ncurses-devel libtiff-devel libogg-devel libvorbis vorbis-tools pacemaker unixODBC bluez-libs postgresql-libs festival ImageMagick"
+	# Update. Now using epel and elrepo repositories
+	YUMPACKS="$YUMPACKS asterisk asterisk-dahdi dahdi-tools libpri asterisk-sounds-core-en_AU asterisk-sounds-core-en asterisk-sqlite asterisk-voicemail-plain asterisk-mysql asterisk-mobile asterisk-ldap asterisk-jabber asterisk-festival asterisk-fax asterisk-curl asterisk-calendar asterisk-jack spandsp iksemel-utils php-fpdf libsrtp php-pear-DB libresample kmod-drbd84 drbd84-utils"
 	for x in $YUMPACKS ; do 
 		if ! (grep "^${x}$" /tmp/rpms.$$ > /dev/null) ; then 
 			INSTALL="$INSTALL $x"
 		fi
 	done
 	if [ "$INSTALL" != "" ] ; then
-		echo -e "\tInstalling missing CentOS yum packages."
+		echo -e "\tInstalling missing yum packages."
 		yum -y install $INSTALL
 	else
 		echo -e "\tNo yum packages required"
 	fi
-	echo -en "\tEnumerating HiPBX RPMs..."
 	INSTALL=""
 	UPGRADE=""
-	DIRS="rpms/asterisk rpms/asterisk-sounds rpms/dahdi rpms/drbd rpms/other"
-	# What kernel version am I?
-	kv=$(uname -r | sed 's/\(.*\).el6.*/\1/')
+	DIRS="rpms/other"
 	DIRS="$DIRS rpms/$kv"
 	HIPBXRPMS=$(find $DIRS -maxdepth 1 -name *rpm -print)
 	echo "Done"
