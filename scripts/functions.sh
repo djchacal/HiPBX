@@ -56,7 +56,7 @@ function installpackages {
 	# RPMs from yum.
 	YUMPACKS="bc vim-enhanced sox libusb-devel httpd php php-gd php-pear php-mysql mysql-server curl mysql mysql-devel php-process libxml2-devel ncurses-devel libtiff-devel libogg-devel libvorbis vorbis-tools pacemaker unixODBC bluez-libs postgresql-libs festival ImageMagick"
 	# Update. Now using epel and elrepo repositories
-	YUMPACKS="$YUMPACKS asterisk asterisk-dahdi dahdi-tools libpri asterisk-sounds-core-en_AU asterisk-sounds-core-en asterisk-sqlite asterisk-voicemail-plain asterisk-mysql asterisk-mobile asterisk-ldap asterisk-jabber asterisk-festival asterisk-fax asterisk-curl asterisk-calendar asterisk-jack spandsp iksemel-utils php-fpdf libsrtp php-pear-DB libresample kmod-drbd84 drbd84-utils"
+	YUMPACKS="$YUMPACKS asterisk asterisk-dahdi dahdi-tools dahdi-linux libpri asterisk-sounds-core-en_AU asterisk-sounds-core-en asterisk-sqlite asterisk-voicemail-plain asterisk-mysql asterisk-mobile asterisk-ldap asterisk-jabber asterisk-festival asterisk-fax asterisk-curl asterisk-calendar asterisk-jack spandsp iksemel-utils php-fpdf libsrtp php-pear-DB libresample kmod-drbd84 drbd84-utils"
 	for x in $YUMPACKS ; do 
 		if ! (grep "^${x}$" /tmp/rpms.$$ > /dev/null) ; then 
 			INSTALL="$INSTALL $x"
@@ -68,48 +68,6 @@ function installpackages {
 	else
 		echo -e "\tNo yum packages required"
 	fi
-	INSTALL=""
-	UPGRADE=""
-	DIRS="rpms/other"
-	DIRS="$DIRS rpms/$kv"
-	HIPBXRPMS=$(find $DIRS -maxdepth 1 -name *rpm -print)
-	echo "Done"
-	echo -en "\tLocating uninstalled RPMs..."
-	for x in $HIPBXRPMS ; do
-		spinner
-		rpmname=$(rpm -qp $x --queryformat '%{NAME}' 2>/dev/null)
-		rpmvers=$(rpm -qp $x --queryformat '%{VERSION}' 2>/dev/null)
-		if ! (grep "^$rpmname\$" /tmp/rpms.$$> /dev/null) ; then 
-			# Doesn't exist. Install it.
-			INSTALL="$INSTALL $x"
-			echo -ne "\b. "
-		else
-			# drbd kernel module is subtly broken.
-			if [[ $rpmname == drbd-km* ]] ; then
-				rpmname=$( basename $x | sed "s/.rpm//" )
-			fi
-			# It exists, but does it need an upgrade?
-			existingvers=$( rpm -q $rpmname --queryformat '%{VERSION}')
-			if [ "$existingvers" != "$rpmvers" ] ; then
-				UPGRADE="$UPGRADE $x"
-				echo -ne "\bu "
-			fi
-		fi
-	done
-	printf "\bDone\n"
-	if [ "$INSTALL" != "" ] ; then
-		echo -e "\tInstalling missing rpm packages"
-		rpm -i $INSTALL
-	else
-		echo -e "\tNo rpm packages required"
-	fi
-	if [ "$UPGRADE" != "" ] ; then
-		echo -e "\tUpgrading rpm packages"
-		rpm -U $UPGRADE
-	else
-		echo -e "\tNo upgrades required"
-	fi
-	echo -e "\tPackages done"
 }
 
 function disableall {
@@ -1118,6 +1076,7 @@ function freepbx_create_symlinks {
 function add_repos {
 	add_elrepo_repo
 	add_epel_repo
+	add_atrpms_repo
 }
 
 function add_elrepo_repo {
@@ -1216,6 +1175,47 @@ failovermethod=priority
 enabled=0
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-6
 gpgcheck=1
+EOF
+
+}
+
+function add_atrpms_repo {
+	# Is atrpms-release already installed?
+	if [ -e /etc/yum.repos.d/atrpms.repo ] ; then
+		return;
+	fi
+
+	# Lets try for a package.
+	if [ yum install atrpms-repo > /dev/null 2>&1 ] ; then
+		# All done. Yay SL.
+		return;
+	fi
+
+	# Dammit. Someone's running this on CentOS. Lets just throw it in
+	cat > /etc/yum.repos.d/atrpms.repo << EOF
+[atrpms]
+name=Red Hat Enterprise Linux 6 - \$basearch - ATrpms
+failovermethod=priority
+baseurl=http://dl.atrpms.net/el6-\$basearch/atrpms/stable
+enabled=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-atrpms
+
+[atrpms-debuginfo]
+name=Red Hat Enterprise Linux 6 - \$basearch - ATrpms - Debug
+failovermethod=priority
+baseurl=http://dl.atrpms.net/debug/el6-\$basearch/atrpms/stable
+enabled=0
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-atrpms
+
+[atrpms-source]
+name=Red Hat Enterprise Linux 6 - \$basearch - ATrpms - Source
+failovermethod=priority
+baseurl=http://dl.atrpms.net/src/el6-\$basearch/atrpms/stable
+enabled=0
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-atrpms
 EOF
 
 }
