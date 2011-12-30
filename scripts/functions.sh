@@ -327,6 +327,7 @@ function add_ssh {
 	if [ ! -f $HOME/.ssh/authorized_keys ]; then
 		echo -n "Creating SSH authorized_keys file on local machine..."
 		# Authorized Keys file doesn't exist. Create it.
+		mkdir -p $HOME/.ssh
 		cp /etc/hipbx.d/ssh_key_master.pub $HOME/.ssh/authorized_keys
 		echo "Done"
 	else
