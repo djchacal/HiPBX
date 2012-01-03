@@ -50,7 +50,7 @@ if [ ! -f /etc/hipbx.d/hipbx.conf ]; then
 	exit
 fi
 
-cfg ISMASTER $ISMASTER 
+cfg ISMAIN $ISMAIN
 
 # Load our configuration. Huzzah! 
 . /etc/hipbx.d/hipbx.conf

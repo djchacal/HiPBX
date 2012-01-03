@@ -2,7 +2,7 @@
 
 #  HiPBX Installer Script. 
 #  Copyright 2011, Rob Thomas <xrobau@gmail.com>
-#  Shared functions used in both the Master and Slave setup scripts
+#  Shared functions used in both the Main and Backup setup scripts
 
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -104,17 +104,17 @@ function mysql_password {
 }
 
 function fix_hostname {
-	if [ $ISMASTER = YES ]; then
-		if [ $(hostname) != master ]; then
-			echo "Fixing hostname - setting to 'master'"
-			hostname master
-			sed -i "s/^HOSTNAME=.*/HOSTNAME=master/" /etc/sysconfig/network
+	if [ $ISMAIN = YES ]; then
+		if [ $(hostname) != main ]; then
+			echo "Fixing hostname - setting to 'main'"
+			hostname main
+			sed -i "s/^HOSTNAME=.*/HOSTNAME=main/" /etc/sysconfig/network
 		fi
 	else
-		if [ $(hostname) != slave ]; then
-			echo "Fixing hostname - setting to 'slave'"
-			hostname slave
-			sed -i "s/^HOSTNAME=.*/HOSTNAME=slave/" /etc/sysconfig/network
+		if [ $(hostname) != backup ]; then
+			echo "Fixing hostname - setting to 'backup'"
+			hostname backup
+			sed -i "s/^HOSTNAME=.*/HOSTNAME=backup/" /etc/sysconfig/network
 		fi
 	fi
 }
@@ -293,10 +293,10 @@ function configure_lvm {
 		done
 	fi
 
-	if [ $ISMASTER = YES ]; then
-		cfg MASTER_VGNAME "$SELECTEDVG"
+	if [ $ISMAIN = YES ]; then
+		cfg MAIN_VGNAME "$SELECTEDVG"
 	else
-		cfg SLAVE_VGNAME "$SELECTEDVG"
+		cfg BACKUP_VGNAME "$SELECTEDVG"
 	fi
 	MY_VGNAME=$SELECTEDVG
 }
@@ -305,24 +305,24 @@ function check_ssh {
 	echo "SSH:"
 	if [ "$SSH_KEY" = "" ]; then
 		echo -e "\t\$SSH_KEY not found."
-		if [ -f /etc/hipbx.d/ssh_key_master -a -f /etc/hipbx.d/ssh_key_master.pub ]; then
-			echo -e "\tHowever, /etc/hipbx.d/ssh_key_master exists"
+		if [ -f /etc/hipbx.d/ssh_key_main -a -f /etc/hipbx.d/ssh_key_main.pub ]; then
+			echo -e "\tHowever, /etc/hipbx.d/ssh_key_main exists"
 		else
-			rm -f /etc/hipbx.d/ssh_key_master /etc/hipbx.d/ssh_key_master.pub
-			echo -en "\tGenerating Master ssh Public key..."
-			ssh-keygen -q -t dsa -f /etc/hipbx.d/ssh_key_master -N ""
+			rm -f /etc/hipbx.d/ssh_key_main /etc/hipbx.d/ssh_key_main.pub
+			echo -en "\tGenerating Main ssh Public key..."
+			ssh-keygen -q -t dsa -f /etc/hipbx.d/ssh_key_main -N ""
 			echo "Done"
 		fi
-		SSH_KEY=$(cat /etc/hipbx.d/ssh_key_master.pub)
+		SSH_KEY=$(cat /etc/hipbx.d/ssh_key_main.pub)
 	else
-		echo -en "\tMaster ssh key exists"
-		test=$(cat /etc/hipbx.d/ssh_key_master.pub 2>/dev/null)
+		echo -en "\tMain ssh key exists"
+		test=$(cat /etc/hipbx.d/ssh_key_main.pub 2>/dev/null)
 		if [ "$SSH_KEY" != "$test" ]; then
 			echo -e " - but doesn't match hipbx.conf! Regenerating."
-			rm -f /etc/hipbx.d/ssh_key_master /etc/hipbx.d/ssh_key_master.pub
-			echo -en "\tGenerating Master ssh Public key..."
-			ssh-keygen -q -t dsa -f /etc/hipbx.d/ssh_key_master -N ""
-			SSH_KEY=$(cat /etc/hipbx.d/ssh_key_master.pub)
+			rm -f /etc/hipbx.d/ssh_key_main /etc/hipbx.d/ssh_key_main.pub
+			echo -en "\tGenerating Main ssh Public key..."
+			ssh-keygen -q -t dsa -f /etc/hipbx.d/ssh_key_main -N ""
+			SSH_KEY=$(cat /etc/hipbx.d/ssh_key_main.pub)
 			echo "Done"
 		else
 			echo " and seems valid"
@@ -336,7 +336,7 @@ function add_ssh {
 		echo -n "Creating SSH authorized_keys file on local machine..."
 		# Authorized Keys file doesn't exist. Create it.
 		mkdir -p $HOME/.ssh
-		cp /etc/hipbx.d/ssh_key_master.pub $HOME/.ssh/authorized_keys
+		cp /etc/hipbx.d/ssh_key_main.pub $HOME/.ssh/authorized_keys
 		echo "Done"
 	else
 		# It exists. Check to see if our key is in there
@@ -344,7 +344,7 @@ function add_ssh {
 			echo -e "\tHiPBX SSH Key already exists in authorized_keys"
 		else
 			echo -en "\tAdding HiPBX SSH Key to authorized_keys..."
-			cat /etc/hipbx.d/ssh_key_master.pub >> $HOME/.ssh/authorized_keys
+			cat /etc/hipbx.d/ssh_key_main.pub >> $HOME/.ssh/authorized_keys
 			echo "Done"
 		fi
 	fi
@@ -352,12 +352,12 @@ function add_ssh {
 	
 function get_ssh_keys {
 	# This should be run on the second machine to be brought online, so it's called from 'joincluster'
-	if [ "$ISMASTER" = "YES" ]; then
-		# We need to get slaves keys, and load slave with ours.
-		ssh -i /etc/hipbx.d/ssh_key_master -o StrictHostKeyChecking=no slave "ssh -i /etc/hipbx.d/ssh_key_master -o StrictHostKeyChecking=no master exit"
+	if [ "$ISMAIN" = "YES" ]; then
+		# We need to get backups keys, and load backup with ours.
+		ssh -i /etc/hipbx.d/ssh_key_main -o StrictHostKeyChecking=no backup "ssh -i /etc/hipbx.d/ssh_key_main -o StrictHostKeyChecking=no main exit"
 	else
-		# We're slave, and we need to get masters, and load masters with ours.
-		ssh -i /etc/hipbx.d/ssh_key_master -o StrictHostKeyChecking=no master "ssh -i /etc/hipbx.d/ssh_key_master -o StrictHostKeyChecking=no slave exit"
+		# We're backup, and we need to get mains, and load mains with ours.
+		ssh -i /etc/hipbx.d/ssh_key_main -o StrictHostKeyChecking=no main "ssh -i /etc/hipbx.d/ssh_key_main -o StrictHostKeyChecking=no backup exit"
 	fi
 }
 
@@ -380,12 +380,12 @@ function config_networking {
 		echo -e "\t\t$iname\t$iaddr"
 	done
 
-	if [ $ISMASTER = YES ]; then
-		MY_EXTERNAL_INT=$MASTER_EXTERNAL_INT
-		MY_INTERNAL_INT=$MASTER_INTERNAL_INT
+	if [ $ISMAIN = YES ]; then
+		MY_EXTERNAL_INT=$MAIN_EXTERNAL_INT
+		MY_INTERNAL_INT=$MAIN_INTERNAL_INT
 	else
-		MY_EXTERNAL_INT=$SLAVE_EXTERNAL_INT
-		MY_INTERNAL_INT=$SLAVE_INTERNAL_INT
+		MY_EXTERNAL_INT=$BACKUP_EXTERNAL_INT
+		MY_INTERNAL_INT=$BACKUP_INTERNAL_INT
 	fi
 
 	INTSVALID=false
@@ -434,16 +434,16 @@ function config_networking {
 		fi
 	done
 
-	if [ $ISMASTER = YES ]; then
-		cfg MASTER_INTERNAL_IP "$MY_INTERNAL_IP"
-		cfg MASTER_INTERNAL_INT "$internalint"
-		cfg MASTER_EXTERNAL_IP "$MY_EXTERNAL_IP"
-		cfg MASTER_EXTERNAL_INT "$externalint"
+	if [ $ISMAIN = YES ]; then
+		cfg MAIN_INTERNAL_IP "$MY_INTERNAL_IP"
+		cfg MAIN_INTERNAL_INT "$internalint"
+		cfg MAIN_EXTERNAL_IP "$MY_EXTERNAL_IP"
+		cfg MAIN_EXTERNAL_INT "$externalint"
 	else
-		cfg SLAVE_INTERNAL_IP "$MY_INTERNAL_IP"
-		cfg SLAVE_INTERNAL_INT "$internalint"
-		cfg SLAVE_EXTERNAL_IP "$MY_EXTERNAL_IP"
-		cfg SLAVE_EXTERNAL_INT "$externalint"
+		cfg BACKUP_INTERNAL_IP "$MY_INTERNAL_IP"
+		cfg BACKUP_INTERNAL_INT "$internalint"
+		cfg BACKUP_EXTERNAL_IP "$MY_EXTERNAL_IP"
+		cfg BACKUP_EXTERNAL_INT "$externalint"
 	fi
 
 
@@ -463,10 +463,10 @@ function config_networking {
 	echo "Configure Services"
 	echo -e "\tPlease enter the IP Addresses for the HiPBX Services. These addresses"
 	echo -e "\tshould NOT already exist, and they will be assigned to the interface"
-	if [ "$ISMASTER" = "YES" ] ; then
-		echo -e "\tyou previously selected ($MASTER_EXTERNAL_INT). These will be the"
+	if [ "$ISMAIN" = "YES" ] ; then
+		echo -e "\tyou previously selected ($MAIN_EXTERNAL_INT). These will be the"
 	else
-		echo -e "\tyou previously selected ($SLAVE_EXTERNAL_INT). These will be the"
+		echo -e "\tyou previously selected ($BACKUP_EXTERNAL_INT). These will be the"
 	fi
 
 	echo -e "\t'floating' addresses that are linked to a service, rather than a"
@@ -483,11 +483,11 @@ function config_networking {
 			exit;
 		fi
 		# Check to make sure the address isn't being used..
-	#	if $(arping -w1 -fqI $MASTER_EXTERNAL_INT $newip) ; then
+	#	if $(arping -w1 -fqI $MAIN_EXTERNAL_INT $newip) ; then
 	#		echo "Whoops. Something seems to be using that address. Here's the response"
-	#		echo "from arping -w 1 -fI $MASTER_EXTERNAL_INT so you can see the MAC address"
+	#		echo "from arping -w 1 -fI $MAIN_EXTERNAL_INT so you can see the MAC address"
 	#		echo "for yourself."
-	#		arping -w 1 -fI $MASTER_EXTERNAL_INT $newip
+	#		arping -w 1 -fI $MAIN_EXTERNAL_INT $newip
 	#		exit;
 	#	fi	
 		cfg ${SERVICENAME[$x]}_IP "$newip"
@@ -496,8 +496,8 @@ function config_networking {
 
 function fixhosts {
 	echo -en "\tUpdating hosts file..."
-	addreplace_host slave $SLAVE_INTERNAL_IP
-	addreplace_host master $MASTER_INTERNAL_IP
+	addreplace_host backup $BACKUP_INTERNAL_IP
+	addreplace_host main $MAIN_INTERNAL_IP
 	addreplace_host mysql $mysql_IP
 	addreplace_host asterisk $asterisk_IP
 	echo "Done"
@@ -519,12 +519,12 @@ $hostip		$hostnm"
 		
 function calc_netmasks {
 	# Figure out netmasks. This isn't line noise, honest.
-	if [ $ISMASTER = YES ] ; then
-		EXTERNAL_CLASS=$(ip -o addr | grep -v inet6 | grep -v secondary | grep ${MASTER_EXTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_')
-		INTERNAL_CLASS=$(ip -o addr | grep -v inet6 | grep -v secondary | grep ${MASTER_INTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_')
+	if [ $ISMAIN = YES ] ; then
+		EXTERNAL_CLASS=$(ip -o addr | grep -v inet6 | grep -v secondary | grep ${MAIN_EXTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_')
+		INTERNAL_CLASS=$(ip -o addr | grep -v inet6 | grep -v secondary | grep ${MAIN_INTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_')
 	else
-		EXTERNAL_CLASS=$(ip -o addr | grep -v inet6 | grep -v secondary | grep ${SLAVE_EXTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_')
-		INTERNAL_CLASS=$(ip -o addr | grep -v inet6 | grep -v secondary | grep ${SLAVE_INTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_')
+		EXTERNAL_CLASS=$(ip -o addr | grep -v inet6 | grep -v secondary | grep ${BACKUP_EXTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_')
+		INTERNAL_CLASS=$(ip -o addr | grep -v inet6 | grep -v secondary | grep ${BACKUP_INTERNAL_INT}$ | sed 's_.*/\([0-9]*\) .*_\1_')
 	fi
 	cfg INTERNAL_CLASS $INTERNAL_CLASS
 	cfg EXTERNAL_CLASS $EXTERNAL_CLASS
@@ -532,10 +532,10 @@ function calc_netmasks {
 
 
 function gen_corosync {
-	if [ $ISMASTER = YES ]; then 
-		INTERNAL_IP=$MASTER_INTERNAL_IP
+	if [ $ISMAIN = YES ]; then 
+		INTERNAL_IP=$MAIN_INTERNAL_IP
 	else
-		INTERNAL_IP=$SLAVE_INTERNAL_IP
+		INTERNAL_IP=$BACKUP_INTERNAL_IP
 	fi
 	echo -n "Generating corosync configuration file: "
 	echo " totem {
@@ -630,13 +630,13 @@ function setup_drbd {
 		disk-flushes no;
 		md-flushes no;
 	}
-	on master {
-		disk /dev/mapper/${MASTER_VGNAME}-drbd_${SERVICENAME[$x]};
-		address ${MASTER_INTERNAL_IP}:400${x};
+	on main {
+		disk /dev/mapper/${MAIN_VGNAME}-drbd_${SERVICENAME[$x]};
+		address ${MAIN_INTERNAL_IP}:400${x};
 	}
-	on slave {
-		disk /dev/mapper/${SLAVE_VGNAME}-drbd_${SERVICENAME[$x]};
-		address ${SLAVE_INTERNAL_IP}:400${x};
+	on backup {
+		disk /dev/mapper/${BACKUP_VGNAME}-drbd_${SERVICENAME[$x]};
+		address ${BACKUP_INTERNAL_IP}:400${x};
 	}
 }" > /etc/drbd.d/${SERVICENAME[$x]}.res
 		cfg "${SERVICENAME[$x]}_DISK" "/dev/drbd$x"
@@ -670,7 +670,7 @@ function setup_drbd {
 			crm configure primitive drbd_${SERVICENAME[$x]} ocf:linbit:drbd \
 				params drbd_resource="${SERVICENAME[$x]}" 
 			crm configure ms ms_drbd_${SERVICENAME[$x]} drbd_${SERVICENAME[$x]} \
-				meta master-max="1" master-node-max="1" clone-max="2" target-role="Stopped"\
+				meta main-max="1" main-node-max="1" clone-max="2" target-role="Stopped"\
 				clone-node-max="1" notify="true"
 			crm configure primitive fs_${SERVICENAME[$x]} ocf:heartbeat:Filesystem \
 				params device="/dev/drbd$x" directory="/drbd/${SERVICENAME[$x]}" \
@@ -749,7 +749,7 @@ function setup_mysql {
 		echo -en "\tCreating HiPBX mysql users .. "
 		CREATE='CREATE USER "hipbx"@"'$host'" IDENTIFIED BY "'$MYSQLPASS'"'
 		mysql -p$MYSQLPASS -e"$CREATE"
-		for host in localhost master slave cluster mysql $PEER_IP %; do
+		for host in localhost main backup cluster mysql $PEER_IP %; do
 			echo -n "$host "
 			GRANT='GRANT ALL PRIVILEGES ON hipbx.* TO "hipbx"@"'$host'" IDENTIFIED BY "'$MYSQLPASS'"'
 			mysql -p$MYSQLPASS -e"$GRANT"
@@ -764,7 +764,7 @@ function setup_mysql {
 	else
 		echo "Failed."
 		echo -en "\tCreating HiPBX mysql users .. "
-		for host in localhost master slave cluster mysql $PEER_IP %; do
+		for host in localhost main backup cluster mysql $PEER_IP %; do
 			echo -n "$host "
 			GRANT='GRANT ALL PRIVILEGES ON asteriskcdrdb.* TO "hipbx"@"'$host'" IDENTIFIED BY "'$MYSQLPASS'"'
 			mysql -p$MYSQLPASS -e"$GRANT"
@@ -774,12 +774,12 @@ function setup_mysql {
 }
 
 function get_peer_addr {
-	if [ $ISMASTER = YES ]; then
-		PEER=SLAVE
-		PEER_IP=$SLAVE_INTERNAL_IP
+	if [ $ISMAIN = YES ]; then
+		PEER=BACKUP
+		PEER_IP=$BACKUP_INTERNAL_IP
 	else
-		PEER=MASTER
-		PEER_IP=$MASTER_INTERNAL_IP
+		PEER=MAIN
+		PEER_IP=$MAIN_INTERNAL_IP
 	fi
 	
 	while [ "$PEER_IP" = "" ]; do
@@ -798,8 +798,8 @@ function get_peer_addr {
 		fi
 	done
 	cfg ${PEER}_INTERNAL_IP $PEER_IP
-	[ $PEER = SLAVE ] && SLAVE_INTERNAL_IP=$PEER_IP
-	[ $PEER = MASTER ] && MASTER_INTERNAL_IP=$PEER_IP
+	[ $PEER = BACKUP ] && BACKUP_INTERNAL_IP=$PEER_IP
+	[ $PEER = MAIN ] && MAIN_INTERNAL_IP=$PEER_IP
 }
 
 function spinner {
@@ -811,19 +811,19 @@ function spinner {
 
 function this_node_standby {
 
-	if [ "$ISMASTER" = "YES" ]; then
-		crm node standby master
+	if [ "$ISMAIN" = "YES" ]; then
+		crm node standby main
 	else
-		crm node standby slave
+		crm node standby backup
 	fi
 }
 
 function this_node_online {
 
-	if [ "$ISMASTER" = "YES" ]; then
-		crm node online master
+	if [ "$ISMAIN" = "YES" ]; then
+		crm node online main
 	else
-		crm node online slave
+		crm node online backup
 	fi
 }
 

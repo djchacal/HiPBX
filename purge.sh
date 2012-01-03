@@ -21,8 +21,8 @@ for x in /etc/drbd.d/*.res
   echo yes|drbdadm wipe-md `echo $x|sed 's_/etc/drbd.d/\(.*\).res_\1_'`
  done
 rm -f /etc/drbd.d/*.res
-mysql -p$MYSQLPASS -e"drop user 'hipbx'@'master'"
-mysql -p$MYSQLPASS -e"drop user 'hipbx'@'slave'"
+mysql -p$MYSQLPASS -e"drop user 'hipbx'@'main'"
+mysql -p$MYSQLPASS -e"drop user 'hipbx'@'backup'"
 mysql -p$MYSQLPASS -e"drop user 'hipbx'@'cluster'"
 mysql -p$MYSQLPASS -e"drop user 'hipbx'@'localhost'"
 mysqladmin -f -p$MYSQLPASS drop hipbx

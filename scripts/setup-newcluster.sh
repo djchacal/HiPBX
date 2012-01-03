@@ -24,10 +24,10 @@ if  ! (type -t configure_lvm | grep function > /dev/null) ; then
 	exit
 fi
 
-if [ "$ISMASTER" = "YES" ]; then
-	MYNAME=master
+if [ "$ISMAIN" = "YES" ]; then
+	MYNAME=main
 else
-	MYNAME=slave
+	MYNAME=backup
 fi 
 echo "Starting new cluster setup on $MYNAME."
 

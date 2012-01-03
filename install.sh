@@ -65,35 +65,34 @@ mysql_password
 
 NEWCLUSTER=NO
 
-# Is this the master or slave server?
-if [ "$ISMASTER" = "" ]; then
+# Is this the main or backup server?
+if [ "$ISMAIN" = "" ]; then
 	echo "This appears to be a new install - /etc/hipbx.d/hipbx.conf doesn't exist."
-	echo "You need to select if this is the 'master' or 'slave' server."
-	echo "Please note that these names are pretty much arbritary, and don't"
-	echo "mean that one server is preferred over the other. The only reason"
-	echo "for calling them 'master' and 'slave' is that that is what the USB "
-	echo "connections on the Xorcom Astribanks refer to. If you're not using"
-	echo "Astribanks, the choice is up to you. If you are using Astribanks,"
-	echo "the Dahdi failover scripts require that the 'master' server is"
-	echo "plugged into the 'master' port(s), and the 'slave' server is plugged"
-	echo "into the 'slave' ports."
+	echo "You need to select if this is the 'main' or 'backup' server."
+	echo "THESE NAMES ARE ARBRITARY AND DO NOT REFLECT A SPECIFIC SERVICE"
+	echo "The only reason for calling them 'main' and 'backup' is that that is"
+	echo "is what the USB ports on the Xorcom Astribanks refer to. If you're not"
+	echo "using Astribanks, the choice is up to you. If you ARE using Astribanks,"
+	echo "the Dahdi failover scripts require that the 'main' server is"
+	echo "plugged into the 'main' port(s), and the 'backup' server is plugged"
+	echo "into the 'backup' ports."
 	echo "If your two servers have different amounts of disk space, you will"
-	echo "save yourself a lot of effort if you set the one with the SMALLER"
-	echo "amount of disk as the MASTER, and install that machine first."
-	echo -n "Is this the Master or Slave server? [m/s]: "
+	echo "save yourself a lot of effort if you create the cluster on one with"
+	echo "the SMALLER amount of disk space."
+	echo -n "Is this the Main or Backup server? [m/b]: "
 	read resp
 	if [ "$resp" = "" ]; then
-		echo "No default. You must select 'M'aster or 'S'lave."
+		echo "No default. You must select 'M'ain or 'B'ackup."
 		exit
 	fi
 	if [ "$resp" = "M" -o "$resp" = "m" ]; then
-		cfg ISMASTER YES
-		MYNAME=MASTER
-	elif [ "$resp" = "S" -o "$resp" = "s" ]; then
-		cfg ISMASTER NO
-		MYNAME=SLAVE
+		cfg ISMAIN YES
+		MYNAME=MAIN
+	elif [ "$resp" = "B" -o "$resp" = "b" ]; then
+		cfg ISMAIN NO
+		MYNAME=BACKUP
 	else 
-		echo "Sorry. You must select 'M'aster or 'Slave'."
+		echo "Sorry. You must select 'M'ain or 'B'ackup."
 		exit
 	fi
 fi
@@ -104,7 +103,7 @@ if [ "$resp" = "Y" -o "$resp" = "y" ]; then
 	NEWCLUSTER=YES
 fi
 
-# Set the hostname of the machine to be 'master' or 'slave'
+# Set the hostname of the machine to be 'main' or 'backup'
 fix_hostname
 
 if [ "$NEWCLUSTER" = "YES" ]; then
