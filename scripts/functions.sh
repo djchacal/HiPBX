@@ -1089,7 +1089,7 @@ function freepbx_create_symlinks {
 
 
 function add_repos {
-	echo -n 'Ensureing all repos are added...'
+	echo -n 'Ensuring all repos are added...'
 	add_elrepo_repo
 	add_epel_repo
 	add_atrpms_repo
