@@ -64,13 +64,13 @@ function installpackages {
 	done
 	if [ "$INSTALL" != "" ] ; then
 		echo -e "\tInstalling missing yum packages."
-		yum -y install $INSTALL
+		yum --enablerepo=elrepo-testing -y install $INSTALL
 	else
 		echo -e "\tNo yum packages required"
 	fi
 	if ! rpm -q dahdi-linux > /dev/null ; then
 		echo -e "\tInstalling DAHDI Kernel module"
-		yum -y --enablerepo atrpms install dahdi-linux
+		yum -y --enablerepo=atrpms install dahdi-linux
 	fi
 }
 
