@@ -1039,6 +1039,8 @@ function apache_install {
 	
 function fix_dahdi_perms {
 	sed -i s/asterisk/apache/g /etc/udev/rules.d/*dahdi.rules
+	udevadm control --reload-rules
+
 }
 
 function freepbx_install {
