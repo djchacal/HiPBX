@@ -724,6 +724,7 @@ function setup_mysql {
 			echo -e "\tPassword correct"
 		else
 			echo -e "Error: Unable to log into MySQL. Sorry.\nIf you know what the MySQL root password is, update the /etc/hipbx.org file with the password.\nOtherwise, you'll have to do a password reset."
+			echo "I can't continue. Please fix this and re-run install.sh"
 			exit
 		fi
 	fi
