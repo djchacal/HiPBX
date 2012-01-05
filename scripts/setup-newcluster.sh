@@ -69,12 +69,10 @@ setup_mysql
 # Do Asterisk
 fix_dahdi_perms
 asterisk_install
+add_cluster_addresses
 
 # Apache
 apache_install
 freepbx_install
 freepbx_create_symlinks
-
-exit
-
 

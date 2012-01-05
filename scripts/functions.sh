@@ -1221,4 +1221,40 @@ function fix_sysctl {
 		grep $var /etc/sysctl.conf > /dev/null || echo "$var = 1" >> /etc/sysctl.conf
 	done
 }
+
+function add_cluster_addresses {
+	# Ensure that Asterisk only binds to the ASTERISK IP address.
+	
+	# SIP
+	if grep udpbindaddr /etc/asterisk/sip_general_custom.conf > /dev/null ; then
+		# It exists. Ensure it's right.
+		sed -i "s/^udpbindaddr.*\$/udpbindaddr=$asterisk_IP/" /etc/asterisk/sip_general_custom.conf 
+	else
+		echo "udpbindaddr=$asterisk_IP" >> /etc/asterisk/sip_general_custom.conf
+	fi
+	if grep tcpbindaddr /etc/asterisk/sip_general_custom.conf > /dev/null ; then
+		# It exists. Ensure it's right.
+		sed -i "s/^tcpbindaddr.*\$/tcpbindaddr=$asterisk_IP/" /etc/asterisk/sip_general_custom.conf 
+	else
+		echo "tcpbindaddr=$asterisk_IP" >> /etc/asterisk/sip_general_custom.conf
+	fi
+
+	# IAX
+	if grep bindaddr /etc/asterisk/iax_general_custom.conf > /dev/null ; then
+		# It exists. Ensure it's right.
+		sed -i "s/^bindaddr.*\$/bindaddr=$asterisk_IP/" /etc/asterisk/iax_general_custom.conf 
+	else
+		echo "bindaddr=$asterisk_IP" >> /etc/asterisk/iax_general_custom.conf
+	fi
+
+	# Dundi
+	# Note - commented out by default. Uncomment and fix it anyway.
+	if grep bindaddr /etc/asterisk/dundi.conf > /dev/null ; then
+		# It exists. Ensure it's right.
+		sed -i "s/^;bindaddr.*\$/bindaddr=$asterisk_IP/" /etc/asterisk/dundi.conf 
+	else
+		echo "bindaddr=$asterisk_IP" >> /etc/asterisk/dundi.conf
+	fi
+
+}
 	
