@@ -81,4 +81,7 @@ rm -rf /usr/share/asterisk
 ln -sf /drbd/asterisk/share /usr/share/asterisk 
 rm -rf /var/lib/asterisk
 ln -sf /drbd/asterisk/lib /var/lib/asterisk
+rm -rf /var/spool/asterisk
+ln -sf /drbd/asterisk/spool /var/spool/asterisk
+
 usermod -G haclient apache
