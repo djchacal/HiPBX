@@ -56,7 +56,7 @@ function installpackages {
 	# RPMs from yum.
 	YUMPACKS="bc vim-enhanced sox libusb-devel httpd php php-gd php-pear php-mysql mysql-server curl mysql mysql-devel php-process libxml2-devel ncurses-devel libtiff-devel libogg-devel libvorbis vorbis-tools pacemaker unixODBC bluez-libs postgresql-libs festival ImageMagick"
 	# Update. Now using epel and elrepo repositories
-	YUMPACKS="$YUMPACKS asterisk asterisk-dahdi dahdi-tools asterisk-sounds-core-en_AU asterisk-sounds-core-en asterisk-sqlite asterisk-voicemail-plain asterisk-mysql asterisk-mobile asterisk-ldap asterisk-jabber asterisk-festival asterisk-fax asterisk-curl asterisk-calendar asterisk-jack spandsp iksemel-utils php-fpdf libsrtp php-pear-DB libresample kmod-drbd84 drbd84-utils"
+	YUMPACKS="$YUMPACKS asterisk asterisk-dahdi dahdi-tools asterisk-sounds-core-en_AU asterisk-sounds-core-en-wav asterisk-sqlite asterisk-voicemail-plain asterisk-mysql asterisk-mobile asterisk-ldap asterisk-jabber asterisk-festival asterisk-fax asterisk-curl asterisk-calendar asterisk-jack spandsp iksemel-utils php-fpdf libsrtp php-pear-DB libresample kmod-drbd84 drbd84-utils"
 	for x in $YUMPACKS ; do 
 		if ! (grep "^${x}$" /tmp/rpms.$$ > /dev/null) ; then 
 			INSTALL="$INSTALL $x"
@@ -1214,3 +1214,11 @@ gpgcheck=0
 EOF
 
 }
+
+function fix_sysctl {
+	# ICMP redirects are bad in a hiav. Don't do them. Don't send them. Don't honour them.
+	for var in net.ipv4.conf.all.accept_redirects net.ipv4.conf.all.send_redirects net.ipv6.conf.all.accept_redirects net.ipv6.conf.all.send_redirects ; do
+		grep $var /etc/sysctl.conf > /dev/null || echo "$var = 1" >> /etc/sysctl.conf
+	done
+}
+	

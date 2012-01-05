@@ -34,6 +34,9 @@ if [ -f /etc/hipbx.d/hipbx.conf ]; then
 	. /etc/hipbx.d/hipbx.conf
 fi
 
+# Ensure ICMP redirects are turned off
+fix_sysctl
+
 # Check if SElinux is enabled
 selinux
 
