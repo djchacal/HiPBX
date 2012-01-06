@@ -72,6 +72,11 @@ function installpackages {
 		echo -e "\tInstalling DAHDI Kernel module"
 		yum -y --enablerepo=atrpms install dahdi-linux
 	fi
+	if ! rpm -q asterisk-extra-sounds-en-sln16 > /dev/null ; then
+		echo -e "\tInstalling Asterisk Extra-sounds module"
+		yum -y --enablerepo=atrpms install asterisk-extra-sounds-en-sln16
+	fi
+
 }
 
 function disableall {
