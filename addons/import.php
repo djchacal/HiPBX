@@ -19,7 +19,7 @@ foreach ($arr as $line) {
 	'cid_masquerade' => '', 'sipname' => '', 'ringtimer' => 0, 'cfringtimer' => 0, 'concurrency_limit' => 0,
 	'callwaiting' => 'enabled', 'answermode' => 'disabled', 'call_screen' => 0, 'pinless' => 'disabled', 'emergency_cid' => '',
 	'tech' => 'sip', 'hardware' => 'generic', 'qnostate' => 'usestate', 'newdidcid' => '',
-	'devinfo_secret_origional' => '', 'devinfo_dtmfmode' => 'rfc2833', 'devinfo_canreinvite' => 'no',
+	'devinfo_secret' => $secret, 'devinfo_dtmfmode' => 'rfc2833', 'devinfo_canreinvite' => 'no',
 	'devinfo_context' => 'from-internal', 'devinfo_host' => 'dynamic', 'devinfo_trustrpid' => 'yes', 'devinfo_sendrpid' => 'no',
 	'devinfo_type' => 'peer', 'devinfo_nat' => 'no', 'devinfo_port' => '5060', 'devinfo_qualify' => 'yes', 'devinfo_qualifyfreq' => '60',
 	'devinfo_transport' => 'udp', 'devinfo_encryption' => 'no', 'devinfo_callgroup' => '', 'devinfo_pickupgroup' => '',
@@ -30,23 +30,20 @@ foreach ($arr as $line) {
 	);
 	$vars['devinfo_dial']="SIP/$ext";
 
-        if ($vm == 'yes') {
-                $vm = array (
-                        'vm' => 'enabled',
-                        'mailbox' => $ext,
-                        'devinfo_voicemail' => 'default',
-                        'devinfo_mailbox' => $ext.'@default',
-                        'vmpwd' => $vmpin,
-                        'attach' => 'attach=no',
-                        'saycid' => 'saycid=yes',
-                        'envelope' => 'envelope=no',
-                        'delete' => 'delete=no',
-                        'pager' => '',
-                        'vmcontext' => 'default',
-                );
-                $vars = array_merge($vars, $vm);
-        }
-
+        $vm = array (
+		'vm' => 'enabled',
+		'mailbox' => $ext,
+		'devinfo_voicemail' => 'default',
+		'devinfo_mailbox' => $ext.'@default',
+		'vmpwd' => $vmpin,
+		'attach' => 'attach=no',
+		'saycid' => 'saycid=yes',
+		'envelope' => 'envelope=no',
+		'delete' => 'delete=no',
+		'pager' => '',
+		'vmcontext' => 'default',
+	);
+	$vars = array_merge($vars, $vm);
 	# And FreePBX Also wants them to be in $_REQUEST, too.
 	$_REQUEST=$vars;
 	core_users_add($vars);
@@ -57,7 +54,7 @@ foreach ($arr as $line) {
 		# Seriously. FreePBX is setting 'vm' to be 'novm' every time. You can't add an exten with
 		# voicemail enabled. This is broken. Workaround below.
 		$sql="update users set voicemail='default' where extension='$ext'";
-		$this->db->query($sql);
+		$db->query($sql);
 		global $astman;
 		$astman->database_put("AMPUSER",$ext."/voicemail", 'default');
 	}
