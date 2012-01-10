@@ -29,10 +29,28 @@ foreach ($arr as $line) {
 	'langcode' => '', 'record_in' => 'Adhoc', 'record_out' => 'Adhoc', 'email' => '', 'vm' => 'enabled',
 	);
 	$vars['devinfo_dial']="SIP/$ext";
+
+        if ($vm == 'yes') {
+                $vm = array (
+                        'vm' => 'enabled',
+                        'mailbox' => $ext,
+                        'devinfo_voicemail' => 'default',
+                        'devinfo_mailbox' => $ext.'@default',
+                        'vmpwd' => $vmpin,
+                        'attach' => 'attach=no',
+                        'saycid' => 'saycid=yes',
+                        'envelope' => 'envelope=no',
+                        'delete' => 'delete=no',
+                        'pager' => '',
+                        'vmcontext' => 'default',
+                );
+                $vars = array_merge($vars, $vm);
+        }
+
 	# And FreePBX Also wants them to be in $_REQUEST, too.
 	$_REQUEST=$vars;
 	core_users_add($vars);
-	core_devices_add($ext, 'dahdi', $vars['devinfo_dial'], 'fixed', $ext, $cidname);
+	core_devices_add($ext, 'sip', $vars['devinfo_dial'], 'fixed', $ext, $cidname);
 	# Create voicemail
 	if ($vars['vm'] === 'enabled') {
 		voicemail_mailbox_add($ext, $vars);
