@@ -83,5 +83,10 @@ rm -rf /var/lib/asterisk
 ln -sf /drbd/asterisk/lib /var/lib/asterisk
 rm -rf /var/spool/asterisk
 ln -sf /drbd/asterisk/spool /var/spool/asterisk
+rm -rf /etc/dahdi
+ln -sf /drbd/asterisk/dahdi /etc/dahdi
 
 usermod -G haclient apache
+
+# Don't forget to enable me!
+this_node_online

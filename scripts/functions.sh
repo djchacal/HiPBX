@@ -72,6 +72,11 @@ function installpackages {
 		echo -e "\tInstalling DAHDI Kernel module"
 		yum -y --enablerepo=atrpms install dahdi-linux
 	fi
+	if ! rpm -q asterisk-extra-sounds-en-sln16 > /dev/null ; then
+		echo -e "\tInstalling Asterisk Extra-sounds module"
+		yum -y --enablerepo=atrpms install asterisk-extra-sounds-en-sln16
+	fi
+
 }
 
 function disableall {
@@ -724,6 +729,7 @@ function setup_mysql {
 			echo -e "\tPassword correct"
 		else
 			echo -e "Error: Unable to log into MySQL. Sorry.\nIf you know what the MySQL root password is, update the /etc/hipbx.org file with the password.\nOtherwise, you'll have to do a password reset."
+			echo "I can't continue. Please fix this and re-run install.sh"
 			exit
 		fi
 	fi
@@ -1037,7 +1043,9 @@ function apache_install {
 }
 	
 function fix_dahdi_perms {
-	sed -i s/asterisk/apache/g /etc/udev/rules.d/dahdi.rules
+	sed -i s/asterisk/apache/g /etc/udev/rules.d/*dahdi.rules
+	udevadm control --reload-rules
+
 }
 
 function freepbx_install {
@@ -1220,5 +1228,41 @@ function fix_sysctl {
 	for var in net.ipv4.conf.all.accept_redirects net.ipv4.conf.all.send_redirects net.ipv6.conf.all.accept_redirects net.ipv6.conf.all.send_redirects ; do
 		grep $var /etc/sysctl.conf > /dev/null || echo "$var = 1" >> /etc/sysctl.conf
 	done
+}
+
+function add_cluster_addresses {
+	# Ensure that Asterisk only binds to the ASTERISK IP address.
+	
+	# SIP
+	if grep udpbindaddr /etc/asterisk/sip_general_custom.conf > /dev/null ; then
+		# It exists. Ensure it's right.
+		sed -i "s/^udpbindaddr.*\$/udpbindaddr=$asterisk_IP/" /etc/asterisk/sip_general_custom.conf 
+	else
+		echo "udpbindaddr=$asterisk_IP" >> /etc/asterisk/sip_general_custom.conf
+	fi
+	if grep tcpbindaddr /etc/asterisk/sip_general_custom.conf > /dev/null ; then
+		# It exists. Ensure it's right.
+		sed -i "s/^tcpbindaddr.*\$/tcpbindaddr=$asterisk_IP/" /etc/asterisk/sip_general_custom.conf 
+	else
+		echo "tcpbindaddr=$asterisk_IP" >> /etc/asterisk/sip_general_custom.conf
+	fi
+
+	# IAX
+	if grep bindaddr /etc/asterisk/iax_general_custom.conf > /dev/null ; then
+		# It exists. Ensure it's right.
+		sed -i "s/^bindaddr.*\$/bindaddr=$asterisk_IP/" /etc/asterisk/iax_general_custom.conf 
+	else
+		echo "bindaddr=$asterisk_IP" >> /etc/asterisk/iax_general_custom.conf
+	fi
+
+	# Dundi
+	# Note - commented out by default. Uncomment and fix it anyway.
+	if grep bindaddr /etc/asterisk/dundi.conf > /dev/null ; then
+		# It exists. Ensure it's right.
+		sed -i "s/^;bindaddr.*\$/bindaddr=$asterisk_IP/" /etc/asterisk/dundi.conf 
+	else
+		echo "bindaddr=$asterisk_IP" >> /etc/asterisk/dundi.conf
+	fi
+
 }
 	
