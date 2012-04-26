@@ -368,7 +368,7 @@ function config_networking {
 	echo -e "\tto work. The first interface is the 'internal' link. This should be"
 	echo -e "\ta crossover cable, or even better, a pair of crossover cables"
 	echo -e "\tbonded together, that links the two machines. There should NOT be a"
-	echo -e "\tnetwork swtich on the internal link. "
+	echo -e "\tnetwork switch on the internal link. "
 	echo -e "\tThe second interface is your external network. This again should be"
 	echo -e "\ta bonded interface, preferrably going to two seperate switches."
 	echo -e "\tBoth of these network interfaces should already be configured, tested"
