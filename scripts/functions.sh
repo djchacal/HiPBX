@@ -413,7 +413,7 @@ function config_networking {
 
 	INTSVALID=false
 	while [ $INTSVALID = false ]; do
-		echo -en "\tPlesae enter the INTERNAL, PRIVATE interface "
+		echo -en "\tPlease enter the INTERNAL, PRIVATE interface "
 		[ "$MY_INTERNAL_INT" = "" ] && MY_INTERNAL_INT="eth1"
 		echo -n "[$MY_INTERNAL_INT]: "
 		read internalint
