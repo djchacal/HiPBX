@@ -1105,11 +1105,12 @@ function add_repos {
 }
 
 function add_elrepo_repo {
-	yum -y install elrepo-release > /dev/null 2>&1
 	# Installed?
 	if [ -e /etc/yum.repos.d/elrepo.repo ] ; then
 		return;
 	fi
+
+	yum -y install elrepo-release > /dev/null 2>&1
 
 	# Dammit. Someone's running this on CentOS. Lets just throw it in
 	cat > /etc/yum.repos.d/elrepo.repo << EOF
@@ -1152,11 +1153,12 @@ EOF
 }
 
 function add_epel_repo {
-	yum -y install epel-release > /dev/null 2>&1
 	# Is it installed?
 	if [ -e /etc/yum.repos.d/epel.repo ] ; then
 		return;
 	fi
+
+	yum -y install epel-release > /dev/null 2>&1
 
 	# Dammit. Someone's running this on CentOS. Lets just throw it in
 	cat > /etc/yum.repos.d/epel.repo << EOF
@@ -1188,7 +1190,6 @@ EOF
 }
 
 function add_atrpms_repo {
-	yum -y install atrpms-repo > /dev/null 2>&1
 
 	# Is it installed?
 	if [ -e /etc/yum.repos.d/atrpms.repo ] ; then
@@ -1196,6 +1197,8 @@ function add_atrpms_repo {
 		sed -i 's/enabled=./enabled=0/' /etc/yum.repos.d/atrpms*
 		return;
 	fi
+
+	yum -y install atrpms-repo > /dev/null 2>&1
 
 	# Dammit. Someone's running this on CentOS. Lets just throw it in
 	cat > /etc/yum.repos.d/atrpms.repo << EOF
