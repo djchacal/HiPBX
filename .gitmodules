@@ -1,3 +1,6 @@
 [submodule "freepbx-2.9.0/amp_conf/htdocs/admin/modules/endpointman"]
 	path = freepbx-2.9.0/amp_conf/htdocs/admin/modules/endpointman
 	url = https://github.com/tm1000/freepbx-endpointmanager/
+[submodule "addons/simple-endpointmanager"]
+	path = addons/simple-endpointmanager
+	url = git@github.com:tm1000/freepbx-simple-endpointmanager.git
